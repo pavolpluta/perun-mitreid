@@ -26,7 +26,8 @@
 				<prop key="jdbc.url">jdbc:postgresql://localhost/oidc</prop>
 				<prop key="jdbc.user">oidc</prop>
 				<prop key="jdbc.password">oidc</prop>
-				<prop key="attribute.openid.sub">"urn:perun:user:attribute-def:virt:login-namespace:einfra</prop>
+				<prop key="admins">3197,59835</prop>
+				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:virt:login-namespace:einfra</prop>
 				<prop key="attribute.profile.preferred_username">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>
 				<prop key="attribute.email.email">urn:perun:user:attribute-def:def:preferredMail</prop>
 				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
@@ -80,7 +81,9 @@
 	      class="org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider">
 		<property name="preAuthenticatedUserDetailsService" ref="userDetailsService"/>
 	</bean>
-	<bean id="userDetailsService" class="cz.muni.ics.oidc.PerunAuthenticationUserDetailsService"/>
+	<bean id="userDetailsService" class="cz.muni.ics.oidc.PerunAuthenticationUserDetailsService">
+		<property name="admins" value="#{'${admins}'.split('\s*,\s*')}"/>
+	</bean>
 
 	<security:http auto-config="false" use-expressions="true" entry-point-ref="http403EntryPoint">
 		<security:intercept-url pattern="/authorize" access="hasRole('ROLE_USER')"/>

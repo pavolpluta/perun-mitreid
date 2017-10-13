@@ -30,6 +30,6 @@
 	<logger name="org.springframework" level="warn"/>
 	<logger name="org.springframework.security" level="warn"/>
 	<logger name="org.springframework.web" level="warn"/>
-	<logger name="cz.muni.ics.oidc" level="debug"/>
+	<logger name="cz.muni.ics.oidc" level="trace"/>
 
 </configuration>
