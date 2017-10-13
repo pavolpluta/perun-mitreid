@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Replaces (overlays) the same-name file from project org.mitre.openid-connect-server-webapp.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+		http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		">
+	<context:property-placeholder properties-ref="coreProperties" ignore-unresolvable="false"/>
+
+	<!-- default config values, override in file /etc/perun/perun-mitreid.properties -->
+	<bean id="defaultCoreProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="issuer.url">https://perun-dev.meta.zcu.cz/oidc/</prop>
+				<prop key="logo.image.url">resources/images/perun_24px.png</prop>
+				<prop key="topbar.title">Perun OIDC</prop>
+				<prop key="perun.url">https://perun.elixir-czech.cz/krb/rpc</prop>
+				<prop key="perun.user">xxxxx</prop>
+				<prop key="perun.password">yyyyy</prop>
+				<prop key="jdbc.url">jdbc:postgresql://localhost/oidc</prop>
+				<prop key="jdbc.user">oidc</prop>
+				<prop key="jdbc.password">oidc</prop>
+				<prop key="attribute.openid.sub">"urn:perun:user:attribute-def:virt:login-namespace:einfra</prop>
+				<prop key="attribute.profile.preferred_username">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>
+				<prop key="attribute.email.email">urn:perun:user:attribute-def:def:preferredMail</prop>
+				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
+				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
+			</props>
+		</property>
+	</bean>
+	<bean id="coreProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties" ref="defaultCoreProperties"/>
+		<property name="locations">
+			<list>
+				<value>file:/etc/perun/perun-mitreid.properties</value>
+			</list>
+		</property>
+		<property name="ignoreResourceNotFound" value="false"/>
+	</bean>
+
+	<!-- defines our own user data source -->
+	<bean id="perunUserInfoRepository" primary="true" class="cz.muni.ics.oidc.PerunUserInfoRepository">
+		<property name="perunUrl" value="${perun.url}"/>
+		<property name="perunUser" value="${perun.user}"/>
+		<property name="perunPassword" value="${perun.password}"/>
+		<property name="subAttribute" value="${attribute.openid.sub}"/>
+		<property name="preferredUsernameAttribute" value="${attribute.profile.preferred_username}"/>
+		<property name="emailAttribute" value="${attribute.email.email}"/>
+		<property name="addressAttribute" value="${attribute.address.address.formatted}"/>
+		<property name="phoneAttribute" value="${attribute.phone.phone}"/>
+		<property name="customClaims">
+			<list>
+				<bean class="cz.muni.ics.oidc.PerunCustomClaimDefinition">
+					<constructor-arg name="scope" value="bona_fide_status"/>
+					<constructor-arg name="claim" value="bona_fide_status"/>
+					<constructor-arg name="perunAttributeName" value="urn:perun:user:attribute-def:def:bonaFideStatus"/>
+				</bean>
+			</list>
+		</property>
+	</bean>
+
+	<!-- replaces default translation service with our own for custom scope with custom claims. -->
+	<bean id="scopeClaimTranslator" primary="true" class="cz.muni.ics.oidc.PerunScopeClaimTranslationService">
+		<property name="perunUserInfoRepository" ref="perunUserInfoRepository"/>
+	</bean>
+
+	<!-- some stuff which I do not understand yet -->
+
+	<security:authentication-manager alias="authenticationManager">
+		<security:authentication-provider ref="preauthAuthProvider"/>
+	</security:authentication-manager>
+
+	<bean id="preauthAuthProvider"
+	      class="org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider">
+		<property name="preAuthenticatedUserDetailsService" ref="userDetailsService"/>
+	</bean>
+	<bean id="userDetailsService" class="cz.muni.ics.oidc.PerunAuthenticationUserDetailsService"/>
+
+	<security:http auto-config="false" use-expressions="true" entry-point-ref="http403EntryPoint">
+		<security:intercept-url pattern="/authorize" access="hasRole('ROLE_USER')"/>
+		<security:intercept-url pattern="/**" access="permitAll"/>
+		<security:custom-filter ref="perunAuthenticationFilter" before="PRE_AUTH_FILTER"/>
+	</security:http>
+
+	<bean id="perunAuthenticationFilter" class="cz.muni.ics.oidc.PerunAuthenticationFilter">
+		<property name="perunUrl" value="${perun.url}"/>
+		<property name="perunUser" value="${perun.user}"/>
+		<property name="perunPassword" value="${perun.password}"/>
+		<property name="authenticationManager" ref="authenticationManager"/>
+	</bean>
+
+</beans>
