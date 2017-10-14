@@ -11,6 +11,7 @@
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 		">
+
 	<context:property-placeholder properties-ref="coreProperties" ignore-unresolvable="false"/>
 
 	<!-- default config values, override in file /etc/perun/perun-mitreid.properties -->
@@ -27,8 +28,10 @@
 				<prop key="jdbc.user">oidc</prop>
 				<prop key="jdbc.password">oidc</prop>
 				<prop key="admins">3197,59835</prop>
-				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:virt:login-namespace:einfra</prop>
+				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:core:id</prop>
 				<prop key="attribute.profile.preferred_username">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>
+				<prop key="attribute.profile.zoneinfo">urn:perun:user:attribute-def:def:timezone</prop>
+				<prop key="attribute.profile.locale">urn:perun:user:attribute-def:def:preferredLanguage</prop>
 				<prop key="attribute.email.email">urn:perun:user:attribute-def:def:preferredMail</prop>
 				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
 				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
@@ -45,16 +48,17 @@
 		<property name="ignoreResourceNotFound" value="false"/>
 	</bean>
 
+
 	<!-- defines our own user data source -->
 	<bean id="perunUserInfoRepository" primary="true" class="cz.muni.ics.oidc.PerunUserInfoRepository">
-		<property name="perunUrl" value="${perun.url}"/>
-		<property name="perunUser" value="${perun.user}"/>
-		<property name="perunPassword" value="${perun.password}"/>
+		<property name="perunConnector" ref="perunConnector"/>
 		<property name="subAttribute" value="${attribute.openid.sub}"/>
 		<property name="preferredUsernameAttribute" value="${attribute.profile.preferred_username}"/>
 		<property name="emailAttribute" value="${attribute.email.email}"/>
 		<property name="addressAttribute" value="${attribute.address.address.formatted}"/>
 		<property name="phoneAttribute" value="${attribute.phone.phone}"/>
+		<property name="zoneinfoAttribute" value="${attribute.profile.zoneinfo}"/>
+		<property name="localeAttribute" value="${attribute.profile.locale}"/>
 		<property name="customClaims">
 			<list>
 				<bean class="cz.muni.ics.oidc.PerunCustomClaimDefinition">
@@ -71,31 +75,47 @@
 		<property name="perunUserInfoRepository" ref="perunUserInfoRepository"/>
 	</bean>
 
-	<!-- some stuff which I do not understand yet -->
+	<!-- authentication -->
 
-	<security:authentication-manager alias="authenticationManager">
-		<security:authentication-provider ref="preauthAuthProvider"/>
-	</security:authentication-manager>
-
-	<bean id="preauthAuthProvider"
-	      class="org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider">
-		<property name="preAuthenticatedUserDetailsService" ref="userDetailsService"/>
-	</bean>
-	<bean id="userDetailsService" class="cz.muni.ics.oidc.PerunAuthenticationUserDetailsService">
-		<property name="admins" value="#{'${admins}'.split('\s*,\s*')}"/>
-	</bean>
-
-	<security:http auto-config="false" use-expressions="true" entry-point-ref="http403EntryPoint">
+	<security:http auto-config="false" use-expressions="true" entry-point-ref="http403EntryPoint"
+	               authentication-manager-ref="authenticationManager">
 		<security:intercept-url pattern="/authorize" access="hasRole('ROLE_USER')"/>
 		<security:intercept-url pattern="/**" access="permitAll"/>
 		<security:custom-filter ref="perunAuthenticationFilter" before="PRE_AUTH_FILTER"/>
 	</security:http>
 
+	<security:authentication-manager id="authenticationManager">
+		<security:authentication-provider ref="preauthAuthProvider"/>
+	</security:authentication-manager>
+
+	<!-- the user must be pre-authenticated by Apache -->
+	<bean id="preauthAuthProvider"
+	      class="org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider">
+		<property name="preAuthenticatedUserDetailsService" ref="userDetailsService"/>
+	</bean>
+
+
+	<bean id="perunTimeStamper" class="cz.muni.ics.oidc.PerunAuthenticationSuccessHandler">
+	</bean>
+
+	<!-- extracts user from HTTP request and looks it up in Perun-->
 	<bean id="perunAuthenticationFilter" class="cz.muni.ics.oidc.PerunAuthenticationFilter">
+		<property name="authenticationManager" ref="authenticationManager"/>
+		<property name="authenticationSuccessHandler" ref="perunTimeStamper"/>
+	</bean>
+
+	<!-- decides who is admin -->
+	<bean id="userDetailsService" class="cz.muni.ics.oidc.PerunAuthenticationUserDetailsService">
+		<property name="perunConnector" ref="perunConnector"/>
+		<property name="admins" value="#{'${admins}'.split('\s*,\s*')}"/>
+	</bean>
+
+	<!-- communicates with Perun -->
+	<bean id="perunConnector" class="cz.muni.ics.oidc.PerunConnector">
 		<property name="perunUrl" value="${perun.url}"/>
 		<property name="perunUser" value="${perun.user}"/>
 		<property name="perunPassword" value="${perun.password}"/>
-		<property name="authenticationManager" ref="authenticationManager"/>
 	</bean>
+
 
 </beans>

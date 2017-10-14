@@ -1,5 +1,6 @@
 package cz.muni.ics.oidc;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,30 +27,60 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 	private static GrantedAuthority ROLE_USER = new SimpleGrantedAuthority("ROLE_USER");
 	private static GrantedAuthority ROLE_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
 
+	private PerunConnector perunConnector;
+
+	public void setPerunConnector(PerunConnector perunConnector) {
+		this.perunConnector = perunConnector;
+	}
+
 	private List<Long> adminIds = new ArrayList<>();
+
 	public void setAdmins(List<String> admins) {
-		log.trace("setAdmins({})",admins);
+		log.trace("setAdmins({})", admins);
 		for (String id : admins) {
 			long l = Long.parseLong(id);
 			adminIds.add(l);
-			log.debug("added admin {}",l);
+			log.debug("added user {} as admin", l);
 		}
 	}
 
+	public PerunAuthenticationUserDetailsService() {
+		log.info("initialized");
+	}
+
+	/**
+	 * Verifies principal extracted by {@link PerunAuthenticationFilter} in Perun or throws exception.
+	 *
+	 * @param token token with {@link PerunPrincipal} extracted by {@link PerunAuthenticationFilter}
+	 * @return UserDetails with username set to Perun user id
+	 * @throws UsernameNotFoundException when user is not verified in Perun
+	 */
 	@Override
 	public UserDetails loadUserDetails(PreAuthenticatedAuthenticationToken token) throws UsernameNotFoundException {
-		log.trace("loadUserDetails({})",token);
-		if (token.getPrincipal() == null) {
-			throw new UsernameNotFoundException("User id is null");
+		log.trace("loadUserDetails({})", token);
+		PerunPrincipal perunPrincipal = (PerunPrincipal) token.getPrincipal();
+		if (perunPrincipal == null) {
+			throw new UsernameNotFoundException("PerunPrincipal is null");
 		}
-		Collection<GrantedAuthority> authorities = new ArrayList<>();
+		try {
+			JsonNode result = perunConnector.getPreauthenticatedUserId(perunPrincipal);
+			Long userId = result.path("id").asLong();
+			String firstname = result.path("firstName").asText();
+			String lastname = result.path("lastName").asText();
+			log.info("User {} {} {} logged in", userId, firstname, lastname);
 
-		authorities.add(ROLE_USER);
-		//noinspection SuspiciousMethodCalls
-		if(adminIds.contains(token.getPrincipal())) {
-			 authorities.add(ROLE_ADMIN);
-			 log.debug("user {} is admin",token.getPrincipal());
+			log.trace("setting user role for {}", userId);
+			Collection<GrantedAuthority> authorities = new ArrayList<>();
+			authorities.add(ROLE_USER);
+			if (adminIds.contains(userId)) {
+				authorities.add(ROLE_ADMIN);
+				log.debug("adding admin role for user {} ({})", userId, perunPrincipal);
+			}
+			//returns username and list of roles, the place to check for expired accounts etc
+			return new User(Long.toString(userId), "no password", authorities);
+		} catch (Exception ex) {
+			log.error("Cannot authenticate user for principal " + perunPrincipal, ex);
+			throw new UsernameNotFoundException("user not found in Perun", ex);
 		}
-		return new User(token.getPrincipal().toString(), "no password", authorities);
 	}
 }

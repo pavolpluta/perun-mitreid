@@ -16,7 +16,9 @@ INSERT INTO system_scope_TEMP (scope, description, icon, restricted, default_sco
   ('email', 'email address', 'envelope', false, true),
   ('address', 'physical address', 'home', false, true),
   ('phone', 'telephone number', 'bell', false, true),
-  ('offline_access', 'offline access', 'time', false, false);
+  ('offline_access', 'offline access', 'time', false, false),
+  ('perun_api', 'calls to Perun API in your roles', 'cog', true, false)
+  ;
   
 --
 -- Merge the temporary scopes safely into the database. This is a two-step process to keep scopes from being created on every startup with a persistent store.

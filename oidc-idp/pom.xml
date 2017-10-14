@@ -52,6 +52,11 @@
 			<version>${mitreid-version}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.mitre</groupId>
+			<artifactId>openid-connect-server</artifactId>
+			<version>${mitreid-version}</version>
+		</dependency>
+		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<scope>provided</scope>

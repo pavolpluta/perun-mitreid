@@ -5,27 +5,27 @@ package cz.muni.ics.oidc;
  */
 public class PerunPrincipal {
 
+	private String extLogin;
 	private String extSourceName;
-	private String userExtSourceLogin;
 
-	PerunPrincipal(String extSourceName, String userExtSourceLogin) {
+	PerunPrincipal(String extLogin, String extSourceName) {
+		this.extLogin = extLogin;
 		this.extSourceName = extSourceName;
-		this.userExtSourceLogin = userExtSourceLogin;
+	}
+
+	String getExtLogin() {
+		return extLogin;
 	}
 
 	String getExtSourceName() {
 		return extSourceName;
 	}
 
-	String getUserExtSourceLogin() {
-		return userExtSourceLogin;
-	}
-
 	@Override
 	public String toString() {
 		return "PerunPrincipal{" +
-				"extSourceName='" + extSourceName + '\'' +
-				", userExtSourceLogin='" + userExtSourceLogin + '\'' +
+				"extLogin='" + extLogin + '\'' +
+				", extSourceName='" + extSourceName + '\'' +
 				'}';
 	}
 }

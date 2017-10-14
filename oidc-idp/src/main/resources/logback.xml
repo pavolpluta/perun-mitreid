@@ -9,7 +9,7 @@
 				</rollingPolicy>
 				<encoder>
 					<!-- http://logback.qos.ch/manual/layouts.html#conversionWord -->
-					<pattern>%d [%thread] %-5level %logger{120} - %msg%n</pattern>
+					<pattern>%d %-5level %logger{40} - %msg%n</pattern>
 				</encoder>
 			</appender>
 		</then>
@@ -29,7 +29,10 @@
 	<!-- keep Spring quiet -->
 	<logger name="org.springframework" level="warn"/>
 	<logger name="org.springframework.security" level="warn"/>
-	<logger name="org.springframework.web" level="warn"/>
-	<logger name="cz.muni.ics.oidc" level="trace"/>
+	<logger name="org.springframework.security.core.SpringSecurityCoreVersion" level="info"/>
+	<!--<logger name="org.springframework.security.authentication" level="info"/>-->
+	<!--<logger name="org.springframework.security.web.authentication" level="info"/>-->
+	<logger name="com.zaxxer.hikari" level="warn"/>
+	<logger name="cz.muni.ics.oidc" level="info"/>
 
 </configuration>

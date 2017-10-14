@@ -34,26 +34,19 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunUserInfoRepository.class);
 
-	private String perunUrl;
-	private String perunUser;
-	private String perunPassword;
+	private PerunConnector perunConnector;
+
+	public void setPerunConnector(PerunConnector perunConnector) {
+		this.perunConnector = perunConnector;
+	}
+
 	private String subAttribute;
 	private String preferredUsernameAttribute;
 	private String emailAttribute;
 	private String addressAttribute;
 	private String phoneAttribute;
-
-	public void setPerunUrl(String perunUrl) {
-		this.perunUrl = perunUrl;
-	}
-
-	public void setPerunUser(String perunUser) {
-		this.perunUser = perunUser;
-	}
-
-	public void setPerunPassword(String perunPassword) {
-		this.perunPassword = perunPassword;
-	}
+	private String zoneinfoAttribute;
+	private String localeAttribute;
 
 	public void setSubAttribute(String subAttribute) {
 		this.subAttribute = subAttribute;
@@ -73,6 +66,14 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 
 	public void setPhoneAttribute(String phoneAttribute) {
 		this.phoneAttribute = phoneAttribute;
+	}
+
+	public void setZoneinfoAttribute(String zoneinfoAttribute) {
+		this.zoneinfoAttribute = zoneinfoAttribute;
+	}
+
+	public void setLocaleAttribute(String localeAttribute) {
+		this.localeAttribute = localeAttribute;
 	}
 
 	private List<PerunCustomClaimDefinition> customClaims = new ArrayList<>();
@@ -117,20 +118,16 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 		public UserInfo load(String username) throws Exception {
 			log.trace("load({})",username);
 			PerunUserInfo ui = new PerunUserInfo();
-			//prepare basic auth
-			RestTemplate restTemplate = new RestTemplate();
-			List<ClientHttpRequestInterceptor> interceptors =
-					Collections.singletonList(new BasicAuthorizationInterceptor(perunUser, perunPassword));
-			restTemplate.setRequestFactory(new InterceptingClientHttpRequestFactory(restTemplate.getRequestFactory(), interceptors));
-			//make call
-			log.debug("calling Perun RPC usersManager/getRichUserWithAttributes?user={}",username);
-			Map<String, Object> map = new LinkedHashMap<>();
-			map.put("user",Integer.parseInt(username));
-			JsonNode result = restTemplate.postForObject(perunUrl + "/json/usersManager/getRichUserWithAttributes", map, JsonNode.class);
+			JsonNode result = perunConnector.getUserAttributes(Long.parseLong(username));
 			//process
 			RichUser richUser = new RichUser(result);
 
-			ui.setSub(richUser.get(subAttribute)); // Subject - Identifier for the End-User at the Issuer.
+			String sub = richUser.get(subAttribute);
+			if(sub==null) {
+				throw new RuntimeException("cannot get sub from attribute "+subAttribute+" for username "+username);
+			}
+			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
+
 			ui.setPreferredUsername(richUser.get(preferredUsernameAttribute)); // Shorthand name by which the End-User wishes to be referred to at the RP
 			ui.setGivenName(richUser.get("urn:perun:user:attribute-def:core:firstName")); //  Given name(s) or first name(s) of the End-User
 			ui.setFamilyName(richUser.get("urn:perun:user:attribute-def:core:lastName")); // Surname(s) or last name(s) of the End-User
@@ -144,8 +141,8 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			//ui.setEmailVerified(true); // True if the End-User's e-mail address has been verified
 			//ui.setGender("male"); // End-User's gender. Values defined by this specification are female and male.
 			//ui.setBirthdate("1975-01-01");//End-User's birthday, represented as an ISO 8601:2004 [ISO8601‑2004] YYYY-MM-DD format.
-			//ui.setZoneinfo(TimeZone.getDefault().getID());//String from zoneinfo [zoneinfo] time zone database, For example, Europe/Paris
-			//ui.setLocale("cs-CZ"); //  For example, en-US or fr-CA.
+			ui.setZoneinfo(richUser.get(zoneinfoAttribute));//String from zoneinfo [zoneinfo] time zone database, For example, Europe/Paris
+			ui.setLocale(richUser.get(localeAttribute)); //  For example, en-US or fr-CA.
 			ui.setPhoneNumber(richUser.get(phoneAttribute)); //[E.164] is RECOMMENDED as the format, for example, +1 (425) 555-121
 			//ui.setPhoneNumberVerified(true); // True if the End-User's phone number has been verified
 			//ui.setUpdatedTime(Long.toString(System.currentTimeMillis()/1000L));// value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time
@@ -168,9 +165,11 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	private static class RichUser {
 		Map<String,JsonNode> map = new HashMap<>();
 		RichUser(JsonNode jsonNode) {
+			log.trace("parsing user attributes");
 			for(JsonNode ua: jsonNode.path("userAttributes")) {
 				String attributeName = ua.path("namespace").asText() + ":" + ua.path("friendlyName").asText();
 				JsonNode value = ua.path("value");
+				log.trace("got user attribute {} = {}",attributeName,value);
 				map.put(attributeName,value);
 			}
 		}
