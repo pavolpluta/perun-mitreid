@@ -25,7 +25,7 @@
  		<jdbc:script location="classpath:/db/psql/security-schema.sql"/>
  		<jdbc:script location="classpath:/db/psql/loading_temp_tables.sql"/>
  		<jdbc:script location="classpath:/db/psql/scopes.sql"/>
-	    <jdbc:script location="classpath:/db/psql/clients.sql"/>
+	    <!--<jdbc:script location="classpath:/db/psql/clients.sql"/>-->
  	</jdbc:initialize-database>
 
 </beans>
