@@ -21,9 +21,9 @@
 				<prop key="issuer.url">https://perun-dev.meta.zcu.cz/oidc/</prop>
 				<prop key="logo.image.url">resources/images/perun_24px.png</prop>
 				<prop key="topbar.title">Perun OIDC</prop>
-				<prop key="perun.url">https://perun.elixir-czech.cz/krb/rpc</prop>
-				<prop key="perun.user">xxxxx</prop>
-				<prop key="perun.password">yyyyy</prop>
+				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
+				<prop key="perun.rpc.user">xxxxx</prop>
+				<prop key="perun.rpc.password">yyyyy</prop>
 				<prop key="jdbc.url">jdbc:postgresql://localhost/oidc</prop>
 				<prop key="jdbc.user">oidc</prop>
 				<prop key="jdbc.password">oidc</prop>
@@ -112,9 +112,9 @@
 
 	<!-- communicates with Perun -->
 	<bean id="perunConnector" class="cz.muni.ics.oidc.PerunConnector">
-		<property name="perunUrl" value="${perun.url}"/>
-		<property name="perunUser" value="${perun.user}"/>
-		<property name="perunPassword" value="${perun.password}"/>
+		<property name="perunUrl" value="${perun.rpc.url}"/>
+		<property name="perunUser" value="${perun.rpc.user}"/>
+		<property name="perunPassword" value="${perun.rpc.password}"/>
 	</bean>
 
 

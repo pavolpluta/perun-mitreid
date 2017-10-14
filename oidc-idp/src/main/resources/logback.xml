@@ -32,7 +32,10 @@
 	<logger name="org.springframework.security.core.SpringSecurityCoreVersion" level="info"/>
 	<!--<logger name="org.springframework.security.authentication" level="info"/>-->
 	<!--<logger name="org.springframework.security.web.authentication" level="info"/>-->
+	<!--<logger name="org.springframework.http.client" level="debug"/>-->
+	<!--<logger name="org.springframework.web.client" level="debug"/>-->
 	<logger name="com.zaxxer.hikari" level="warn"/>
 	<logger name="cz.muni.ics.oidc" level="info"/>
+	<logger name="cz.muni.ics.oidc.PerunConnector" level="info"/>
 
 </configuration>

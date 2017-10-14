@@ -31,14 +31,17 @@ public class PerunConnector {
 	private String perunPassword;
 
 	public void setPerunUrl(String perunUrl) {
+		log.trace("setting perunUrl to {}",perunUrl);
 		this.perunUrl = perunUrl;
 	}
 
 	public void setPerunUser(String perunUser) {
+		log.trace("setting perunUser to {}",perunUser);
 		this.perunUser = perunUser;
 	}
 
 	public void setPerunPassword(String perunPassword) {
+		log.trace("setting perunPassword");
 		this.perunPassword = perunPassword;
 	}
 
