@@ -11,7 +11,7 @@
 
 	<bean id="configBean" class="org.mitre.openid.connect.config.ConfigurationPropertiesBean">
 	    <!-- This property sets the root URL of the server, known as the issuer -->
-		<property name="issuer" value="${issuer.url}" />
+		<property name="issuer" value="${main.oidc.issuer.url}" />
 		<!-- This property is a URL pointing to a logo image 24px high to be used in the top bar -->
  		<property name="logoImageUrl" value="${logo.image.url}" />
  		<!-- This property sets the display name of the server, displayed in the topbar and page title -->

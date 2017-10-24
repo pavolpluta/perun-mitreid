@@ -18,7 +18,7 @@
 	<bean id="defaultCoreProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
 		<property name="properties">
 			<props>
-				<prop key="issuer.url">https://perun-dev.meta.zcu.cz/oidc/</prop>
+				<prop key="main.oidc.issuer.url">https://perun-dev.meta.zcu.cz/oidc/</prop>
 				<prop key="logo.image.url">resources/images/perun_24px.png</prop>
 				<prop key="topbar.title">Perun OIDC</prop>
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
@@ -75,6 +75,14 @@
 		<property name="perunUserInfoRepository" ref="perunUserInfoRepository"/>
 	</bean>
 
+	<bean id="introspectionResultAssembler" class="cz.muni.ics.oidc.PerunIntrospectionResultAssembler" primary="true">
+		<property name="configBean" ref="configBean"/>
+	</bean>
+
+	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.PerunOidcConfig">
+		<property name="rpcUrl" value="${perun.rpc.url}"/>
+		<property name="configBean" ref="configBean"/>
+	</bean>
 	<!-- authentication -->
 
 	<security:http auto-config="false" use-expressions="true" entry-point-ref="http403EntryPoint"
