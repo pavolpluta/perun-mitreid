@@ -11,17 +11,12 @@ import org.mitre.openid.connect.model.UserInfo;
 import org.mitre.openid.connect.repository.UserInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.client.InterceptingClientHttpRequestFactory;
-import org.springframework.http.client.support.BasicAuthorizationInterceptor;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +30,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	private final static Logger log = LoggerFactory.getLogger(PerunUserInfoRepository.class);
 
 	private PerunConnector perunConnector;
+	private Properties properties;
 
 	public void setPerunConnector(PerunConnector perunConnector) {
 		this.perunConnector = perunConnector;
@@ -47,6 +43,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	private String phoneAttribute;
 	private String zoneinfoAttribute;
 	private String localeAttribute;
+	private List<PerunCustomClaimDefinition> customClaims = new ArrayList<>();
 
 	public void setSubAttribute(String subAttribute) {
 		this.subAttribute = subAttribute;
@@ -76,10 +73,24 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 		this.localeAttribute = localeAttribute;
 	}
 
-	private List<PerunCustomClaimDefinition> customClaims = new ArrayList<>();
-
-	public void setCustomClaims(List<PerunCustomClaimDefinition> customClaims) {
-		this.customClaims = customClaims;
+	public void setCustomClaimNames(List<String> customClaimNames) {
+		//PerunCustomClaimDefinition
+		this.customClaims = new ArrayList<>(customClaimNames.size());
+		for (String claim : customClaimNames) {
+			String scopeProperty = "custom.claim." + claim + ".scope";
+			String scope = properties.getProperty(scopeProperty);
+			if (scope == null) {
+				log.error("property {} not found, skipping custom claim {}", scopeProperty, claim);
+				continue;
+			}
+			String attributeProperty = "custom.claim." + claim + ".attribute";
+			String perunAttribute = properties.getProperty(attributeProperty);
+			if (perunAttribute == null) {
+				log.error("property {} not found, skipping custom claim {}", attributeProperty, claim);
+				continue;
+			}
+			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute));
+		}
 	}
 
 	public List<PerunCustomClaimDefinition> getCustomClaims() {
@@ -92,7 +103,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 		try {
 			return cache.get(username);
 		} catch (UncheckedExecutionException | ExecutionException e) {
-			log.error("cannot get user from cache",e);
+			log.error("cannot get user from cache", e);
 			return null;
 		}
 	}
@@ -116,15 +127,15 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	private CacheLoader<String, UserInfo> cacheLoader = new CacheLoader<String, UserInfo>() {
 		@Override
 		public UserInfo load(String username) throws Exception {
-			log.trace("load({})",username);
+			log.trace("load({})", username);
 			PerunUserInfo ui = new PerunUserInfo();
 			JsonNode result = perunConnector.getUserAttributes(Long.parseLong(username));
 			//process
 			RichUser richUser = new RichUser(result);
 
 			String sub = richUser.get(subAttribute);
-			if(sub==null) {
-				throw new RuntimeException("cannot get sub from attribute "+subAttribute+" for username "+username);
+			if (sub == null) {
+				throw new RuntimeException("cannot get sub from attribute " + subAttribute + " for username " + username);
 			}
 			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
 
@@ -154,30 +165,35 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			//address.setCountry("Czech Republic");
 			ui.setAddress(address);
 			//custom claims
-			for(PerunCustomClaimDefinition pccd : customClaims) {
-				ui.getCustomClaims().put(pccd.getClaim(),richUser.get(pccd.getPerunAttributeName()));
+			for (PerunCustomClaimDefinition pccd : customClaims) {
+				ui.getCustomClaims().put(pccd.getClaim(), richUser.get(pccd.getPerunAttributeName()));
 			}
 			log.trace("user loaded");
 			return ui;
 		}
 	};
 
+	public void setProperties(Properties properties) {
+		this.properties = properties;
+	}
+
 	private static class RichUser {
-		Map<String,JsonNode> map = new HashMap<>();
+		Map<String, JsonNode> map = new HashMap<>();
+
 		RichUser(JsonNode jsonNode) {
 			log.trace("parsing user attributes");
-			for(JsonNode ua: jsonNode.path("userAttributes")) {
+			for (JsonNode ua : jsonNode.path("userAttributes")) {
 				String attributeName = ua.path("namespace").asText() + ":" + ua.path("friendlyName").asText();
 				JsonNode value = ua.path("value");
-				log.trace("got user attribute {} = {}",attributeName,value);
-				map.put(attributeName,value);
+				log.trace("got user attribute {} = {}", attributeName, value);
+				map.put(attributeName, value);
 			}
 		}
 
 		String get(String s) {
 			JsonNode jsonNode = map.get(s);
-			if(jsonNode==null) return null;
-			if(jsonNode.isNull()) return null;
+			if (jsonNode == null) return null;
+			if (jsonNode.isNull()) return null;
 			return jsonNode.asText();
 		}
 	}

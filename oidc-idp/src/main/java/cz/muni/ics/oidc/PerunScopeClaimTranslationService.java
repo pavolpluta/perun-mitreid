@@ -25,9 +25,8 @@ public class PerunScopeClaimTranslationService implements ScopeClaimTranslationS
 	private SetMultimap<String, String> scopesToClaims = HashMultimap.create();
 
 	public void setPerunUserInfoRepository(PerunUserInfoRepository perunUserInfoRepository) {
-		log.info("adding custom scopes and claims");
 		for(PerunCustomClaimDefinition pccd : perunUserInfoRepository.getCustomClaims()) {
-			log.info("adding scope \"{}\" claim \"{}\"",pccd.getScope(),pccd.getClaim());
+			log.info("adding custom claim \"{}\" in scope \"{}\" ",pccd.getClaim(),pccd.getScope());
 			scopesToClaims.put(pccd.getScope(),pccd.getClaim());
 		}
 	}

@@ -35,6 +35,11 @@
 				<prop key="attribute.email.email">urn:perun:user:attribute-def:def:preferredMail</prop>
 				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
 				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
+				<prop key="custom.claims">bona_fide_status,test</prop>
+				<prop key="custom.claim.bona_fide_status.scope">bona_fide_status</prop>
+				<prop key="custom.claim.bona_fide_status.attribute">urn:perun:user:attribute-def:def:bonaFideStatus</prop>
+				<prop key="custom.claim.test.scope">bona_fide_status</prop>
+				<prop key="custom.claim.test.attribute">urn:perun:user:attribute-def:core:id</prop>
 			</props>
 		</property>
 	</bean>
@@ -59,15 +64,8 @@
 		<property name="phoneAttribute" value="${attribute.phone.phone}"/>
 		<property name="zoneinfoAttribute" value="${attribute.profile.zoneinfo}"/>
 		<property name="localeAttribute" value="${attribute.profile.locale}"/>
-		<property name="customClaims">
-			<list>
-				<bean class="cz.muni.ics.oidc.PerunCustomClaimDefinition">
-					<constructor-arg name="scope" value="bona_fide_status"/>
-					<constructor-arg name="claim" value="bona_fide_status"/>
-					<constructor-arg name="perunAttributeName" value="urn:perun:user:attribute-def:def:bonaFideStatus"/>
-				</bean>
-			</list>
-		</property>
+		<property name="properties" ref="coreProperties"/>
+		<property name="customClaimNames" value="#{'${custom.claims}'.split('\s*,\s*')}"/>
 	</bean>
 
 	<!-- replaces default translation service with our own for custom scope with custom claims. -->
@@ -119,7 +117,7 @@
 	</bean>
 
 	<!-- communicates with Perun -->
-	<bean id="perunConnector" class="cz.muni.ics.oidc.PerunConnector">
+	<bean id="perunConnector" class="cz.muni.ics.oidc.PerunConnectorRpc">
 		<property name="perunUrl" value="${perun.rpc.url}"/>
 		<property name="perunUser" value="${perun.rpc.user}"/>
 		<property name="perunPassword" value="${perun.rpc.password}"/>
