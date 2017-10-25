@@ -30,6 +30,7 @@
 	<logger name="org.springframework" level="warn"/>
 	<logger name="org.springframework.security" level="warn"/>
 	<logger name="org.springframework.security.core.SpringSecurityCoreVersion" level="info"/>
+	<logger name="org.mitre.openid.connect.config.JsonMessageSource" level="warn"/>
 	<!--<logger name="org.springframework.security.authentication" level="info"/>-->
 	<!--<logger name="org.springframework.security.web.authentication" level="info"/>-->
 	<!--<logger name="org.springframework.http.client" level="debug"/>-->
