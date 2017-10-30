@@ -3,20 +3,32 @@ package cz.muni.ics.oidc;
 import org.mitre.openid.connect.config.ConfigurationPropertiesBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import javax.servlet.ServletContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 /**
- * Created with IntelliJ IDEA.
+ * Logs some interesting facts.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */
+@SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 public class PerunOidcConfig {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunOidcConfig.class);
+	private static final String OIDC_POM_FILE = "/META-INF/maven/cz.muni.ics/oidc-idp/pom.properties";
+	private static final String MITREID_POM_FILE = "/META-INF/maven/org.mitre/openid-connect-server-webapp/pom.properties";
 
 	private ConfigurationPropertiesBean configBean;
 	private String rpcUrl;
+
+	@Autowired
+	private ServletContext servletContext;
 
 	public void setRpcUrl(String rpcUrl) {
 		this.rpcUrl = rpcUrl;
@@ -30,8 +42,25 @@ public class PerunOidcConfig {
 	@PostConstruct
 	public void postInit() {
 		log.info("Perun OIDC initialized");
-		log.info("Mitreid config URL: {}",configBean.getIssuer());
-		log.info("RPC URL: {}",rpcUrl);
+		log.info("Mitreid config URL: {}", configBean.getIssuer());
+		log.info("RPC URL: {}", rpcUrl);
+		if (servletContext != null) {
+			log.info("contextPath: {}", servletContext.getContextPath());
+			try {
+				Properties p = new Properties();
+				p.load(servletContext.getResourceAsStream(MITREID_POM_FILE));
+				log.info("MitreID version: {}", p.getProperty("version"));
+			} catch (IOException e) {
+				log.error("cannot read file " + MITREID_POM_FILE, e);
+			}
+			try {
+				Properties p = new Properties();
+				p.load(servletContext.getResourceAsStream(OIDC_POM_FILE));
+				log.info("Perun OIDC version: {}", p.getProperty("version"));
+			} catch (IOException e) {
+				log.error("cannot read file " + OIDC_POM_FILE, e);
+			}
+		}
 	}
 
 
