@@ -19,10 +19,11 @@ public class PerunTokenEnhancer extends ConnectTokenEnhancer {
 	@Override
 	public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
 		log.info("enhance(accessToken={},authentication={})", accessToken, authentication);
+		log.info("principal: {}",authentication.getPrincipal());
 		OAuth2Request oAuth2Request = authentication.getOAuth2Request();
-		log.info("oAuth2Request.grantType: {}", oAuth2Request.getGrantType());
-		log.info("oAuth2Request.clientId: {}", oAuth2Request.getClientId());
-		log.info("oAuth2Request.redirectUri: {}", oAuth2Request.getRedirectUri());
+		log.info("grantType: {}", oAuth2Request.getGrantType());
+		log.info("clientId: {}", oAuth2Request.getClientId());
+		log.info("redirectUri: {}", oAuth2Request.getRedirectUri());
 		return super.enhance(accessToken, authentication);
 	}
 
