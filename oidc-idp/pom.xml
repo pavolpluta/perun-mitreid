@@ -44,17 +44,17 @@
 			<groupId>org.mitre</groupId>
 			<artifactId>openid-connect-server-webapp</artifactId>
 			<type>war</type>
-			<version>${mitreid-version}</version>
+			<!--<version>${mitreid-version}</version>-->
 		</dependency>
 		<dependency>
 			<groupId>org.mitre</groupId>
 			<artifactId>openid-connect-common</artifactId>
-			<version>${mitreid-version}</version>
+			<!--<version>${mitreid-version}</version>-->
 		</dependency>
 		<dependency>
 			<groupId>org.mitre</groupId>
 			<artifactId>openid-connect-server</artifactId>
-			<version>${mitreid-version}</version>
+			<!--<version>${mitreid-version}</version>-->
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -67,9 +67,8 @@
 			<version>3.6</version>
 		</dependency>
 		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>42.1.4</version>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
 		</dependency>
 		
 		<!-- logging -->

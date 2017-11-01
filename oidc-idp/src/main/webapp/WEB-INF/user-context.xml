@@ -24,6 +24,7 @@
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
 				<prop key="perun.rpc.user">xxxxx</prop>
 				<prop key="perun.rpc.password">yyyyy</prop>
+				<prop key="jdbc.driver">org.postgresql.Driver</prop>
 				<prop key="jdbc.url">jdbc:postgresql://localhost/oidc</prop>
 				<prop key="jdbc.user">oidc</prop>
 				<prop key="jdbc.password">oidc</prop>
@@ -102,6 +103,9 @@
 
 
 	<bean id="perunTimeStamper" class="cz.muni.ics.oidc.PerunAuthenticationSuccessHandler">
+	</bean>
+
+	<bean id="tokenEnhancer" class="cz.muni.ics.oidc.PerunTokenEnhancer" primary="true">
 	</bean>
 
 	<!-- extracts user from HTTP request and looks it up in Perun-->

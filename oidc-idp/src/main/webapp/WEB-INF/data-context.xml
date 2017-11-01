@@ -8,24 +8,20 @@
 	<!--  The following is for connecting to a PostgreSQL database that has been initialized with
 			src/main/resources/db/psql/psql_database_tables.sql -->
 	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-		<property name="driverClassName" value="org.postgresql.Driver" />
+		<property name="driverClassName" value="${jdbc.driver}" />
 		<property name="jdbcUrl" value="${jdbc.url}" />
 		<property name="username" value="${jdbc.user}" />
 		<property name="password" value="${jdbc.password}" />
 	</bean>
 
 	<bean id="jpaAdapter" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter">
-		<property name="databasePlatform" value="org.eclipse.persistence.platform.database.PostgreSQLPlatform" />
+		<property name="databasePlatform" value="org.eclipse.persistence.platform.database.MySQLPlatform" />
 		<property name="showSql" value="false" />
 	</bean>
-	<!-- You can optionally initialize the database with test values here,
-		but this is not recommended for real systems -->
+	<!-- Initialize the database -->
  	<jdbc:initialize-database data-source="dataSource">
- 		<jdbc:script location="classpath:/db/psql/psql_database_tables.sql"/>
- 		<jdbc:script location="classpath:/db/psql/security-schema.sql"/>
- 		<jdbc:script location="classpath:/db/psql/loading_temp_tables.sql"/>
- 		<jdbc:script location="classpath:/db/psql/scopes.sql"/>
-	    <!--<jdbc:script location="classpath:/db/psql/clients.sql"/>-->
+ 		<jdbc:script location="classpath:/db/mysql/mysql_database_tables.sql"/>
+ 		<jdbc:script location="classpath:/db/mysql/scopes.sql"/>
  	</jdbc:initialize-database>
 
 </beans>
