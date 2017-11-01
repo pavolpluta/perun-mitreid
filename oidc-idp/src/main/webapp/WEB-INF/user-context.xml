@@ -24,10 +24,11 @@
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
 				<prop key="perun.rpc.user">xxxxx</prop>
 				<prop key="perun.rpc.password">yyyyy</prop>
-				<prop key="jdbc.driver">org.postgresql.Driver</prop>
-				<prop key="jdbc.url">jdbc:postgresql://localhost/oidc</prop>
+				<prop key="jdbc.driver">com.mysql.jdbc.Driver</prop>
+				<prop key="jdbc.url">jdbc:mysql://localhost:3306/oidc</prop>
 				<prop key="jdbc.user">oidc</prop>
 				<prop key="jdbc.password">oidc</prop>
+				<prop key="jdbc.platform">org.eclipse.persistence.platform.database.MySQLPlatform</prop>
 				<prop key="admins">3197,59835</prop>
 				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:core:id</prop>
 				<prop key="attribute.profile.preferred_username">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>

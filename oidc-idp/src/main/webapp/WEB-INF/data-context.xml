@@ -15,13 +15,15 @@
 	</bean>
 
 	<bean id="jpaAdapter" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter">
-		<property name="databasePlatform" value="org.eclipse.persistence.platform.database.MySQLPlatform" />
+		<property name="databasePlatform" value="${jdbc.platform}" />
 		<property name="showSql" value="false" />
 	</bean>
 	<!-- Initialize the database -->
+	<!--
  	<jdbc:initialize-database data-source="dataSource">
  		<jdbc:script location="classpath:/db/mysql/mysql_database_tables.sql"/>
  		<jdbc:script location="classpath:/db/mysql/scopes.sql"/>
  	</jdbc:initialize-database>
+ 	-->
 
 </beans>
