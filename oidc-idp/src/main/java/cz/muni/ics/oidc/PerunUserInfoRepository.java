@@ -93,7 +93,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 		}
 	}
 
-	public List<PerunCustomClaimDefinition> getCustomClaims() {
+	List<PerunCustomClaimDefinition> getCustomClaims() {
 		return customClaims;
 	}
 
@@ -117,7 +117,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	public PerunUserInfoRepository() {
 		this.cache = CacheBuilder.newBuilder()
 				.maximumSize(100)
-				.expireAfterAccess(14, TimeUnit.DAYS)
+				.expireAfterAccess(30, TimeUnit.SECONDS)
 				.build(cacheLoader);
 	}
 
@@ -166,7 +166,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			ui.setAddress(address);
 			//custom claims
 			for (PerunCustomClaimDefinition pccd : customClaims) {
-				ui.getCustomClaims().put(pccd.getClaim(), richUser.get(pccd.getPerunAttributeName()));
+				ui.getCustomClaims().put(pccd.getClaim(), richUser.getJson(pccd.getPerunAttributeName()));
 			}
 			log.trace("user loaded");
 			return ui;
@@ -188,6 +188,10 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 				log.trace("got user attribute {} = {}", attributeName, value);
 				map.put(attributeName, value);
 			}
+		}
+
+		JsonNode getJson(String s) {
+			return map.get(s);
 		}
 
 		String get(String s) {
