@@ -7,8 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
@@ -26,6 +24,8 @@ public class PerunOidcConfig {
 
 	private ConfigurationPropertiesBean configBean;
 	private String rpcUrl;
+	private String jwk;
+	private String jdbcUrl;
 
 	@Autowired
 	private ServletContext servletContext;
@@ -38,12 +38,21 @@ public class PerunOidcConfig {
 		this.configBean = configBean;
 	}
 
+	public void setJwk(String jwk) {
+		this.jwk = jwk;
+	}
+
+	public void setJdbcUrl(String jdbcUrl) {
+		this.jdbcUrl = jdbcUrl;
+	}
 
 	@PostConstruct
 	public void postInit() {
 		log.info("Perun OIDC initialized");
 		log.info("Mitreid config URL: {}", configBean.getIssuer());
 		log.info("RPC URL: {}", rpcUrl);
+		log.info("JSON Web Keys: {}", jwk);
+		log.info("JDBC URL: {}",jdbcUrl);
 		if (servletContext != null) {
 			log.info("contextPath: {}", servletContext.getContextPath());
 			try {

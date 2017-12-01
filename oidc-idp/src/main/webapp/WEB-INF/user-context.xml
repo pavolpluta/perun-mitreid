@@ -29,6 +29,7 @@
 				<prop key="jdbc.user">oidc</prop>
 				<prop key="jdbc.password">oidc</prop>
 				<prop key="jdbc.platform">org.eclipse.persistence.platform.database.MySQLPlatform</prop>
+				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
 				<prop key="admins">3197,59835</prop>
 				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:core:id</prop>
 				<prop key="attribute.profile.preferred_username">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>
@@ -82,6 +83,8 @@
 	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.PerunOidcConfig">
 		<property name="rpcUrl" value="${perun.rpc.url}"/>
 		<property name="configBean" ref="configBean"/>
+		<property name="jwk" value="${jwk}"/>
+		<property name="jdbcUrl" value="${jdbc.url}"/>
 	</bean>
 	<!-- authentication -->
 
