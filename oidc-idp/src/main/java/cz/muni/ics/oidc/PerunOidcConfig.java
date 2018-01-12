@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.util.Properties;
@@ -30,6 +31,9 @@ public class PerunOidcConfig {
 	@Autowired
 	private ServletContext servletContext;
 
+	@Autowired
+	private Properties coreProperties;
+
 	public void setRpcUrl(String rpcUrl) {
 		this.rpcUrl = rpcUrl;
 	}
@@ -53,6 +57,7 @@ public class PerunOidcConfig {
 		log.info("RPC URL: {}", rpcUrl);
 		log.info("JSON Web Keys: {}", jwk);
 		log.info("JDBC URL: {}",jdbcUrl);
+		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 		if (servletContext != null) {
 			log.info("contextPath: {}", servletContext.getContextPath());
 			try {

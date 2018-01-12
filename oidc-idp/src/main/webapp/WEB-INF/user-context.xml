@@ -43,6 +43,7 @@
 				<prop key="custom.claim.bona_fide_status.attribute">urn:perun:user:attribute-def:def:bonaFideStatus</prop>
 				<prop key="custom.claim.test.scope">bona_fide_status</prop>
 				<prop key="custom.claim.test.attribute">urn:perun:user:attribute-def:core:id</prop>
+				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.PerunTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
 			</props>
 		</property>
 	</bean>
@@ -109,7 +110,11 @@
 	<bean id="perunTimeStamper" class="cz.muni.ics.oidc.PerunAuthenticationSuccessHandler">
 	</bean>
 
+    <bean id="accessTokenClaimsModifier" class="${accessTokenClaimsModifier}">
+
+    </bean>
 	<bean id="tokenEnhancer" class="cz.muni.ics.oidc.PerunTokenEnhancer" primary="true">
+        <property name="accessTokenClaimsModifier" ref="accessTokenClaimsModifier"/>
 	</bean>
 
 	<!-- extracts user from HTTP request and looks it up in Perun-->
