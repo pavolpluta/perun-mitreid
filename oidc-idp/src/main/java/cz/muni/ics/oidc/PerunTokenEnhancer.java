@@ -7,7 +7,6 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import net.minidev.json.JSONArray;
 import org.mitre.jwt.signer.service.JWTSigningAndValidationService;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.model.OAuth2AccessTokenEntity;
@@ -28,7 +27,8 @@ import org.springframework.security.oauth2.provider.OAuth2Request;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 
 import java.net.URI;
-import java.util.*;
+import java.util.Date;
+import java.util.UUID;
 
 /**
  * Copy of ConnectTokenEnhancer.
@@ -37,7 +37,7 @@ import java.util.*;
  */
 public class PerunTokenEnhancer implements TokenEnhancer {
 
-	private final static Logger log = LoggerFactory.getLogger(PerunTokenEnhancer.class);
+    private final static Logger log = LoggerFactory.getLogger(PerunTokenEnhancer.class);
 
 
     @Autowired
@@ -59,7 +59,7 @@ public class PerunTokenEnhancer implements TokenEnhancer {
      * Exact copy from ConnectTokenEnhancer with added hooks.
      */
     @Override
-    public OAuth2AccessToken enhance(OAuth2AccessToken accessToken,	OAuth2Authentication authentication) {
+    public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
         Date iat = new Date();
         OAuth2AccessTokenEntity token = (OAuth2AccessTokenEntity) accessToken;
         OAuth2Request originalAuthRequest = authentication.getOAuth2Request();
@@ -67,46 +67,19 @@ public class PerunTokenEnhancer implements TokenEnhancer {
         String clientId = originalAuthRequest.getClientId();
         ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
 
-        String sub = null;
-        /**
-         * Authorization request scope MUST include "openid" in OIDC, but access token request
-         * may or may not include the scope parameter. As long as the AuthorizationRequest
-         * has the proper scope, we can consider this a valid OpenID Connect request. Otherwise,
-         * we consider it to be a vanilla OAuth2 request.
-         *
-         * Also, there must be a user authentication involved in the request for it to be considered
-         * OIDC and not OAuth, so we check for that as well.
-         */
+        UserInfo userInfo = null;
         if (originalAuthRequest.getScope().contains(SystemScopeService.OPENID_SCOPE)
                 && !authentication.isClientOnly()) {
-
-            String username = authentication.getName();
-            UserInfo userInfo = userInfoService.getByUsernameAndClientId(username, clientId);
-
-            if (userInfo != null) {
-
-                sub = userInfo.getSub();
-                JWT idToken = connectTokenService.createIdToken(client,
-                        originalAuthRequest, iat,
-                        sub, token);
-
-                // attach the id token to the parent access token
-                token.setIdToken(idToken);
-                if(log.isDebugEnabled()) log.debug("idToken: {}",idToken.serialize());
-            } else {
-                // can't create an id token if we can't find the user
-                log.warn("Request for ID token when no user is present.");
-            }
+            userInfo = userInfoService.getByUsernameAndClientId(authentication.getName(), clientId);
         }
 
         // create signed access token
-
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
                 .claim("azp", clientId)
                 .issuer(configBean.getIssuer())
                 .issueTime(iat)
                 .expirationTime(token.getExpiration())
-                .subject(sub != null ? sub : authentication.getName())
+                .subject(userInfo != null ? userInfo.getSub() : authentication.getName())
                 .jwtID(UUID.randomUUID().toString()); // set a random NONCE in the middle of it
         accessTokenClaimsHook(builder, accessToken, authentication);
 
@@ -118,15 +91,26 @@ public class PerunTokenEnhancer implements TokenEnhancer {
         JWTClaimsSet claims = builder.build();
 
         JWSAlgorithm signingAlg = jwtService.getDefaultSigningAlgorithm();
-        URI jku = URI.create(configBean.getIssuer()+ JWKSetPublishingEndpoint.URL);
+        URI jku = URI.create(configBean.getIssuer() + JWKSetPublishingEndpoint.URL);
         JWSHeader header = new JWSHeader(signingAlg, null, null, null, jku, null, null, null, null, null,
                 jwtService.getDefaultSignerKeyId(),
                 null, null);
         SignedJWT signed = new SignedJWT(header, claims);
 
         jwtService.signJwt(signed);
-
         token.setJwt(signed);
+
+        if (userInfo != null) {
+            //needs access token
+            JWT idToken = connectTokenService.createIdToken(client, originalAuthRequest, iat, userInfo.getSub(), token);
+            // attach the id token to the parent access token
+            token.setIdToken(idToken);
+            if (log.isDebugEnabled()) log.debug("idToken: {}", idToken.serialize());
+        } else {
+            // can't create an id token if we can't find the user
+            log.warn("Request for ID token when no user is present.");
+        }
+
 
         logHook(token, authentication);
         return token;
@@ -140,7 +124,7 @@ public class PerunTokenEnhancer implements TokenEnhancer {
         OAuth2Request oAuth2Request = authentication.getOAuth2Request();
         log.info("userId: {}, clientId: {}, grantType: {}, redirectUri: {}, scopes: {}",
                 userId, oAuth2Request.getClientId(), oAuth2Request.getGrantType(), oAuth2Request.getRedirectUri(), token.getScope());
-        if(log.isDebugEnabled()) log.debug("access token: {}",token.getValue());
+        if (log.isDebugEnabled()) log.debug("access token: {}", token.getValue());
     }
 
     private AccessTokenClaimsModifier accessTokenClaimsModifier;
@@ -150,7 +134,7 @@ public class PerunTokenEnhancer implements TokenEnhancer {
     }
 
     private void accessTokenClaimsHook(JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
-        if(accessTokenClaimsModifier!=null) {
+        if (accessTokenClaimsModifier != null) {
             accessTokenClaimsModifier.modifyClaims(builder, accessToken, authentication);
         }
     }
