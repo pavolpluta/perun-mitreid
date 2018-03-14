@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>cz.muni.ics</groupId>
 		<artifactId>perun-mitreid</artifactId>
-		<version>1.6-SNAPSHOT</version>
+		<version>1.7-SNAPSHOT</version>
 		<relativePath>..</relativePath>
 	</parent>
 
@@ -69,13 +69,7 @@
 			<artifactId>mariadb-java-client</artifactId>
 			<version>2.2.0</version>
 		</dependency>
-		<!-- PostgreSQL JDBC Driver -->
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>42.1.1</version>
-		</dependency>
-		
+
 		<!-- logging -->
 		<dependency>
 			<groupId>org.codehaus.janino</groupId>
