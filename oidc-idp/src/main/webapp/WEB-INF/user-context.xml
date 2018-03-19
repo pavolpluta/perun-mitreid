@@ -13,6 +13,7 @@
 		">
 
 	<context:property-placeholder properties-ref="coreProperties" ignore-unresolvable="false"/>
+	<context:component-scan annotation-config="true" base-package="cz.muni.ics.oidc"/>
 
 	<!-- default config values, override in file /etc/perun/perun-mitreid.properties -->
 	<bean id="defaultCoreProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
@@ -38,12 +39,14 @@
 				<prop key="attribute.email.email">urn:perun:user:attribute-def:def:preferredMail</prop>
 				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
 				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
+				<prop key="attribute.oidc.clientid">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
 				<prop key="custom.claims">bona_fide_status,test</prop>
 				<prop key="custom.claim.bona_fide_status.scope">bona_fide_status</prop>
 				<prop key="custom.claim.bona_fide_status.attribute">urn:perun:user:attribute-def:def:bonaFideStatus</prop>
 				<prop key="custom.claim.test.scope">bona_fide_status</prop>
 				<prop key="custom.claim.test.attribute">urn:perun:user:attribute-def:core:id</prop>
 				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.PerunTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
+				<prop key="web.theme">default</prop>
 			</props>
 		</property>
 	</bean>
@@ -57,9 +60,8 @@
 		<property name="ignoreResourceNotFound" value="false"/>
 	</bean>
 
-
 	<!-- defines our own user data source -->
-	<bean id="perunUserInfoRepository" primary="true" class="cz.muni.ics.oidc.PerunUserInfoRepository">
+	<bean id="userInfoRepository" primary="true" class="cz.muni.ics.oidc.PerunUserInfoRepository">
 		<property name="perunConnector" ref="perunConnector"/>
 		<property name="subAttribute" value="${attribute.openid.sub}"/>
 		<property name="preferredUsernameAttribute" value="${attribute.profile.preferred_username}"/>
@@ -74,7 +76,7 @@
 
 	<!-- replaces default translation service with our own for custom scope with custom claims. -->
 	<bean id="scopeClaimTranslator" primary="true" class="cz.muni.ics.oidc.PerunScopeClaimTranslationService">
-		<property name="perunUserInfoRepository" ref="perunUserInfoRepository"/>
+		<property name="perunUserInfoRepository" ref="userInfoRepository"/>
 	</bean>
 
 	<bean id="introspectionResultAssembler" class="cz.muni.ics.oidc.PerunIntrospectionResultAssembler" primary="true">
@@ -86,6 +88,7 @@
 		<property name="configBean" ref="configBean"/>
 		<property name="jwk" value="${jwk}"/>
 		<property name="jdbcUrl" value="${jdbc.url}"/>
+		<property name="theme" value="${web.theme}"/>
 	</bean>
 	<!-- authentication -->
 
@@ -134,7 +137,7 @@
 		<property name="perunUrl" value="${perun.rpc.url}"/>
 		<property name="perunUser" value="${perun.rpc.user}"/>
 		<property name="perunPassword" value="${perun.rpc.password}"/>
+		<property name="oidcClientIdAttr" value="${attribute.oidc.clientid}" />
 	</bean>
-
 
 </beans>

@@ -18,9 +18,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Connects to Perun. SHould be using LDAP, but for now  RPC calls would do
+ * Connects to Perun. Should be using LDAP, but for now  RPC calls would do
  *
  * @author Martin Kuba makub@ics.muni.cz
+ * @author Dominik František Bučík bucik@ics.muni.cz
  */
 public class PerunConnectorRpc implements PerunConnector {
 
@@ -29,6 +30,8 @@ public class PerunConnectorRpc implements PerunConnector {
 	private String perunUrl;
 	private String perunUser;
 	private String perunPassword;
+
+	private String oidcClientIdAttr;
 
 	public void setPerunUrl(String perunUrl) {
 		log.trace("setting perunUrl to {}",perunUrl);
@@ -43,6 +46,10 @@ public class PerunConnectorRpc implements PerunConnector {
 	public void setPerunPassword(String perunPassword) {
 		log.trace("setting perunPassword");
 		this.perunPassword = perunPassword;
+	}
+
+	public void setOidcClientIdAttr(String oidcClientIdAttr) {
+		this.oidcClientIdAttr = oidcClientIdAttr;
 	}
 
 	@Override
@@ -61,6 +68,40 @@ public class PerunConnectorRpc implements PerunConnector {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("user", userId);
 		return makeRpcCall("/usersManager/getRichUserWithAttributes", map);
+	}
+
+	@Override
+	public JsonNode getFacilitiesByClientId(String clientId) {
+		log.trace("getFacilitiesByClientId({})", clientId);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("attributeName", oidcClientIdAttr);
+		map.put("attributeValue", clientId);
+		return makeRpcCall("/facilitiesManager/getFacilitiesByAttribute", map);
+	}
+
+	@Override
+	public JsonNode getAssignedResourcesForFacility(String facilityId) {
+		log.trace("getAssignedResourcesForFacility({})", facilityId);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facilityId);
+		return makeRpcCall("/facilitiesManager/getAssignedResources", map);
+	}
+
+	@Override
+	public JsonNode getAssignedGroups(String resourceId, String memberId) {
+		log.trace("getAssignedGroups resource: ({}), member: ({})", resourceId, memberId);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("resource", resourceId);
+		map.put("member", memberId);
+		return makeRpcCall("/resourcesManager/getAssignedGroups", map);
+	}
+
+	@Override
+	public JsonNode getMembersByUser(String userId) {
+		log.trace("getMembersByUser({})", userId);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("user", userId);
+		return makeRpcCall("/membersManager/getMembersByUser", map);
 	}
 
 	private JsonNode makeRpcCall(String urlPart, Map<String, Object> map) {
