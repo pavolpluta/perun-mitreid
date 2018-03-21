@@ -42,5 +42,6 @@
 	<logger name="cz.muni.ics.oidc.PerunUserInfo" level="info"/>
 	<logger name="cz.muni.ics.oidc.PerunUserInfoRepository" level="info"/>
 	<logger name="cz.muni.ics.oidc.PerunTokenEnhancer" level="debug"/>
+	<logger name="cz.muni.ics.oidc.elixir.DatasetPermissionsAccessTokenModifier" level="debug"/>
 
 </configuration>

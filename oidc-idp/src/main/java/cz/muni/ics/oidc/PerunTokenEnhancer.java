@@ -74,14 +74,15 @@ public class PerunTokenEnhancer implements TokenEnhancer {
         }
 
         // create signed access token
+        String sub = userInfo != null ? userInfo.getSub() : authentication.getName();
         JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder()
                 .claim("azp", clientId)
                 .issuer(configBean.getIssuer())
                 .issueTime(iat)
                 .expirationTime(token.getExpiration())
-                .subject(userInfo != null ? userInfo.getSub() : authentication.getName())
+                .subject(sub)
                 .jwtID(UUID.randomUUID().toString()); // set a random NONCE in the middle of it
-        accessTokenClaimsHook(builder, accessToken, authentication);
+        accessTokenClaimsHook(sub, builder, accessToken, authentication);
 
         String audience = (String) authentication.getOAuth2Request().getExtensions().get("aud");
         if (!Strings.isNullOrEmpty(audience)) {
@@ -133,21 +134,21 @@ public class PerunTokenEnhancer implements TokenEnhancer {
         this.accessTokenClaimsModifier = accessTokenClaimsModifier;
     }
 
-    private void accessTokenClaimsHook(JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+    private void accessTokenClaimsHook(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
         if (accessTokenClaimsModifier != null) {
-            accessTokenClaimsModifier.modifyClaims(builder, accessToken, authentication);
+            accessTokenClaimsModifier.modifyClaims(sub, builder, accessToken, authentication);
         }
     }
 
     @FunctionalInterface
     public interface AccessTokenClaimsModifier {
-        void modifyClaims(JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication);
+        void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication);
     }
 
     public static class NoOpAccessTokenClaimsModifier implements AccessTokenClaimsModifier {
 
         @Override
-        public void modifyClaims(JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+        public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
             log.debug("no modification");
         }
     }
