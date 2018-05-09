@@ -19,5 +19,4 @@
 		<!-- This property forces the issuer value to start with "https", recommended on production servers -->
 	    <property name="forceHttps" value="true" />
 	</bean>
-	
 </beans>

@@ -126,7 +126,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	@SuppressWarnings("FieldCanBeLocal")
 	private CacheLoader<String, UserInfo> cacheLoader = new CacheLoader<String, UserInfo>() {
 		@Override
-		public UserInfo load(String username) throws Exception {
+		public UserInfo load(String username) {
 			log.trace("load({})", username);
 			PerunUserInfo ui = new PerunUserInfo();
 			JsonNode result = perunConnector.getUserAttributes(Long.parseLong(username));
@@ -137,6 +137,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			if (sub == null) {
 				throw new RuntimeException("cannot get sub from attribute " + subAttribute + " for username " + username);
 			}
+			ui.setId(Long.parseLong(username));
 			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
 
 			ui.setPreferredUsername(richUser.get(preferredUsernameAttribute)); // Shorthand name by which the End-User wishes to be referred to at the RP
@@ -201,6 +202,4 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			return jsonNode.asText();
 		}
 	}
-
-
 }

@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
 import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.util.Properties;
@@ -27,6 +26,7 @@ public class PerunOidcConfig {
 	private String rpcUrl;
 	private String jwk;
 	private String jdbcUrl;
+	private String theme;
 
 	@Autowired
 	private ServletContext servletContext;
@@ -50,13 +50,22 @@ public class PerunOidcConfig {
 		this.jdbcUrl = jdbcUrl;
 	}
 
-	@PostConstruct
+	public void setTheme(String theme) {
+		this.theme = theme;
+	}
+
+    public String getTheme() {
+        return theme;
+    }
+
+    @PostConstruct
 	public void postInit() {
 		log.info("Perun OIDC initialized");
 		log.info("Mitreid config URL: {}", configBean.getIssuer());
 		log.info("RPC URL: {}", rpcUrl);
 		log.info("JSON Web Keys: {}", jwk);
 		log.info("JDBC URL: {}",jdbcUrl);
+		log.info("THEME: {}", theme);
 		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 		if (servletContext != null) {
 			log.info("contextPath: {}", servletContext.getContextPath());
