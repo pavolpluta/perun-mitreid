@@ -18,5 +18,8 @@
  		<property name="topbarTitle" value="${topbar.title}" />
 		<!-- This property forces the issuer value to start with "https", recommended on production servers -->
 	    <property name="forceHttps" value="true" />
+	    <!-- This property allows the server to create and accept fully-composed
+	         user URIs (with the user-code emebedded) for the device flow -->
+	    <property name="allowCompleteDeviceCodeUri" value="true" />
 	</bean>
 </beans>
