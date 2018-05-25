@@ -48,7 +48,7 @@
 									</span>
 								</label>
 							</div>
-
+							<c:if test="${ not empty claims[scope.value] }">
 							<div class="attrvalue">
 								<c:choose>
 									<c:when test="${fn:length(claims[scope.value]) > 1}">
@@ -65,6 +65,7 @@
 									</c:otherwise>
 								</c:choose>
 							</div>
+							</c:if>
 						</td>
 					</tr>
 				</c:forEach>

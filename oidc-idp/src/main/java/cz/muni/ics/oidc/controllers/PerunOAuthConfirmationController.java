@@ -1,7 +1,6 @@
 package cz.muni.ics.oidc.controllers;
 
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
@@ -9,12 +8,16 @@ import java.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import cz.muni.ics.oidc.*;
 import cz.muni.ics.oidc.exceptions.LanguageFileException;
+import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.mitre.oauth2.web.OAuthConfirmationController;
 import org.mitre.openid.connect.service.UserInfoService;
+import org.mitre.openid.connect.view.HttpCodeView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.oauth2.common.exceptions.OAuth2Exception;
 import org.springframework.security.oauth2.provider.AuthorizationRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -41,6 +44,9 @@ public class PerunOAuthConfirmationController{
     private OAuthConfirmationController oAuthConfirmationController;
 
     @Autowired
+    private ClientDetailsEntityService clientService;
+
+    @Autowired
     private UserInfoService userInfoService;
 
     @Autowired
@@ -57,34 +63,47 @@ public class PerunOAuthConfirmationController{
     @RequestMapping(value = "/oauth/confirm_access", params = { "client_id" })
     public String confirmAccess(Map<String, Object> model, HttpServletRequest req, @ModelAttribute("authorizationRequest") AuthorizationRequest authRequest,
                                 Principal p) {
-        // get the userinfo claims for each scope
-        PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsername(p.getName());
+        ClientDetailsEntity client;
 
+        try {
+            client = clientService.loadClientByClientId(authRequest.getClientId());
+        } catch (OAuth2Exception e) {
+            log.error("confirmAccess: OAuth2Exception was thrown when attempting to load client", e);
+            model.put(HttpCodeView.CODE, HttpStatus.NOT_FOUND);
+            return HttpCodeView.VIEWNAME;
+        } catch (IllegalArgumentException e) {
+            log.error("confirmAccess: IllegalArgumentException was thrown when attempting to load client", e);
+            model.put(HttpCodeView.CODE, HttpStatus.BAD_REQUEST);
+            return HttpCodeView.VIEWNAME;
+        }
+
+        if (client == null) {
+            log.error("confirmAccess: could not find client " + authRequest.getClientId());
+            model.put(HttpCodeView.CODE, HttpStatus.NOT_FOUND);
+            return HttpCodeView.VIEWNAME;
+        }
+
+        model.put("client", client);
         model.put("theme", perunOidcConfig.getTheme().toLowerCase());
+
+        PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsername(p.getName());
         setLanguageForPage(model, req);
         // check if user is allowed to access depending on his membership in groups
         // we use perunUserInfoRepository which for sure returns PerunUserInfo object
-        try {
-            if (!isUserInApprovedGroups(authRequest.getClientId(), user.getId())) {
-                model.put("title", "Unapproved access");
-                model.put("page", "unapproved");
-                return "unapproved";
-            }
-        } catch (IllegalArgumentException e) {
-            model.put("title", "Error while processing");
-            return "error";
-        } catch (Exception e) {
-            log.error("Exception thrown {}", e);
-            return "error";
+
+        if (!isUserInApprovedGroups(authRequest.getClientId(), user.getId())) {
+            model.put("title", "Unapproved access");
+            model.put("page", "unapproved");
+            return "unapproved";
         }
 
         String result = oAuthConfirmationController.confimAccess(model, authRequest, p);
         if (result.equals("approve") && perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
-            return "defaultApprove";
+            return "approve";
         }
 
         model.put("page", "consent");
-        return "approve";
+        return "themedApprove";
     }
 
     private void setLanguageForPage(Map<String, Object> model, HttpServletRequest req) {
@@ -119,14 +138,27 @@ public class PerunOAuthConfirmationController{
             throw new IllegalArgumentException("isUserInApprovedGroups wrong parameters");
         }
 
-        log.info("started approval check");
+
         JsonNode jn = perunConnector.getFacilitiesByClientId(clientId);
         Set<String> facilityIds = new HashSet<>(jn.findValuesAsText("id"));
 
         if (facilityIds.isEmpty()) {
-            log.error("facility could not be found with clientId({})", clientId);
-            throw new IllegalArgumentException("Facility could not be found");
+            log.warn("Facility with OIDCClientID({}) could not be found", clientId);
+            return true;
         }
+
+        boolean cont = false;
+        for (String facility: facilityIds) {
+            cont = cont || perunConnector.isAllowedGroupCheckForFacility(facility);
+        }
+
+        if (!cont) {
+            //checking membership is not required, returning true as user is allowed to access
+            log.trace("Membership check not requested, skipping");
+            return true;
+        }
+
+        log.info("Started group membership check");
 
         Set<String> resIds = new HashSet<>();
         for (String facility : facilityIds) {
@@ -135,7 +167,7 @@ public class PerunOAuthConfirmationController{
         }
 
         if (resIds.isEmpty()) {
-            log.error("resources could not be found for facilities({})", facilityIds.toString());
+            log.error("Resources could not be found for facilities({})", facilityIds.toString());
             throw new IllegalArgumentException("Resources could not be found");
         }
 
@@ -143,7 +175,7 @@ public class PerunOAuthConfirmationController{
         Set<String> members = filterActiveMembersIds(jn);
 
         if (members.isEmpty()) {
-            log.error("members could not be found for user({})", userId.toString());
+            log.error("Members could not be found for user({})", userId.toString());
             throw new IllegalArgumentException("Members could not be found");
         }
 
@@ -152,13 +184,13 @@ public class PerunOAuthConfirmationController{
                 jn = perunConnector.getAssignedGroups(resource, member);
                 List<String> groups = jn.findValuesAsText("id");
                 if(! groups.isEmpty()) {
-                    log.trace("user ({}) has been approved to access service ({})", userId, clientId);
+                    log.trace("User ({}) has been approved to access service ({})", userId, clientId);
                     return true;
                 }
             }
         }
 
-        log.error("user ({}) is not in group allowed to access service ({})", userId, clientId);
+        log.error("User ({}) is not in group allowed to access service ({})", userId, clientId);
         return false;
     }
 
