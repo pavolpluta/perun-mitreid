@@ -38,7 +38,7 @@
 	<logger name="com.zaxxer.hikari" level="warn"/>
 	<logger name="cz.muni.ics.oidc" level="info"/>
 	<logger name="cz.muni.ics.oidc.PerunConnectorRpc" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunIntrospectionResultAssembler" level="info"/>
+	<logger name="cz.muni.ics.oidc.PerunIntrospectionResultAssembler" level="debug"/>
 	<logger name="cz.muni.ics.oidc.PerunUserInfo" level="info"/>
 	<logger name="cz.muni.ics.oidc.PerunUserInfoRepository" level="info"/>
 	<logger name="cz.muni.ics.oidc.PerunTokenEnhancer" level="debug"/>

@@ -80,7 +80,8 @@
 	</bean>
 
 	<bean id="introspectionResultAssembler" class="cz.muni.ics.oidc.PerunIntrospectionResultAssembler" primary="true">
-		<property name="configBean" ref="configBean"/>
+		<constructor-arg name="configBean" ref="configBean"/>
+		<constructor-arg name="translator" ref="scopeClaimTranslator"/>
 	</bean>
 
 	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.PerunOidcConfig">
