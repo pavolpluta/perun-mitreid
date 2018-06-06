@@ -32,6 +32,7 @@ public class PerunConnectorRpc implements PerunConnector {
 	private String perunPassword;
 
 	private String oidcClientIdAttr;
+	private String oidcCheckMembershipAttr;
 
 	public void setPerunUrl(String perunUrl) {
 		log.trace("setting perunUrl to {}",perunUrl);
@@ -49,7 +50,13 @@ public class PerunConnectorRpc implements PerunConnector {
 	}
 
 	public void setOidcClientIdAttr(String oidcClientIdAttr) {
+		log.trace("setting OIDCClientID attr name");
 		this.oidcClientIdAttr = oidcClientIdAttr;
+	}
+
+	public void setOidcCheckMembershipAttr(String oidcCheckMembershipAttr) {
+		log.trace("setting OIDCCheckGroupMembership attr name");
+		this.oidcCheckMembershipAttr = oidcCheckMembershipAttr;
 	}
 
 	@Override
@@ -102,6 +109,17 @@ public class PerunConnectorRpc implements PerunConnector {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("user", userId);
 		return makeRpcCall("/membersManager/getMembersByUser", map);
+	}
+
+	@Override
+	public boolean isAllowedGroupCheckForFacility(String facilityId) {
+		log.trace("isAllowedGroupCheckForFacility({})", facilityId);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facilityId);
+		map.put("attributeName", oidcCheckMembershipAttr);
+		JsonNode res = makeRpcCall("/attributesManager/getAttribute", map);
+
+		return res.get("value").asBoolean(false);
 	}
 
 	private JsonNode makeRpcCall(String urlPart, Map<String, Object> map) {

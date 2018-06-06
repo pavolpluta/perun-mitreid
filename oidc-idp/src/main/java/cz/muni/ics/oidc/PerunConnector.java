@@ -52,4 +52,12 @@ public interface PerunConnector {
 	 * @return JsonNode with user members
 	 */
 	JsonNode getMembersByUser(String userId);
+
+	/**
+	 * Ask Perun if membership of user in groups allowed to access resource should be checked.
+	 * @param facilityId id of facility to be accessed
+	 * @return TRUE if check should be done, FALSE otherwise
+	 */
+	boolean isAllowedGroupCheckForFacility(String facilityId);
+
 }

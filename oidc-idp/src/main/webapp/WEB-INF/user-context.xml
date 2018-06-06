@@ -40,6 +40,7 @@
 				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
 				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
 				<prop key="attribute.oidc.clientid">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
+				<prop key="attribute.oidc.checkMembership">urn:perun:facility:attribute-def:def:OIDCCheckGroupMembership</prop>
 				<prop key="custom.claims">bona_fide_status,test</prop>
 				<prop key="custom.claim.bona_fide_status.scope">bona_fide_status</prop>
 				<prop key="custom.claim.bona_fide_status.attribute">urn:perun:user:attribute-def:def:bonaFideStatus</prop>
@@ -139,6 +140,7 @@
 		<property name="perunUser" value="${perun.rpc.user}"/>
 		<property name="perunPassword" value="${perun.rpc.password}"/>
 		<property name="oidcClientIdAttr" value="${attribute.oidc.clientid}" />
+		<property name="oidcCheckMembershipAttr" value="${attribute.oidc.checkMembership}"/>
 	</bean>
 
 </beans>
