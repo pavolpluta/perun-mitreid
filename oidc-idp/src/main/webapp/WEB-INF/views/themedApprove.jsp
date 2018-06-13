@@ -44,7 +44,11 @@
 									   id="scope_${ fn:escapeXml(scope.value) }" value="${ fn:escapeXml(scope.value) }">
 								<label class="form-check-label" for="scope_${ fn:escapeXml(scope.value) }">
 									<span class="attrname">
-										<c:out value="${langProps[scope.value]}" />
+										<c:set var="scopeValue" value="${langProps[scope.value]}"/>
+										<c:if test="${empty fn:trim(scopeValue)}">
+											<c:set var="scopeValue" value="${scope.value}"/>
+										</c:if>
+										<c:out value="${scopeValue}" />
 									</span>
 								</label>
 							</div>
@@ -54,7 +58,11 @@
 									<c:when test="${fn:length(claims[scope.value]) > 1}">
 										<ul>
 											<c:forEach var="claim" items="${ claims[scope.value] }">
-												<li><strong><c:out value="${langProps[claim.key]}" />:</strong> <c:out value="${claim.value}" /></li>
+												<c:set var="claimKey" value="${langProps[claim.key]}"/>
+												<c:if test="${empty fn:trim(claimKey)}">
+													<c:set var="scopeValue" value="${claim.key}"/>
+												</c:if>
+												<li><strong><c:out value="${claimKey}" />:</strong> <c:out value="${claim.value}" /></li>
 											</c:forEach>
 										</ul>
 									</c:when>
