@@ -48,14 +48,12 @@
         <h1><c:out value="${langProps['403_header']}"/></h1>
         <p><c:out value="${langProps['403_text']} ${client.clientName}"/><br>
             <c:if test="${not empty client.clientUri}">
-                <c:out value="${langProps['403_informationPage'] }"/><a href="<c:out value='${client.clientUri}'/>"><c:out value='${client.clientUri}'/></a>
+                <c:out value="${langProps['403_informationPage'] }"/> <a href="<c:out value='${client.clientUri}'/>"> <c:out value='${client.clientUri}'/></a>
             </c:if>
         </p>
 
         <p><c:out value="${langProps['403_contactSupport'] }"/>
-           <a href="mailto:<c:out value='${contact}?subject=${langProps["403_subject"]} ${client.clientName}'/>">
-                <c:out value="${contact}"/>
-           </a>
+           <a href="mailto:<c:out value='${contact}?subject=${langProps["403_subject"]} ${client.clientName}'/>"> <c:out value="${contact}"/></a>
         </p>
     </div>
 </div>

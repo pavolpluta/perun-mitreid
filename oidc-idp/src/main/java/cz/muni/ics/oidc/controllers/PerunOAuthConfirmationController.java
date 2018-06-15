@@ -100,10 +100,12 @@ public class PerunOAuthConfirmationController{
         String result = oAuthConfirmationController.confimAccess(model, authRequest, p);
         if (result.equals("approve") && perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
             return "approve";
+        } else if (result.equals("approve")) {
+            model.put("page", "consent");
+            return "themedApprove";
         }
 
-        model.put("page", "consent");
-        return "themedApprove";
+        return result;
     }
 
     private void setLanguageForPage(Map<String, Object> model, HttpServletRequest req) {
