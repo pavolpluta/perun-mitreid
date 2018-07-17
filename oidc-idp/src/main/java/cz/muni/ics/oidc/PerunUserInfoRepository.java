@@ -1,6 +1,9 @@
 package cz.muni.ics.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -14,11 +17,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
  * Provides data about a user.
@@ -37,6 +43,8 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	}
 
 	private String subAttribute;
+	private Pattern subAttributeFind;
+	private String subAttributeReplacement;
 	private String preferredUsernameAttribute;
 	private String emailAttribute;
 	private String addressAttribute;
@@ -47,6 +55,14 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 
 	public void setSubAttribute(String subAttribute) {
 		this.subAttribute = subAttribute;
+	}
+
+	public void setSubAttributeFind(String regex) {
+		this.subAttributeFind = Pattern.compile(regex);
+	}
+
+	public void setSubAttributeReplacement(String subAttributeReplacement) {
+		this.subAttributeReplacement = subAttributeReplacement;
 	}
 
 	public void setPreferredUsernameAttribute(String preferredUsernameAttribute) {
@@ -77,19 +93,38 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 		//PerunCustomClaimDefinition
 		this.customClaims = new ArrayList<>(customClaimNames.size());
 		for (String claim : customClaimNames) {
+			//get scope
 			String scopeProperty = "custom.claim." + claim + ".scope";
 			String scope = properties.getProperty(scopeProperty);
 			if (scope == null) {
 				log.error("property {} not found, skipping custom claim {}", scopeProperty, claim);
 				continue;
 			}
+			//get perun attribute
 			String attributeProperty = "custom.claim." + claim + ".attribute";
 			String perunAttribute = properties.getProperty(attributeProperty);
 			if (perunAttribute == null) {
 				log.error("property {} not found, skipping custom claim {}", attributeProperty, claim);
 				continue;
 			}
-			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute));
+			//get regex
+			Pattern regex = null;
+			String regexProperty = "custom.claim." + claim + ".find";
+			String regexString = properties.getProperty(regexProperty);
+			if (regexString != null) {
+				try {
+					regex = Pattern.compile(regexString);
+				} catch (PatternSyntaxException ex) {
+					log.error("regex value not parsed", ex);
+					log.error("value of property {} not parsed, skipping custom claim {}", regexProperty, claim);
+					continue;
+				}
+			}
+			//get replacement
+			String replacementProperty = "custom.claim." + claim + ".replace";
+			String replacement = properties.getProperty(replacementProperty, "");
+			//add claim definition
+			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute, regex, replacement));
 		}
 	}
 
@@ -137,6 +172,10 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			if (sub == null) {
 				throw new RuntimeException("cannot get sub from attribute " + subAttribute + " for username " + username);
 			}
+			//transform sub value
+			if (subAttributeFind != null) {
+				sub = subAttributeFind.matcher(sub).replaceAll(subAttributeReplacement);
+			}
 			ui.setId(Long.parseLong(username));
 			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
 
@@ -167,7 +206,39 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			ui.setAddress(address);
 			//custom claims
 			for (PerunCustomClaimDefinition pccd : customClaims) {
-				ui.getCustomClaims().put(pccd.getClaim(), richUser.getJson(pccd.getPerunAttributeName()));
+				JsonNode claimInJson = richUser.getJson(pccd.getPerunAttributeName());
+				Pattern regex = pccd.getRegex();
+				if (regex != null) {
+					log.debug("transforming values of claim '{}' by replacing '{}' with '{}'", pccd.getClaim(), pccd.getRegex().pattern(), pccd.getReplacement());
+					//transform values
+					if (claimInJson.isTextual()) {
+						//transform a simple string value
+						claimInJson = TextNode.valueOf(regex.matcher(claimInJson.asText()).replaceAll(pccd.getReplacement()));
+					} else if (claimInJson.isArray()) {
+						//transform all strings in an array
+						ArrayNode arrayNode = (ArrayNode) claimInJson;
+						for (int i = 0; i < arrayNode.size(); i++) {
+							JsonNode item = arrayNode.get(i);
+							if (item.isTextual()) {
+								String original = item.asText();
+								String modified = regex.matcher(original).replaceAll(pccd.getReplacement());
+								log.debug("transforming value '{}' to '{}'", original, modified);
+								arrayNode.set(i, TextNode.valueOf(modified));
+							}
+						}
+					} else if (claimInJson.isObject()) {
+						//transform all values in a map
+						ObjectNode objectNode = (ObjectNode) claimInJson;
+						Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
+						while (fields.hasNext()) {
+							Map.Entry<String, JsonNode> field = fields.next();
+							if (field.getValue().isTextual()) {
+								objectNode.put(field.getKey(), TextNode.valueOf(regex.matcher(field.getValue().asText()).replaceAll(pccd.getReplacement())));
+							}
+						}
+					}
+				}
+				ui.getCustomClaims().put(pccd.getClaim(), claimInJson);
 			}
 			log.trace("user loaded");
 			return ui;
