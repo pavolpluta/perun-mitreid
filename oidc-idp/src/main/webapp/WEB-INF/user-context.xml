@@ -12,8 +12,8 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 		">
 
-	<context:property-placeholder properties-ref="coreProperties" ignore-unresolvable="false"/>
-	<context:component-scan annotation-config="true" base-package="cz.muni.ics.oidc"/>
+	<context:property-placeholder properties-ref="coreProperties"/>
+	<context:component-scan base-package="cz.muni.ics.oidc"/>
 
 	<!-- default config values, override in file /etc/perun/perun-mitreid.properties -->
 	<bean id="defaultCoreProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
@@ -94,6 +94,7 @@
 	</bean>
 	<!-- authentication -->
 
+	<!--suppress SpringXmlModelInspection -->
 	<security:http auto-config="false" use-expressions="true" entry-point-ref="http403EntryPoint"
 	               authentication-manager-ref="authenticationManager">
 		<security:intercept-url pattern="/authorize" access="hasRole('ROLE_USER')"/>

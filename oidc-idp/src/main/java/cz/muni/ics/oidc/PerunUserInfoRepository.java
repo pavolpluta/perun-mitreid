@@ -1,10 +1,14 @@
 package cz.muni.ics.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import cz.muni.ics.oidc.claims.ClaimValueModifier;
+import cz.muni.ics.oidc.claims.ClaimValueModifierInitContext;
 import org.mitre.openid.connect.model.Address;
 import org.mitre.openid.connect.model.DefaultAddress;
 import org.mitre.openid.connect.model.UserInfo;
@@ -12,6 +16,9 @@ import org.mitre.openid.connect.repository.UserInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,21 +36,29 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunUserInfoRepository.class);
 
+	private static final String MODIFIER_CLASS = ".modifierClass";
+
 	private PerunConnector perunConnector;
 	private Properties properties;
 
-	public void setPerunConnector(PerunConnector perunConnector) {
-		this.perunConnector = perunConnector;
-	}
-
 	private String subAttribute;
+	private ClaimValueModifier subModifier;
 	private String preferredUsernameAttribute;
 	private String emailAttribute;
 	private String addressAttribute;
 	private String phoneAttribute;
 	private String zoneinfoAttribute;
 	private String localeAttribute;
+	private List<String> customClaimNames;
 	private List<PerunCustomClaimDefinition> customClaims = new ArrayList<>();
+
+	public void setProperties(Properties properties) {
+		this.properties = properties;
+	}
+
+	public void setPerunConnector(PerunConnector perunConnector) {
+		this.perunConnector = perunConnector;
+	}
 
 	public void setSubAttribute(String subAttribute) {
 		this.subAttribute = subAttribute;
@@ -74,22 +89,67 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	}
 
 	public void setCustomClaimNames(List<String> customClaimNames) {
-		//PerunCustomClaimDefinition
+		this.customClaimNames = customClaimNames;
+	}
+
+	@PostConstruct
+	public void postInit() {
+		log.debug("trying to load modifier for attribute.openid.sub");
+		subModifier = loadClaimValueModifier("attribute.openid.sub");
+		//custom claims
 		this.customClaims = new ArrayList<>(customClaimNames.size());
 		for (String claim : customClaimNames) {
-			String scopeProperty = "custom.claim." + claim + ".scope";
+			String propertyPrefix = "custom.claim." + claim;
+			//get scope
+			String scopeProperty = propertyPrefix + ".scope";
 			String scope = properties.getProperty(scopeProperty);
 			if (scope == null) {
 				log.error("property {} not found, skipping custom claim {}", scopeProperty, claim);
 				continue;
 			}
-			String attributeProperty = "custom.claim." + claim + ".attribute";
+			//get Perun user attribute from which to get value
+			String attributeProperty = propertyPrefix + ".attribute";
 			String perunAttribute = properties.getProperty(attributeProperty);
 			if (perunAttribute == null) {
 				log.error("property {} not found, skipping custom claim {}", attributeProperty, claim);
 				continue;
 			}
-			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute));
+			//optional claim value modifier
+			ClaimValueModifier claimValueModifier = loadClaimValueModifier(propertyPrefix);
+			//add claim definition
+			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute, claimValueModifier));
+		}
+	}
+
+	private ClaimValueModifier loadClaimValueModifier(String propertyPrefix) {
+		String modifierClass = properties.getProperty(propertyPrefix + MODIFIER_CLASS);
+		if (modifierClass != null) {
+			try {
+				Class<?> rawClazz = Class.forName(modifierClass);
+				if (!ClaimValueModifier.class.isAssignableFrom(rawClazz)) {
+					log.error("modifier class {} does not extend ClaimValueModifier", modifierClass);
+					return null;
+				}
+				@SuppressWarnings("unchecked") Class<ClaimValueModifier> clazz = (Class<ClaimValueModifier>) rawClazz;
+				Constructor<ClaimValueModifier> constructor = clazz.getConstructor(ClaimValueModifierInitContext.class);
+				ClaimValueModifierInitContext ctx = new ClaimValueModifierInitContext(propertyPrefix, properties);
+				ClaimValueModifier claimValueModifier = constructor.newInstance(ctx);
+				log.info("loaded modifier '{}' for {}", claimValueModifier, propertyPrefix);
+				return claimValueModifier;
+			} catch (ClassNotFoundException e) {
+				log.error("modifier class {} not found", modifierClass);
+				return null;
+			} catch (NoSuchMethodException e) {
+				log.error("modifier class {} does not have proper constructor", modifierClass);
+				return null;
+			} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+				log.error("cannot instantiate " + modifierClass, e);
+				log.error("modifier class {} cannot be instantiated", modifierClass);
+				return null;
+			}
+		} else {
+			log.debug("property {} not found, skipping", propertyPrefix + MODIFIER_CLASS);
+			return null;
 		}
 	}
 
@@ -137,6 +197,11 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			if (sub == null) {
 				throw new RuntimeException("cannot get sub from attribute " + subAttribute + " for username " + username);
 			}
+			if (subModifier != null) {
+				//transform sub value
+				sub = subModifier.modify(sub);
+			}
+
 			ui.setId(Long.parseLong(username));
 			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
 
@@ -167,16 +232,36 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			ui.setAddress(address);
 			//custom claims
 			for (PerunCustomClaimDefinition pccd : customClaims) {
-				ui.getCustomClaims().put(pccd.getClaim(), richUser.getJson(pccd.getPerunAttributeName()));
+				JsonNode claimInJson = richUser.getJson(pccd.getPerunAttributeName());
+				ClaimValueModifier claimValueModifier = pccd.getClaimValueModifier();
+				if (claimValueModifier != null) {
+					log.debug("modifying values of claim '{}' using {}", pccd.getClaim(), claimValueModifier);
+					//transform values
+					if (claimInJson.isTextual()) {
+						//transform a simple string value
+						claimInJson = TextNode.valueOf(claimValueModifier.modify(claimInJson.asText()));
+					} else if (claimInJson.isArray()) {
+						//transform all strings in an array
+						ArrayNode arrayNode = (ArrayNode) claimInJson;
+						for (int i = 0; i < arrayNode.size(); i++) {
+							JsonNode item = arrayNode.get(i);
+							if (item.isTextual()) {
+								String original = item.asText();
+								String modified = claimValueModifier.modify(original);
+								log.debug("transforming value '{}' to '{}'", original, modified);
+								arrayNode.set(i, TextNode.valueOf(modified));
+							}
+						}
+					}
+				}
+				ui.getCustomClaims().put(pccd.getClaim(), claimInJson);
 			}
 			log.trace("user loaded");
 			return ui;
 		}
 	};
 
-	public void setProperties(Properties properties) {
-		this.properties = properties;
-	}
+
 
 	private static class RichUser {
 		Map<String, JsonNode> map = new HashMap<>();
