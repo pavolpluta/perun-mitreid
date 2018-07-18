@@ -1,17 +1,18 @@
 package cz.muni.ics.oidc;
 
+import cz.muni.ics.oidc.claims.ClaimValueModifier;
+
 import java.util.regex.Pattern;
 
 /**
- * Keeps definitionof a custom user claim.
+ * Keeps definition of a custom user claim.
  * <ul>
  *     <li><b>scope</b> - which scope must be granted to include the claim</li>
  *     <li><b>claim</b> - name of the claim</li>
  *     <li><b>perunAttributeName</b> - id of Perun user attribute to obtain values from</li>
- *     <li><b>regex</b> - if defined, matching parts of each value will be replaced with replacement</li>
- *     <li><b>replacement</b> - string with ${g} or $g to replace matching groups</li>
+ *     <li><b>claimValueModifier</b> - instance of a class implementing {@link ClaimValueModifier}</li>
  * </ul>
- * @see java.util.regex.Matcher#replaceAll(String)
+ * @see ClaimValueModifier
  * @author Martin Kuba makub@ics.muni.cz
  */
 public class PerunCustomClaimDefinition {
@@ -19,15 +20,13 @@ public class PerunCustomClaimDefinition {
 	private String scope;
 	private String claim;
 	private String perunAttributeName;
-	private Pattern regex;
-	private String replacement;
+	private ClaimValueModifier claimValueModifier;
 
-	public PerunCustomClaimDefinition(String scope, String claim, String perunAttributeName,Pattern regex,String replacement) {
+	PerunCustomClaimDefinition(String scope, String claim, String perunAttributeName, ClaimValueModifier claimValueModifier) {
 		this.scope = scope;
 		this.claim = claim;
 		this.perunAttributeName = perunAttributeName;
-		this.regex = regex;
-		this.replacement = replacement;
+		this.claimValueModifier = claimValueModifier;
 	}
 
 	public String getScope() {
@@ -38,17 +37,12 @@ public class PerunCustomClaimDefinition {
 		return claim;
 	}
 
-	public String getPerunAttributeName() {
+	String getPerunAttributeName() {
 		return perunAttributeName;
 	}
 
-	public Pattern getRegex() {
-		return regex;
+	public ClaimValueModifier getClaimValueModifier() {
+		return claimValueModifier;
 	}
-
-	public String getReplacement() {
-		return replacement;
-	}
-
 
 }

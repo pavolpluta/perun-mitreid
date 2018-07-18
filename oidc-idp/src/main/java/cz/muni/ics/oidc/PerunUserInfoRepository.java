@@ -2,12 +2,13 @@ package cz.muni.ics.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import cz.muni.ics.oidc.claims.ClaimValueModifier;
+import cz.muni.ics.oidc.claims.ClaimValueModifierInitContext;
 import org.mitre.openid.connect.model.Address;
 import org.mitre.openid.connect.model.DefaultAddress;
 import org.mitre.openid.connect.model.UserInfo;
@@ -15,16 +16,16 @@ import org.mitre.openid.connect.repository.UserInfoRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * Provides data about a user.
@@ -35,34 +36,32 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunUserInfoRepository.class);
 
+	private static final String MODIFIER_CLASS = ".modifierClass";
+
 	private PerunConnector perunConnector;
 	private Properties properties;
 
-	public void setPerunConnector(PerunConnector perunConnector) {
-		this.perunConnector = perunConnector;
-	}
-
 	private String subAttribute;
-	private Pattern subAttributeFind;
-	private String subAttributeReplacement;
+	private ClaimValueModifier subModifier;
 	private String preferredUsernameAttribute;
 	private String emailAttribute;
 	private String addressAttribute;
 	private String phoneAttribute;
 	private String zoneinfoAttribute;
 	private String localeAttribute;
+	private List<String> customClaimNames;
 	private List<PerunCustomClaimDefinition> customClaims = new ArrayList<>();
+
+	public void setProperties(Properties properties) {
+		this.properties = properties;
+	}
+
+	public void setPerunConnector(PerunConnector perunConnector) {
+		this.perunConnector = perunConnector;
+	}
 
 	public void setSubAttribute(String subAttribute) {
 		this.subAttribute = subAttribute;
-	}
-
-	public void setSubAttributeFind(String regex) {
-		this.subAttributeFind = Pattern.compile(regex);
-	}
-
-	public void setSubAttributeReplacement(String subAttributeReplacement) {
-		this.subAttributeReplacement = subAttributeReplacement;
 	}
 
 	public void setPreferredUsernameAttribute(String preferredUsernameAttribute) {
@@ -90,41 +89,67 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	}
 
 	public void setCustomClaimNames(List<String> customClaimNames) {
-		//PerunCustomClaimDefinition
+		this.customClaimNames = customClaimNames;
+	}
+
+	@PostConstruct
+	public void postInit() {
+		log.debug("trying to load modifier for attribute.openid.sub");
+		subModifier = loadClaimValueModifier("attribute.openid.sub");
+		//custom claims
 		this.customClaims = new ArrayList<>(customClaimNames.size());
 		for (String claim : customClaimNames) {
+			String propertyPrefix = "custom.claim." + claim;
 			//get scope
-			String scopeProperty = "custom.claim." + claim + ".scope";
+			String scopeProperty = propertyPrefix + ".scope";
 			String scope = properties.getProperty(scopeProperty);
 			if (scope == null) {
 				log.error("property {} not found, skipping custom claim {}", scopeProperty, claim);
 				continue;
 			}
-			//get perun attribute
-			String attributeProperty = "custom.claim." + claim + ".attribute";
+			//get Perun user attribute from which to get value
+			String attributeProperty = propertyPrefix + ".attribute";
 			String perunAttribute = properties.getProperty(attributeProperty);
 			if (perunAttribute == null) {
 				log.error("property {} not found, skipping custom claim {}", attributeProperty, claim);
 				continue;
 			}
-			//get regex
-			Pattern regex = null;
-			String regexProperty = "custom.claim." + claim + ".find";
-			String regexString = properties.getProperty(regexProperty);
-			if (regexString != null) {
-				try {
-					regex = Pattern.compile(regexString);
-				} catch (PatternSyntaxException ex) {
-					log.error("regex value not parsed", ex);
-					log.error("value of property {} not parsed, skipping custom claim {}", regexProperty, claim);
-					continue;
-				}
-			}
-			//get replacement
-			String replacementProperty = "custom.claim." + claim + ".replace";
-			String replacement = properties.getProperty(replacementProperty, "");
+			//optional claim value modifier
+			ClaimValueModifier claimValueModifier = loadClaimValueModifier(propertyPrefix);
 			//add claim definition
-			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute, regex, replacement));
+			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute, claimValueModifier));
+		}
+	}
+
+	private ClaimValueModifier loadClaimValueModifier(String propertyPrefix) {
+		String modifierClass = properties.getProperty(propertyPrefix + MODIFIER_CLASS);
+		if (modifierClass != null) {
+			try {
+				Class<?> rawClazz = Class.forName(modifierClass);
+				if (!ClaimValueModifier.class.isAssignableFrom(rawClazz)) {
+					log.error("modifier class {} does not extend ClaimValueModifier", modifierClass);
+					return null;
+				}
+				@SuppressWarnings("unchecked") Class<ClaimValueModifier> clazz = (Class<ClaimValueModifier>) rawClazz;
+				Constructor<ClaimValueModifier> constructor = clazz.getConstructor(ClaimValueModifierInitContext.class);
+				ClaimValueModifierInitContext ctx = new ClaimValueModifierInitContext(propertyPrefix, properties);
+				ClaimValueModifier claimValueModifier = constructor.newInstance(ctx);
+				log.info("loaded modifier '{}' for {}", claimValueModifier, propertyPrefix);
+				return claimValueModifier;
+			} catch (ClassNotFoundException e) {
+				log.error("modifier class {} not found", modifierClass);
+				return null;
+			} catch (NoSuchMethodException e) {
+				log.error("modifier class {} does not have proper constructor", modifierClass);
+				return null;
+			} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+				log.error("cannot instantiate " + modifierClass, e);
+				log.error("modifier class {} cannot be instantiated", modifierClass);
+				return null;
+			}
+		} else {
+			log.debug("property {} not found, skipping", propertyPrefix + MODIFIER_CLASS);
+			return null;
 		}
 	}
 
@@ -172,10 +197,11 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			if (sub == null) {
 				throw new RuntimeException("cannot get sub from attribute " + subAttribute + " for username " + username);
 			}
-			//transform sub value
-			if (subAttributeFind != null) {
-				sub = subAttributeFind.matcher(sub).replaceAll(subAttributeReplacement);
+			if (subModifier != null) {
+				//transform sub value
+				sub = subModifier.modify(sub);
 			}
+
 			ui.setId(Long.parseLong(username));
 			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
 
@@ -207,13 +233,13 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			//custom claims
 			for (PerunCustomClaimDefinition pccd : customClaims) {
 				JsonNode claimInJson = richUser.getJson(pccd.getPerunAttributeName());
-				Pattern regex = pccd.getRegex();
-				if (regex != null) {
-					log.debug("transforming values of claim '{}' by replacing '{}' with '{}'", pccd.getClaim(), pccd.getRegex().pattern(), pccd.getReplacement());
+				ClaimValueModifier claimValueModifier = pccd.getClaimValueModifier();
+				if (claimValueModifier != null) {
+					log.debug("modifying values of claim '{}' using {}", pccd.getClaim(), claimValueModifier);
 					//transform values
 					if (claimInJson.isTextual()) {
 						//transform a simple string value
-						claimInJson = TextNode.valueOf(regex.matcher(claimInJson.asText()).replaceAll(pccd.getReplacement()));
+						claimInJson = TextNode.valueOf(claimValueModifier.modify(claimInJson.asText()));
 					} else if (claimInJson.isArray()) {
 						//transform all strings in an array
 						ArrayNode arrayNode = (ArrayNode) claimInJson;
@@ -221,19 +247,9 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 							JsonNode item = arrayNode.get(i);
 							if (item.isTextual()) {
 								String original = item.asText();
-								String modified = regex.matcher(original).replaceAll(pccd.getReplacement());
+								String modified = claimValueModifier.modify(original);
 								log.debug("transforming value '{}' to '{}'", original, modified);
 								arrayNode.set(i, TextNode.valueOf(modified));
-							}
-						}
-					} else if (claimInJson.isObject()) {
-						//transform all values in a map
-						ObjectNode objectNode = (ObjectNode) claimInJson;
-						Iterator<Map.Entry<String, JsonNode>> fields = objectNode.fields();
-						while (fields.hasNext()) {
-							Map.Entry<String, JsonNode> field = fields.next();
-							if (field.getValue().isTextual()) {
-								objectNode.put(field.getKey(), TextNode.valueOf(regex.matcher(field.getValue().asText()).replaceAll(pccd.getReplacement())));
 							}
 						}
 					}
@@ -245,9 +261,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 		}
 	};
 
-	public void setProperties(Properties properties) {
-		this.properties = properties;
-	}
+
 
 	private static class RichUser {
 		Map<String, JsonNode> map = new HashMap<>();
