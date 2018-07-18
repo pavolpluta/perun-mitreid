@@ -27,9 +27,6 @@ public class PerunScopeClaimTranslationService implements ScopeClaimTranslationS
 	public void setPerunUserInfoRepository(PerunUserInfoRepository perunUserInfoRepository) {
 		for(PerunCustomClaimDefinition pccd : perunUserInfoRepository.getCustomClaims()) {
 			log.info("adding custom claim \"{}\" in scope \"{}\" ",pccd.getClaim(),pccd.getScope());
-			if(pccd.getRegex() != null) {
-				log.info("claim transformation: find={} replace={}",pccd.getRegex().pattern(),pccd.getReplacement());
-			}
 			scopesToClaims.put(pccd.getScope(),pccd.getClaim());
 		}
 	}
