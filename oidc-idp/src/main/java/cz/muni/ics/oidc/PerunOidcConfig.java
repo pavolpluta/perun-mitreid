@@ -54,36 +54,51 @@ public class PerunOidcConfig {
 		this.theme = theme;
 	}
 
-    public String getTheme() {
-        return theme;
-    }
+	public String getTheme() {
+		return theme;
+	}
 
-    @PostConstruct
+	private String perunOIDCVersion;
+
+	public String getPerunOIDCVersion() {
+		if (perunOIDCVersion == null) {
+			perunOIDCVersion = readPomVersion(OIDC_POM_FILE);
+		}
+		return perunOIDCVersion;
+	}
+
+	private String mitreidVersion;
+
+	public String getMitreidVersion() {
+		if (mitreidVersion == null) {
+			mitreidVersion = readPomVersion(MITREID_POM_FILE);
+		}
+		return mitreidVersion;
+	}
+
+	private String readPomVersion(String file) {
+		try {
+			Properties p = new Properties();
+			p.load(servletContext.getResourceAsStream(file));
+			return p.getProperty("version");
+		} catch (IOException e) {
+			log.error("cannot read file " + file, e);
+			return "UNKNOWN";
+		}
+	}
+
+	@PostConstruct
 	public void postInit() {
 		log.info("Perun OIDC initialized");
 		log.info("Mitreid config URL: {}", configBean.getIssuer());
 		log.info("RPC URL: {}", rpcUrl);
 		log.info("JSON Web Keys: {}", jwk);
-		log.info("JDBC URL: {}",jdbcUrl);
+		log.info("JDBC URL: {}", jdbcUrl);
 		log.info("THEME: {}", theme);
 		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
-		if (servletContext != null) {
-			log.info("contextPath: {}", servletContext.getContextPath());
-			try {
-				Properties p = new Properties();
-				p.load(servletContext.getResourceAsStream(MITREID_POM_FILE));
-				log.info("MitreID version: {}", p.getProperty("version"));
-			} catch (IOException e) {
-				log.error("cannot read file " + MITREID_POM_FILE, e);
-			}
-			try {
-				Properties p = new Properties();
-				p.load(servletContext.getResourceAsStream(OIDC_POM_FILE));
-				log.info("Perun OIDC version: {}", p.getProperty("version"));
-			} catch (IOException e) {
-				log.error("cannot read file " + OIDC_POM_FILE, e);
-			}
-		}
+		log.info("MitreID version: {}", getMitreidVersion());
+		log.info("Perun OIDC version: {}", getPerunOIDCVersion());
+		log.info("contextPath: {}", servletContext.getContextPath());
 	}
 
 
