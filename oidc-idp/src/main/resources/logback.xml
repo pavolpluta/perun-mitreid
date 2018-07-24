@@ -1,5 +1,6 @@
 <configuration packagingData="true" debug="false" scan="false" scanPeriod="30 seconds">
 	<contextName>oidc</contextName>
+	<!--
 	<if condition='isDefined("catalina.base")'>
 		<then>
 			<appender name="APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -8,7 +9,6 @@
 					<fileNamePattern>${catalina.base}/logs/${CONTEXT_NAME}.log.%d{yyyy-MM-dd}</fileNamePattern>
 				</rollingPolicy>
 				<encoder>
-					<!-- http://logback.qos.ch/manual/layouts.html#conversionWord -->
 					<pattern>%d %-5level %logger{40} - %msg%n</pattern>
 				</encoder>
 			</appender>
@@ -20,10 +20,14 @@
 				</encoder>
 			</appender>
 		</else>
-	</if>
+	</if> -->
+	<appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
+		<facility>LOCAL7</facility>
+		<suffixPattern>%d %-5level %logger{40} - %msg%n</suffixPattern>
+	</appender>
 
-	<root level="info">
-		<appender-ref ref="APP"/>
+	<root level="debug">
+		<appender-ref ref="SYSLOG"/>
 	</root>
 
 	<!-- keep Spring quiet -->
@@ -36,12 +40,7 @@
 	<!--<logger name="org.springframework.http.client" level="debug"/>-->
 	<!--<logger name="org.springframework.web.client" level="debug"/>-->
 	<logger name="com.zaxxer.hikari" level="warn"/>
-	<logger name="cz.muni.ics.oidc" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunConnectorRpc" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunIntrospectionResultAssembler" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunUserInfo" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunUserInfoRepository" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunTokenEnhancer" level="debug"/>
-	<logger name="cz.muni.ics.oidc.elixir.DatasetPermissionsAccessTokenModifier" level="info"/>
+	<logger name="org.mitre" level="debug"/>
+	<logger name="cz.muni.ics.oidc" level="debug"/>
 
 </configuration>
