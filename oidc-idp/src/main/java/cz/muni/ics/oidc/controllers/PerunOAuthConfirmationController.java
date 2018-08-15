@@ -8,6 +8,10 @@ import java.util.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import cz.muni.ics.oidc.*;
 import cz.muni.ics.oidc.exceptions.LanguageFileException;
+import cz.muni.ics.oidc.models.Facility;
+import cz.muni.ics.oidc.models.Group;
+import cz.muni.ics.oidc.models.Member;
+import cz.muni.ics.oidc.models.Resource;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.mitre.oauth2.web.OAuthConfirmationController;
@@ -31,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
  * about him will be sent to the client.
  *
  * @author Dominik František Bučík bucik@ics.muni.cz
+ * @author Peter Jancus jancus@ics.muni.cz
  *
  */
 
@@ -140,9 +145,11 @@ public class PerunOAuthConfirmationController{
             throw new IllegalArgumentException("isUserInApprovedGroups wrong parameters");
         }
 
+		Set<Long> facilityIds = new HashSet<>();
+        for (Facility facility :  perunConnector.getFacilitiesByClientId(clientId)) {
+        	facilityIds.add(facility.getId());
+        }
 
-        JsonNode jn = perunConnector.getFacilitiesByClientId(clientId);
-        Set<String> facilityIds = new HashSet<>(jn.findValuesAsText("id"));
 
         if (facilityIds.isEmpty()) {
             log.warn("Facility with OIDCClientID({}) could not be found", clientId);
@@ -150,7 +157,7 @@ public class PerunOAuthConfirmationController{
         }
 
         boolean cont = false;
-        for (String facility: facilityIds) {
+        for (Long facility: facilityIds) {
             cont = cont || perunConnector.isAllowedGroupCheckForFacility(facility);
         }
 
@@ -162,10 +169,12 @@ public class PerunOAuthConfirmationController{
 
         log.info("Started group membership check");
 
-        Set<String> resIds = new HashSet<>();
-        for (String facility : facilityIds) {
-            JsonNode resources = perunConnector.getAssignedResourcesForFacility(facility);
-            resIds.addAll(resources.findValuesAsText("id"));
+        Set<Long> resIds = new HashSet<>();
+        for (Long facility : facilityIds) {
+            List<Resource> resources = perunConnector.getAssignedResourcesForFacility(facility);
+            for (Resource resource : resources) {
+            	resIds.add(resource.getId());
+			}
         }
 
         if (resIds.isEmpty()) {
@@ -173,18 +182,17 @@ public class PerunOAuthConfirmationController{
             throw new IllegalArgumentException("Resources could not be found");
         }
 
-        jn = perunConnector.getMembersByUser(userId.toString());
-        Set<String> members = filterActiveMembersIds(jn);
+        List<Member> members = perunConnector.getMembersByUser(userId.toString());
+        Set<Long> memberIds = filterActiveMembersIds(members);
 
         if (members.isEmpty()) {
             log.error("Members could not be found for user({})", userId.toString());
             throw new IllegalArgumentException("Members could not be found");
         }
 
-        for (String resource : resIds) {
-            for (String member : members) {
-                jn = perunConnector.getAssignedGroups(resource, member);
-                List<String> groups = jn.findValuesAsText("id");
+        for (Long resource : resIds) {
+            for (Long member : memberIds) {
+                List<Group> groups = perunConnector.getAssignedGroups(resource, member);
                 if(! groups.isEmpty()) {
                     log.trace("User ({}) has been approved to access service ({})", userId, clientId);
                     return true;
@@ -196,11 +204,11 @@ public class PerunOAuthConfirmationController{
         return false;
     }
 
-    private Set<String> filterActiveMembersIds(JsonNode members) {
-        Set<String> active = new HashSet<>();
-        for (JsonNode jn : members) {
-            if (jn.has("status") && jn.get("status").asText().equals("VALID")) {
-                active.add(jn.get("id").asText());
+    private Set<Long> filterActiveMembersIds(List<Member> members) {
+        Set<Long> active = new HashSet<>();
+        for (Member member : members) {
+            if (member.getStatus().equals("VALID")) {
+                active.add(member.getId());
             }
         }
 
