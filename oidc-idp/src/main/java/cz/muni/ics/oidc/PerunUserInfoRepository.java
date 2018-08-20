@@ -241,6 +241,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 						//transform a simple string value
 						claimInJson = TextNode.valueOf(claimValueModifier.modify(claimInJson.asText()));
 					} else if (claimInJson.isArray()) {
+					    claimInJson = claimInJson.deepCopy();
 						//transform all strings in an array
 						ArrayNode arrayNode = (ArrayNode) claimInJson;
 						for (int i = 0; i < arrayNode.size(); i++) {
