@@ -5,7 +5,7 @@
 	<groupId>cz.muni.ics</groupId>
 	<artifactId>perun-mitreid</artifactId>
 	<packaging>pom</packaging>
-	<version>1.13-SNAPSHOT</version>
+	<version>1.13.0</version>
 	<name>Perun OpenID Connect Provider</name>
 
 	<developers>
