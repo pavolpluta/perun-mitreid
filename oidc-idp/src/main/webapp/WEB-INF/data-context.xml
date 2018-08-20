@@ -14,6 +14,13 @@
 		<property name="password" value="${jdbc.password}" />
 	</bean>
 
+	<bean id="mitreIdStats" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driver}" />
+		<property name="jdbcUrl" value="${stats.jdbc.url}" />
+		<property name="username" value="${stats.jdbc.user}" />
+		<property name="password" value="${stats.jdbc.password}" />
+	</bean>
+
 	<bean id="jpaAdapter" class="org.springframework.orm.jpa.vendor.EclipseLinkJpaVendorAdapter">
 		<property name="databasePlatform" value="${jdbc.platform}" />
 		<property name="showSql" value="false" />
