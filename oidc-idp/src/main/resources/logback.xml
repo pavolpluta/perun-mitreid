@@ -26,7 +26,7 @@
 		<suffixPattern>%d %-5level %logger{40} - %msg%n</suffixPattern>
 	</appender>
 
-	<root level="debug">
+	<root level="info">
 		<appender-ref ref="SYSLOG"/>
 	</root>
 
@@ -40,7 +40,8 @@
 	<!--<logger name="org.springframework.http.client" level="debug"/>-->
 	<!--<logger name="org.springframework.web.client" level="debug"/>-->
 	<logger name="com.zaxxer.hikari" level="warn"/>
-	<logger name="org.mitre" level="debug"/>
-	<logger name="cz.muni.ics.oidc" level="debug"/>
+	<logger name="org.mitre" level="info"/>
+	<logger name="cz.muni.ics.oidc" level="info"/>
+	<logger name="cz.muni.ics.oidc.filters.ProxyStatisticsFilter" level="debug"/>
 
 </configuration>

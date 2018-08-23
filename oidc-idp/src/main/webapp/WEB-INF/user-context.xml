@@ -37,6 +37,8 @@
 				<prop key="stats.tableName.identityProvidersMap">identityProvidersMap</prop>
 				<prop key="stats.tableName.serviceProviders">serviceProviders</prop>
 				<prop key="stats.tableName.serviceProvidersMap">serviceProvidersMap</prop>
+				<prop key="stats.idp.name.attribute">sourceIdPName</prop>
+				<prop key="stats.idp.entityID.attribute">sourceIdPEntityID</prop>
 				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
 				<prop key="admins">3197,59835</prop>
 				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:core:id</prop>
@@ -143,6 +145,8 @@
 		<property name="identityProvidersMapTableName" value="${stats.tableName.identityProvidersMap}"/>
 		<property name="serviceProvidersTableName" value="${stats.tableName.serviceProviders}"/>
 		<property name="serviceProvidersMapTableName" value="${stats.tableName.serviceProvidersMap}"/>
+		<property name="idpNameAttributeName" value="${stats.idp.name.attribute}"/>
+		<property name="idpEntityIdAttributeName" value="${stats.idp.entityID.attribute}"/>
 	</bean>
 
 	<!-- decides who is admin -->
