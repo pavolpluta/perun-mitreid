@@ -38,7 +38,8 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 
 	private final static Logger log = LoggerFactory.getLogger(ProxyStatisticsFilter.class);
 
-	private static final String SOURCE_IDP_NAME = "sourceIdPName";
+	private static final String IDP_NAME = "sourceIdPName";
+	private static final String IDP_ENTITY_ID = "sourceIdPEntityID";
 
 	@Autowired
 	private OAuth2RequestFactory authRequestFactory;
@@ -59,14 +60,24 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 	private RequestMatcher requestMatcher = new AntPathRequestMatcher(REQ_PATTERN);
 
 	private String identityProvidersTableName;
+	private String identityProvidersMapTableName;
 	private String serviceProvidersTableName;
+	private String serviceProvidersMapTableName;
 
 	public void setIdentityProvidersTableName(String identityProvidersTableName) {
 		this.identityProvidersTableName = identityProvidersTableName;
 	}
 
+	public void setIdentityProvidersMapTableName(String identityProvidersMapTableName) {
+		this.identityProvidersMapTableName = identityProvidersMapTableName;
+	}
+
 	public void setServiceProvidersTableName(String serviceProvidersTableName) {
 		this.serviceProvidersTableName = serviceProvidersTableName;
+	}
+
+	public void setServiceProvidersMapTableName(String serviceProvidersMapTableName) {
+		this.serviceProvidersMapTableName = serviceProvidersMapTableName;
 	}
 
 	@Override
@@ -97,12 +108,23 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 			return;
 		}
 
-		if(Strings.isNullOrEmpty((String) request.getAttribute(SOURCE_IDP_NAME))) {
-			log.warn("SourceIdPName is null or empty, skip to next filter");
+		String clientIdentifier = client.getClientId();
+		String clientName = client.getClientName();
+
+
+		if(Strings.isNullOrEmpty((String) request.getAttribute(IDP_ENTITY_ID))) {
+			log.warn("Attribute '" + IDP_ENTITY_ID + "' is null or empty, skip to next filter");
 			chain.doFilter(req, res);
 			return;
 		}
-		insertLogin((String) request.getAttribute(SOURCE_IDP_NAME), client.getClientName());
+
+		String idpEntityId = new String(((String)request.getAttribute(IDP_ENTITY_ID)).getBytes("iso-8859-1"), "utf-8");
+		String idpName = null;
+
+		if(!Strings.isNullOrEmpty((String) request.getAttribute(IDP_NAME))) {
+			idpName = new String(((String)request.getAttribute(IDP_NAME)).getBytes("iso-8859-1"), "utf-8");
+		}
+		insertLogin(idpEntityId, idpName, clientIdentifier, clientName);
 
 		chain.doFilter(req, res);
 	}
@@ -119,27 +141,46 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 		return requestMap;
 	}
 
-	private void insertLogin(String sourceIdp, String service) {
+	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName) {
 		LocalDate date = LocalDate.now();
 
 		String queryIdp = "INSERT INTO " + identityProvidersTableName + "(year, month, day, sourceIdp, count) VALUES(?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
+		String queryIdPMap = "INSERT INTO " + identityProvidersMapTableName + "(entityId, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
 		String queryService = "INSERT INTO " + serviceProvidersTableName + "(year, month, day, service, count) VALUES(?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
+		String queryServiceMap = "INSERT INTO " + serviceProvidersMapTableName + "(identifier, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
 
 		try (Connection c = mitreIdStats.getConnection()) {
 			try (PreparedStatement preparedStatement = c.prepareStatement(queryIdp)) {
 				preparedStatement.setInt(1, date.getYear());
 				preparedStatement.setInt(2, date.getMonthValue());
 				preparedStatement.setInt(3, date.getDayOfMonth());
-				preparedStatement.setString(4, sourceIdp);
+				preparedStatement.setString(4, idpEntityId);
 				preparedStatement.execute();
 			}
 			try (PreparedStatement preparedStatement = c.prepareStatement(queryService)) {
 				preparedStatement.setInt(1, date.getYear());
 				preparedStatement.setInt(2, date.getMonthValue());
 				preparedStatement.setInt(3, date.getDayOfMonth());
-				preparedStatement.setString(4, service);
+				preparedStatement.setString(4, spIdentifier);
 				preparedStatement.execute();
 			}
+			if (!Strings.isNullOrEmpty(idpName)){
+				try (PreparedStatement preparedStatement = c.prepareStatement(queryIdPMap)){
+					preparedStatement.setString(1, idpEntityId);
+					preparedStatement.setString(2, idpName);
+					preparedStatement.setString(3, idpName);
+					preparedStatement.execute();
+				}
+			}
+			if (!Strings.isNullOrEmpty(spName)) {
+				try (PreparedStatement preparedStatement = c.prepareStatement(queryServiceMap)){
+					preparedStatement.setString(1, spIdentifier);
+					preparedStatement.setString(2, spName);
+					preparedStatement.setString(3, spName);
+					preparedStatement.execute();
+				}
+			}
+			log.debug("The login log was successfully stored into database.");
 		} catch (SQLException ex) {
 			log.warn("Statistics weren't updated due to SQLException.");
 			log.debug("SQLException {}", ex);

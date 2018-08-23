@@ -34,7 +34,9 @@
 				<prop key="stats.jdbc.user">user</prop>
 				<prop key="stats.jdbc.password">password</prop>
 				<prop key="stats.tableName.identityProviders">identityProviders</prop>
+				<prop key="stats.tableName.identityProvidersMap">identityProvidersMap</prop>
 				<prop key="stats.tableName.serviceProviders">serviceProviders</prop>
+				<prop key="stats.tableName.serviceProvidersMap">serviceProvidersMap</prop>
 				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
 				<prop key="admins">3197,59835</prop>
 				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:core:id</prop>
@@ -138,7 +140,9 @@
 	<!-- Save statistics about logins -->
 	<bean id="proxyStatisticsFilter" class="cz.muni.ics.oidc.filters.ProxyStatisticsFilter">
 		<property name="identityProvidersTableName" value="${stats.tableName.identityProviders}"/>
+		<property name="identityProvidersMapTableName" value="${stats.tableName.identityProvidersMap}"/>
 		<property name="serviceProvidersTableName" value="${stats.tableName.serviceProviders}"/>
+		<property name="serviceProvidersMapTableName" value="${stats.tableName.serviceProvidersMap}"/>
 	</bean>
 
 	<!-- decides who is admin -->

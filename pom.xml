@@ -5,18 +5,18 @@
 	<groupId>cz.muni.ics</groupId>
 	<artifactId>perun-mitreid</artifactId>
 	<packaging>pom</packaging>
-	<version>1.13.0</version>
+	<version>1.14.0</version>
 	<name>Perun OpenID Connect Provider</name>
 
-   <developers>
-        <developer>
-            <name>Martin Kuba</name>
-            <email>makub@ics.muni.cz</email>
-            <url>http://www.muni.cz/people/3988</url>
-            <organization>ÚVT MU</organization>
-        </developer>
-    </developers>
- 
+	<developers>
+		<developer>
+			<name>Martin Kuba</name>
+			<email>makub@ics.muni.cz</email>
+			<url>http://www.muni.cz/people/3988</url>
+			<organization>ÚVT MU</organization>
+		</developer>
+	</developers>
+
 	<modules>
 		<module>oidc-idp</module>
 	</modules>
