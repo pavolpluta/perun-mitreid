@@ -38,8 +38,15 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 
 	private final static Logger log = LoggerFactory.getLogger(ProxyStatisticsFilter.class);
 
-	private static final String IDP_NAME = "sourceIdPName";
-	private static final String IDP_ENTITY_ID = "sourceIdPEntityID";
+	/**
+	 * Name of the ServletRequest attribute which contains IdP's name.
+	 */
+	private String idpNameAttributeName;
+
+	/**
+	 * Name of the ServletRequest attribute which contains IdP's entityID.
+	 */
+	private String idpEntityIdAttributeName;
 
 	@Autowired
 	private OAuth2RequestFactory authRequestFactory;
@@ -80,6 +87,14 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 		this.serviceProvidersMapTableName = serviceProvidersMapTableName;
 	}
 
+	public void setIdpNameAttributeName(String idpNameAttributeName) {
+		this.idpNameAttributeName = idpNameAttributeName;
+	}
+
+	public void setIdpEntityIdAttributeName(String idpEntityIdAttributeName) {
+		this.idpEntityIdAttributeName = idpEntityIdAttributeName;
+	}
+
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
 			throws IOException, ServletException {
@@ -89,7 +104,6 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 			chain.doFilter(req, res);
 			return;
 		}
-
 		AuthorizationRequest authRequest = authRequestFactory.createAuthorizationRequest(
 				createRequestMap(request.getParameterMap()));
 
@@ -102,7 +116,7 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 		client = clientService.loadClientByClientId(authRequest.getClientId());
 		log.debug("Found client: {}", client);
 
-		if(Strings.isNullOrEmpty(client.getClientName())) {
+		if (Strings.isNullOrEmpty(client.getClientName())) {
 			log.warn("ClientName is null or empty, skip to next filter");
 			chain.doFilter(req, res);
 			return;
@@ -112,17 +126,17 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 		String clientName = client.getClientName();
 
 
-		if(Strings.isNullOrEmpty((String) request.getAttribute(IDP_ENTITY_ID))) {
-			log.warn("Attribute '" + IDP_ENTITY_ID + "' is null or empty, skip to next filter");
+		if (Strings.isNullOrEmpty((String) request.getAttribute(idpEntityIdAttributeName))) {
+			log.warn("Attribute '" + idpEntityIdAttributeName + "' is null or empty, skip to next filter");
 			chain.doFilter(req, res);
 			return;
 		}
 
-		String idpEntityId = new String(((String)request.getAttribute(IDP_ENTITY_ID)).getBytes("iso-8859-1"), "utf-8");
+		String idpEntityId = new String(((String) request.getAttribute(idpEntityIdAttributeName)).getBytes("iso-8859-1"), "utf-8");
 		String idpName = null;
 
-		if(!Strings.isNullOrEmpty((String) request.getAttribute(IDP_NAME))) {
-			idpName = new String(((String)request.getAttribute(IDP_NAME)).getBytes("iso-8859-1"), "utf-8");
+		if (!Strings.isNullOrEmpty((String) request.getAttribute(idpNameAttributeName))) {
+			idpName = new String(((String) request.getAttribute(idpNameAttributeName)).getBytes("iso-8859-1"), "utf-8");
 		}
 		insertLogin(idpEntityId, idpName, clientIdentifier, clientName);
 
@@ -141,6 +155,7 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 		return requestMap;
 	}
 
+	@SuppressWarnings("Duplicates")
 	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName) {
 		LocalDate date = LocalDate.now();
 
@@ -164,8 +179,8 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 				preparedStatement.setString(4, spIdentifier);
 				preparedStatement.execute();
 			}
-			if (!Strings.isNullOrEmpty(idpName)){
-				try (PreparedStatement preparedStatement = c.prepareStatement(queryIdPMap)){
+			if (!Strings.isNullOrEmpty(idpName)) {
+				try (PreparedStatement preparedStatement = c.prepareStatement(queryIdPMap)) {
 					preparedStatement.setString(1, idpEntityId);
 					preparedStatement.setString(2, idpName);
 					preparedStatement.setString(3, idpName);
@@ -173,14 +188,14 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 				}
 			}
 			if (!Strings.isNullOrEmpty(spName)) {
-				try (PreparedStatement preparedStatement = c.prepareStatement(queryServiceMap)){
+				try (PreparedStatement preparedStatement = c.prepareStatement(queryServiceMap)) {
 					preparedStatement.setString(1, spIdentifier);
 					preparedStatement.setString(2, spName);
 					preparedStatement.setString(3, spName);
 					preparedStatement.execute();
 				}
 			}
-			log.debug("The login log was successfully stored into database.");
+			log.debug("The login log was successfully stored into database: ({},{},{},{})", idpEntityId, idpName, spIdentifier, spName);
 		} catch (SQLException ex) {
 			log.warn("Statistics weren't updated due to SQLException.");
 			log.debug("SQLException {}", ex);
