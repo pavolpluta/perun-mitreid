@@ -2,6 +2,11 @@ package cz.muni.ics.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cz.muni.ics.oidc.models.Facility;
+import cz.muni.ics.oidc.models.Group;
+import cz.muni.ics.oidc.models.Member;
+import cz.muni.ics.oidc.models.Resource;
+import cz.muni.ics.oidc.models.RichUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -12,6 +17,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +28,7 @@ import java.util.Map;
  *
  * @author Martin Kuba makub@ics.muni.cz
  * @author Dominik František Bučík bucik@ics.muni.cz
+ * @author Peter Jancus jancus@ics.muni.cz
  */
 public class PerunConnectorRpc implements PerunConnector {
 
@@ -70,49 +77,74 @@ public class PerunConnectorRpc implements PerunConnector {
 	}
 
 	@Override
-	public JsonNode getUserAttributes(Long userId) {
+	public RichUser getUserAttributes(Long userId) {
 		log.trace("getUserAttributes({})", userId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("user", userId);
-		return makeRpcCall("/usersManager/getRichUserWithAttributes", map);
+
+		return Mapper.mapRichUser(makeRpcCall("/usersManager/getRichUserWithAttributes", map));
 	}
 
 	@Override
-	public JsonNode getFacilitiesByClientId(String clientId) {
+	public List<Facility> getFacilitiesByClientId(String clientId) {
 		log.trace("getFacilitiesByClientId({})", clientId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("attributeName", oidcClientIdAttr);
 		map.put("attributeValue", clientId);
-		return makeRpcCall("/facilitiesManager/getFacilitiesByAttribute", map);
+
+		ArrayList<Facility> facilities = new ArrayList<>();
+		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getFacilitiesByAttribute", map);
+		for (int i = 0; i < jsonNode.size(); i++) {
+			facilities.add(Mapper.mapFacility(jsonNode.get(i)));
+		}
+		return facilities;
 	}
 
 	@Override
-	public JsonNode getAssignedResourcesForFacility(String facilityId) {
+	public List<Resource> getAssignedResourcesForFacility(Long facilityId) {
 		log.trace("getAssignedResourcesForFacility({})", facilityId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facilityId);
-		return makeRpcCall("/facilitiesManager/getAssignedResources", map);
+
+		ArrayList<Resource> resources = new ArrayList<>();
+		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getAssignedResources", map);
+		for (int i = 0; i < jsonNode.size(); i++) {
+			resources.add(Mapper.mapResource(jsonNode.get(i)));
+		}
+		return resources;
 	}
 
 	@Override
-	public JsonNode getAssignedGroups(String resourceId, String memberId) {
+	public List<Group> getAssignedGroups(Long resourceId, Long memberId) {
 		log.trace("getAssignedGroups resource: ({}), member: ({})", resourceId, memberId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("resource", resourceId);
 		map.put("member", memberId);
-		return makeRpcCall("/resourcesManager/getAssignedGroups", map);
+
+		ArrayList<Group> groups = new ArrayList<>();
+		JsonNode jsonNode = makeRpcCall("/resourcesManager/getAssignedGroups", map);
+		for (int i = 0; i < jsonNode.size(); i++) {
+			groups.add(Mapper.mapGroup(jsonNode.get(i)));
+		}
+		return groups;
 	}
 
 	@Override
-	public JsonNode getMembersByUser(String userId) {
+	public List<Member> getMembersByUser(String userId) {
 		log.trace("getMembersByUser({})", userId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("user", userId);
-		return makeRpcCall("/membersManager/getMembersByUser", map);
+
+		ArrayList<Member> members = new ArrayList<>();
+		JsonNode jsonNode = makeRpcCall("/membersManager/getMembersByUser", map);
+		for (int i = 0; i < jsonNode.size(); i++) {
+			members.add(Mapper.mapMember(jsonNode.get(i)));
+		}
+		return members;
 	}
 
 	@Override
-	public boolean isAllowedGroupCheckForFacility(String facilityId) {
+	public boolean isAllowedGroupCheckForFacility(Long facilityId) {
 		log.trace("isAllowedGroupCheckForFacility({})", facilityId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facilityId);
