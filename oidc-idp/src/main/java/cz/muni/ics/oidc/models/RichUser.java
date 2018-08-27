@@ -57,12 +57,8 @@ public class RichUser extends Model {
 	}
 
 	public String getAttributeValue(String attrName) {
-		if (attributes.containsKey(attrName) && attributes.get(attrName) != null) {
-			return attributes.get(attrName).asText();
-		} else {
-			return null;
-		}
-
+		JsonNode jsonNode = attributes.get(attrName);
+		return (jsonNode == null) || jsonNode.isNull() ? null : jsonNode.asText();
 	}
 
 	public JsonNode getJson(String attrName) {
