@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Member;
+import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.Resource;
 import cz.muni.ics.oidc.models.RichUser;
 
@@ -15,14 +16,15 @@ import java.util.Map;
  *
  * @author Peter Jancus jancus@ics.muni.cz
  */
-public class Mapper {
+class Mapper {
 
 	/**
 	 * Maps JsonNode to Facility model
+	 *
 	 * @param jsonNode facility in Json format to be mapped
 	 * @return Facility mapped from JsonNode
 	 */
-	public static Facility mapFacility(JsonNode jsonNode) {
+	static Facility mapFacility(JsonNode jsonNode) {
 		Long id = jsonNode.get("id").asLong();
 		String name = jsonNode.get("name").asText();
 		String description = jsonNode.get("description").asText();
@@ -30,19 +32,25 @@ public class Mapper {
 		return new Facility(id, name, description);
 	}
 
+	static PerunUser mapPerunUser(JsonNode jsonNode) {
+		long userId = jsonNode.path("id").asLong();
+		String firstName = jsonNode.path("firstName").asText();
+		String lastName = jsonNode.path("lastName").asText();
+		return new PerunUser(userId, firstName, lastName);
+	}
+
 	/**
 	 * Maps JsonNode to Group model
 	 * @param jsonNode group in Json format to be mapped
 	 * @return Group mapped from JsonNode
 	 */
-	public static Group mapGroup(JsonNode jsonNode) {
+	static Group mapGroup(JsonNode jsonNode) {
 		Long id = jsonNode.get("id").asLong();
 		Long parentGroupId = jsonNode.get("parentGroupId").asLong();
 		String name = jsonNode.get("name").asText();
 		String description = jsonNode.get("description").asText();
-		String shortName = jsonNode.get("shortName").asText();
-
-		return new Group(id, parentGroupId, name, description, shortName);
+		Long voId = jsonNode.get("voId").asLong();
+		return new Group(id, parentGroupId, name, description, voId);
 	}
 
 	/**
@@ -50,7 +58,7 @@ public class Mapper {
 	 * @param jsonNode member in Json format to be mapped
 	 * @return Member mapped from JsonNode
 	 */
-	public static Member mapMember(JsonNode jsonNode) {
+	static Member mapMember(JsonNode jsonNode) {
 		Long id = jsonNode.get("id").asLong();
 		Long userId = jsonNode.get("userId").asLong();
 		Long voId = jsonNode.get("voId").asLong();
@@ -64,7 +72,7 @@ public class Mapper {
 	 * @param jsonNode resource in Json format to be mapped
 	 * @return Resource mapped from JsonNode
 	 */
-	public static Resource mapResource(JsonNode jsonNode) {
+	static Resource mapResource(JsonNode jsonNode) {
 		Long id = jsonNode.get("id").asLong();
 		Long voId = jsonNode.get("voId").asLong();
 		String name = jsonNode.get("name").asText();
@@ -75,20 +83,15 @@ public class Mapper {
 
 	/**
 	 * Mapps JsonNode to RichUser model
+	 *
 	 * @param jsonNode rich user in Json format to be mapped
 	 * @return RichUser mapped from JsonNode
 	 */
-	public static RichUser mapRichUser (JsonNode jsonNode) {
+	static RichUser mapRichUser(JsonNode jsonNode) {
 		Map<String, JsonNode> map = new HashMap<>();
-
 		Long id = jsonNode.get("id").asLong();
-		String firstName = jsonNode.get("firstName").asText();
-		String lastName = jsonNode.get("lastName").asText();
-		String middleName = jsonNode.get("middleName").asText();
-		RichUser richUser = new RichUser(id, firstName, lastName, middleName);
-
+		RichUser richUser = new RichUser(id);
 		JsonNode attributesNode = jsonNode.get("userAttributes");
-
 		for (int i = 0; i < attributesNode.size(); i++) {
 			String friendlyName = attributesNode.get(i).get("friendlyName").asText();
 			String namespace = attributesNode.get(i).get("namespace").asText();

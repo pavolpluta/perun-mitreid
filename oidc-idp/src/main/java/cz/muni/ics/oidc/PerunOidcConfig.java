@@ -94,11 +94,11 @@ public class PerunOidcConfig {
 		log.info("RPC URL: {}", rpcUrl);
 		log.info("JSON Web Keys: {}", jwk);
 		log.info("JDBC URL: {}", jdbcUrl);
+		log.info("LDAP: ldaps://{}/{}",coreProperties.getProperty("ldap.host"),coreProperties.getProperty("ldap.baseDN"));
 		log.info("THEME: {}", theme);
 		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 		log.info("MitreID version: {}", getMitreidVersion());
 		log.info("Perun OIDC version: {}", getPerunOIDCVersion());
-		log.info("contextPath: {}", servletContext.getContextPath());
 	}
 
 

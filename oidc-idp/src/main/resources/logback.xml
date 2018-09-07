@@ -20,21 +20,27 @@
 				</encoder>
 			</appender>
 		</else>
-	</if> -->
+	</if>
+	<root level="info">
+		<appender-ref ref="APP"/>
+	</root>
+	-->
 	<appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
 		<facility>LOCAL7</facility>
 		<suffixPattern>%d %-5level %logger{40} - %msg%n</suffixPattern>
 	</appender>
-
 	<root level="info">
 		<appender-ref ref="SYSLOG"/>
 	</root>
+
 
 	<!-- keep Spring quiet -->
 	<logger name="org.springframework" level="warn"/>
 	<logger name="org.springframework.security" level="warn"/>
 	<logger name="org.springframework.security.core.SpringSecurityCoreVersion" level="info"/>
 	<logger name="org.mitre.openid.connect.config.JsonMessageSource" level="warn"/>
+	<logger name="org.apache.directory" level="warn"/>
+	<logger name="org.apache.directory.ldap.client.api.LdapNetworkConnection" level="error"/>
 	<!--<logger name="org.springframework.security.authentication" level="info"/>-->
 	<!--<logger name="org.springframework.security.web.authentication" level="info"/>-->
 	<!--<logger name="org.springframework.http.client" level="debug"/>-->
@@ -42,6 +48,10 @@
 	<logger name="com.zaxxer.hikari" level="warn"/>
 	<logger name="org.mitre" level="info"/>
 	<logger name="cz.muni.ics.oidc" level="info"/>
-	<logger name="cz.muni.ics.oidc.filters.ProxyStatisticsFilter" level="debug"/>
+	<logger name="cz.muni.ics.oidc.filters.ProxyStatisticsFilter" level="info"/>
+	<logger name="cz.muni.ics.oidc.PerunConnectorLdap" level="info"/>
+	<logger name="cz.muni.ics.oidc.PerunConnectorRpc" level="info"/>
+	<logger name="cz.muni.ics.oidc.controllers.PerunOAuthConfirmationController" level="info"/>
+
 
 </configuration>

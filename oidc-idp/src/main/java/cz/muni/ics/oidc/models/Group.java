@@ -10,45 +10,61 @@ public class Group extends Model {
 	private Long parentGroupId;
 	private String name;
 	private String description;
-	private String shortName;
+	private String uniqueGroupName; // voShortName + ":" + group name
+	private Long voId;
 
-	public Group(Long id, Long parentGroupId, String name, String description, String shortName) {
+	public Group(Long id, Long parentGroupId, String name, String description, String uniqueGroupName) {
 		super(id);
 		this.parentGroupId = parentGroupId;
 		this.name = name;
 		this.description = description;
-		this.shortName = shortName;
+		this.uniqueGroupName = uniqueGroupName;
 	}
 
-	public Long getParentGroupId() {
-		return parentGroupId;
-	}
-
-	public void setParentGroupId(Long parentGroupId) {
+	public Group(Long id, Long parentGroupId, String name, String description, Long voId) {
+		super(id);
 		this.parentGroupId = parentGroupId;
+		this.name = name;
+		this.description = description;
+		this.voId = voId;
 	}
 
 	public String getName() {
 		return name;
 	}
 
-	public void setName(String name) {
-		this.name = name;
-	}
-
 	public String getDescription() {
 		return description;
 	}
 
-	public void setDescription(String description) {
-		this.description = description;
+	public void setUniqueGroupName(String uniqueGroupName) {
+		this.uniqueGroupName = uniqueGroupName;
 	}
 
-	public String getShortName() {
-		return shortName;
+	public Long getVoId() {
+		return voId;
 	}
 
-	public void setShortName(String shortName) {
-		this.shortName = shortName;
+	public void setVoId(Long voId) {
+		this.voId = voId;
+	}
+
+	/**
+	 * Gets identifier voShortName:group.name usable for groupNames in AARC format.
+	 */
+	public String getUniqueGroupName() {
+		return uniqueGroupName;
+	}
+
+	@Override
+	public String toString() {
+		return "Group{" +
+				"id=" + getId() +
+				", name='" + name + '\'' +
+				", uniqueGroupName='" + uniqueGroupName + '\'' +
+				", description='" + description + '\'' +
+				", parentGroupId=" + parentGroupId +
+				", voId=" + voId +
+				'}';
 	}
 }

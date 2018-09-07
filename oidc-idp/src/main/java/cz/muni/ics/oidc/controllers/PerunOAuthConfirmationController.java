@@ -1,17 +1,11 @@
 package cz.muni.ics.oidc.controllers;
 
 
-import java.io.IOException;
-import java.security.Principal;
-import java.util.*;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import cz.muni.ics.oidc.*;
+import cz.muni.ics.oidc.PerunConnector;
+import cz.muni.ics.oidc.PerunOidcConfig;
+import cz.muni.ics.oidc.PerunUserInfo;
 import cz.muni.ics.oidc.exceptions.LanguageFileException;
 import cz.muni.ics.oidc.models.Facility;
-import cz.muni.ics.oidc.models.Group;
-import cz.muni.ics.oidc.models.Member;
-import cz.muni.ics.oidc.models.Resource;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.mitre.oauth2.web.OAuthConfirmationController;
@@ -29,6 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
+import java.security.Principal;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Controller of the pages where user accepts that information
@@ -145,73 +143,18 @@ public class PerunOAuthConfirmationController{
             throw new IllegalArgumentException("isUserInApprovedGroups wrong parameters");
         }
 
-		Set<Long> facilityIds = new HashSet<>();
-        for (Facility facility :  perunConnector.getFacilitiesByClientId(clientId)) {
-        	facilityIds.add(facility.getId());
-        }
-
-
-        if (facilityIds.isEmpty()) {
-            log.warn("Facility with OIDCClientID({}) could not be found", clientId);
+        Facility facility = perunConnector.getFacilityByClientId(clientId);
+        if (facility == null) {
+            //if no facilities are defined for the OIDC client in Perun, no check is performed
+            log.info("Facility with OIDCClientID({}) was not found", clientId);
             return true;
+        } else {
+            //if membership check is enabled, check whether the user is allowed to access the facility
+            return !perunConnector.isMembershipCheckEnabledOnFacility(facility) ||
+                    perunConnector.isUserAllowedOnFacility(facility, userId);
         }
 
-        boolean cont = false;
-        for (Long facility: facilityIds) {
-            cont = cont || perunConnector.isAllowedGroupCheckForFacility(facility);
-        }
-
-        if (!cont) {
-            //checking membership is not required, returning true as user is allowed to access
-            log.trace("Membership check not requested, skipping");
-            return true;
-        }
-
-        log.info("Started group membership check");
-
-        Set<Long> resIds = new HashSet<>();
-        for (Long facility : facilityIds) {
-            List<Resource> resources = perunConnector.getAssignedResourcesForFacility(facility);
-            for (Resource resource : resources) {
-            	resIds.add(resource.getId());
-			}
-        }
-
-        if (resIds.isEmpty()) {
-            log.error("Resources could not be found for facilities({})", facilityIds.toString());
-            throw new IllegalArgumentException("Resources could not be found");
-        }
-
-        List<Member> members = perunConnector.getMembersByUser(userId.toString());
-        Set<Long> memberIds = filterActiveMembersIds(members);
-
-        if (members.isEmpty()) {
-            log.error("Members could not be found for user({})", userId.toString());
-            throw new IllegalArgumentException("Members could not be found");
-        }
-
-        for (Long resource : resIds) {
-            for (Long member : memberIds) {
-                List<Group> groups = perunConnector.getAssignedGroups(resource, member);
-                if(! groups.isEmpty()) {
-                    log.trace("User ({}) has been approved to access service ({})", userId, clientId);
-                    return true;
-                }
-            }
-        }
-
-        log.error("User ({}) is not in group allowed to access service ({})", userId, clientId);
-        return false;
     }
 
-    private Set<Long> filterActiveMembersIds(List<Member> members) {
-        Set<Long> active = new HashSet<>();
-        for (Member member : members) {
-            if (member.getStatus().equals("VALID")) {
-                active.add(member.getId());
-            }
-        }
 
-        return active;
-    }
 }

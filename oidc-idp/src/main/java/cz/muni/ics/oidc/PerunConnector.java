@@ -1,13 +1,11 @@
 package cz.muni.ics.oidc;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
-import cz.muni.ics.oidc.models.Member;
-import cz.muni.ics.oidc.models.Resource;
+import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
 
-import java.util.List;
+import java.util.Set;
 
 /**
  * Connects to Perun and obtains information.
@@ -19,53 +17,52 @@ import java.util.List;
 public interface PerunConnector {
 
 	/**
-	 * Fetch user based on his principal (extSource) from Perun
+	 * Fetch user based on his principal (extLogin and extSource) from Perun
+	 *
 	 * @param perunPrincipal principal of user
-	 * @return JsonNode with attributes of found user
+	 * @return PerunUser with id of found user
 	 */
-	JsonNode getPreauthenticatedUserId(PerunPrincipal perunPrincipal);
+	PerunUser getPreauthenticatedUserId(PerunPrincipal perunPrincipal);
 
 	/**
-	 * Fetch user identified by userId from Perun
+	 * Fetch user identified by userId from Perun with all attributes.
+	 *
 	 * @param userId identifier of the user
 	 * @return RichUser with attributes of found user
 	 */
 	RichUser getUserAttributes(Long userId);
 
 	/**
-	 * Fetch OIDC facility from Perun
+	 * Fetch facility registered in Perun for the given OIDC client.
+	 *
 	 * @param clientId value for attribute OIDCClientID
-	 * @return List of facilities if it has found at least one, empty list otherwise
+	 * @return facility if it was found or null
 	 */
-	List<Facility> getFacilitiesByClientId(String clientId);
+	Facility getFacilityByClientId(String clientId);
 
 	/**
-	 * Fetch resources assigned to facility specified by id
-	 * @param facilityId id of facility
-	 * @return List of assigned resources if it has found at least one, empty list otherwise
-	 */
-	List<Resource> getAssignedResourcesForFacility(Long facilityId);
-
-	/**
-	 * Fetch all groups associated with resource and member
-	 * @param resourceId id of resource
-	 * @param memberId id of member
-	 * @return List of groups associated both with resource and member if it has found at least one, empty list otherwise
-	 */
-	List<Group> getAssignedGroups(Long resourceId, Long memberId);
-
-	/**
-	 * Fetch members of user specified by his/her id
-	 * @param userId id of user
-	 * @return List of user members if it has found at least one, empty list otherwise
-	 */
-	List<Member> getMembersByUser(String userId);
-
-	/**
-	 * Ask Perun if membership of user in groups allowed to access resource should be checked.
-	 * @param facilityId id of facility to be accessed
+	 * Ask Perun if user's access to the facility should be checked.
+	 *
+	 * @param facility facility to be accessed
 	 * @return TRUE if check should be done, FALSE otherwise
 	 */
-	boolean isAllowedGroupCheckForFacility(Long facilityId);
+	boolean isMembershipCheckEnabledOnFacility(Facility facility);
 
+	/**
+	 * Decide whether the user is allowed to access the facility.
+	 *
+	 * @param facility facility to be accessed
+	 * @param userId   id of user to check
+	 * @return true if the user is member of any group assigned to a resource on the facility
+	 */
+	boolean isUserAllowedOnFacility(Facility facility, Long userId);
+
+	/**
+	 * Provides a list of groups which connect the user to the facility.
+	 *
+	 * @param facility acility to be accessed
+	 * @param userId   id of user to check
+	 * @return list of all groups such that the user is member of the group and the group is assigned to a resource of the facility
+	 */
+	Set<Group> getUserGroupsAllowedOnFacility(Facility facility, Long userId);
 }
