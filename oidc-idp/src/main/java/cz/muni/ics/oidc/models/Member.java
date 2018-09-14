@@ -18,27 +18,21 @@ public class Member extends Model {
 		this.status = status;
 	}
 
-	public Long getUserId() {
-		return userId;
-	}
-
-	public void setUserId(Long userId) {
-		this.userId = userId;
-	}
-
 	public Long getVoId() {
 		return voId;
-	}
-
-	public void setVoId(Long voId) {
-		this.voId = voId;
 	}
 
 	public String getStatus() {
 		return status;
 	}
 
-	public void setStatus(String status) {
-		this.status = status;
+	@Override
+	public String toString() {
+		return "Member{" +
+				"id=" + getId() +
+				", userId=" + userId +
+				", voId=" + voId +
+				", status='" + status + '\'' +
+				'}';
 	}
 }

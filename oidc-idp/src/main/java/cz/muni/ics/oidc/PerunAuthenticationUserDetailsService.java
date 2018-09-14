@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import cz.muni.ics.oidc.models.PerunUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
@@ -63,11 +64,9 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 			throw new UsernameNotFoundException("PerunPrincipal is null");
 		}
 		try {
-			JsonNode result = perunConnector.getPreauthenticatedUserId(perunPrincipal);
-			Long userId = result.path("id").asLong();
-			String firstname = result.path("firstName").asText();
-			String lastname = result.path("lastName").asText();
-			log.info("User {} {} {} logged in", userId, firstname, lastname);
+			PerunUser perunUser = perunConnector.getPreauthenticatedUserId(perunPrincipal);
+			Long userId = perunUser.getId();
+			log.info("User {} {} {} logged in", userId, perunUser.getFirstName(), perunUser.getLastName());
 
 			log.trace("setting user role for {}", userId);
 			Collection<GrantedAuthority> authorities = new ArrayList<>();

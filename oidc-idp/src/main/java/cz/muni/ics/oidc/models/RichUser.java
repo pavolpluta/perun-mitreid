@@ -12,40 +12,10 @@ import java.util.Map;
  */
 public class RichUser extends Model {
 
-	private String firstName;
-	private String lastName;
-	private String middleName;
 	private Map<String, JsonNode> attributes = new LinkedHashMap<>();
 
-	public RichUser(Long id, String firstName, String lastName, String middleName) {
+	public RichUser(Long id) {
 		super(id);
-		this.firstName = firstName;
-		this.lastName = lastName;
-		this.middleName = middleName;
-	}
-
-	public String getFirstName() {
-		return firstName;
-	}
-
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
-
-	public String getLastName() {
-		return lastName;
-	}
-
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
-
-	public String getMiddleName() {
-		return middleName;
-	}
-
-	public void setMiddleName(String middleName) {
-		this.middleName = middleName;
 	}
 
 	public Map<String, JsonNode> getAttributes() {
@@ -63,5 +33,13 @@ public class RichUser extends Model {
 
 	public JsonNode getJson(String attrName) {
 		return attributes.get(attrName);
+	}
+
+	@Override
+	public String toString() {
+		return "RichUser{" +
+				"id="+getId()+
+				"attributes=" + attributes +
+				'}';
 	}
 }

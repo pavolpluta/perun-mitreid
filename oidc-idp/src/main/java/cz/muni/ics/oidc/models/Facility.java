@@ -31,4 +31,13 @@ public class Facility extends Model {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+
+	@Override
+	public String toString() {
+		return "Facility{" +
+				"id=" + getId() +
+				", name='" + name + '\'' +
+				", description='" + description + '\'' +
+				'}';
+	}
 }

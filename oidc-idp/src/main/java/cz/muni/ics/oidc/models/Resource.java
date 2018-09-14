@@ -41,4 +41,14 @@ public class Resource extends Model {
 	public void setDescription(String description) {
 		this.description = description;
 	}
+
+	@Override
+	public String toString() {
+		return "Resource{" +
+				"id=" + getId() +
+				", voId=" + voId +
+				", name='" + name + '\'' +
+				", description='" + description + '\'' +
+				'}';
+	}
 }

@@ -46,6 +46,10 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	private String subAttribute;
 	private ClaimValueModifier subModifier;
 	private String preferredUsernameAttribute;
+	private String givenNameAttribute;
+	private String familyNameAttribute;
+	private String middleNameAttribute;
+	private String fullNameAttribute;
 	private String emailAttribute;
 	private String addressAttribute;
 	private String phoneAttribute;
@@ -68,6 +72,22 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 
 	public void setPreferredUsernameAttribute(String preferredUsernameAttribute) {
 		this.preferredUsernameAttribute = preferredUsernameAttribute;
+	}
+
+	public void setGivenNameAttribute(String givenNameAttribute) {
+		this.givenNameAttribute = givenNameAttribute;
+	}
+
+	public void setFamilyNameAttribute(String familyNameAttribute) {
+		this.familyNameAttribute = familyNameAttribute;
+	}
+
+	public void setMiddleNameAttribute(String middleNameAttribute) {
+		this.middleNameAttribute = middleNameAttribute;
+	}
+
+	public void setFullNameAttribute(String fullNameAttribute) {
+		this.fullNameAttribute = fullNameAttribute;
 	}
 
 	public void setEmailAttribute(String emailAttribute) {
@@ -208,10 +228,10 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
 
 			ui.setPreferredUsername(richUser.getAttributeValue(preferredUsernameAttribute)); // Shorthand name by which the End-User wishes to be referred to at the RP
-			ui.setGivenName(richUser.getAttributeValue("urn:perun:user:attribute-def:core:firstName")); //  Given name(s) or first name(s) of the End-User
-			ui.setFamilyName(richUser.getAttributeValue("urn:perun:user:attribute-def:core:lastName")); // Surname(s) or last name(s) of the End-User
-			ui.setMiddleName(richUser.getAttributeValue("urn:perun:user:attribute-def:core:middleName")); //  Middle name(s) of the End-User
-			ui.setName(richUser.getAttributeValue("urn:perun:user:attribute-def:core:displayName")); // End-User's full name
+			ui.setGivenName(richUser.getAttributeValue(givenNameAttribute)); //  Given name(s) or first name(s) of the End-User
+			ui.setFamilyName(richUser.getAttributeValue(familyNameAttribute)); // Surname(s) or last name(s) of the End-User
+			ui.setMiddleName(richUser.getAttributeValue(middleNameAttribute)); //  Middle name(s) of the End-User
+			ui.setName(richUser.getAttributeValue(fullNameAttribute)); // End-User's full name
 			//ui.setNickname(); // Casual name of the End-User
 			//ui.setProfile(); //  URL of the End-User's profile page.
 			//ui.setPicture(); // URL of the End-User's profile picture.
@@ -235,6 +255,10 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			//custom claims
 			for (PerunCustomClaimDefinition pccd : customClaims) {
 				JsonNode claimInJson = richUser.getJson(pccd.getPerunAttributeName());
+				if(claimInJson==null) {
+					log.warn("claim {} is null",pccd.getPerunAttributeName());
+					continue;
+				}
 				ClaimValueModifier claimValueModifier = pccd.getClaimValueModifier();
 				if (claimValueModifier != null) {
 					log.debug("modifying values of claim '{}' using {}", pccd.getClaim(), claimValueModifier);

@@ -114,7 +114,7 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 			return;
 		}
 		client = clientService.loadClientByClientId(authRequest.getClientId());
-		log.debug("Found client: {}", client);
+		log.debug("Found client: {}", client.getClientId());
 
 		if (Strings.isNullOrEmpty(client.getClientName())) {
 			log.warn("ClientName is null or empty, skip to next filter");
