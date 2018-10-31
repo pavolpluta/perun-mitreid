@@ -70,8 +70,8 @@
 				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:core:id</prop>
 				<prop key="attribute.profile.preferred_username">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>
 				<prop key="attribute.profile.given_name">urn:perun:user:attribute-def:core:firstName</prop>
-				<prop key="attribute.profile.middle_name">urn:perun:user:attribute-def:core:lastName</prop>
-				<prop key="attribute.profile.family_name">urn:perun:user:attribute-def:core:middleName</prop>
+				<prop key="attribute.profile.middle_name">urn:perun:user:attribute-def:core:middleName</prop>
+				<prop key="attribute.profile.family_name">urn:perun:user:attribute-def:core:lastName</prop>
 				<prop key="attribute.profile.name">urn:perun:user:attribute-def:core:displayName</prop>
 				<prop key="attribute.profile.zoneinfo">urn:perun:user:attribute-def:def:timezone</prop>
 				<prop key="attribute.profile.locale">urn:perun:user:attribute-def:def:preferredLanguage</prop>
