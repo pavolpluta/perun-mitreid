@@ -1,10 +1,12 @@
-<%@ tag pageEncoding="UTF-8" %>
+<%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!-- javascript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 
 <!-- Load jQuery up here so that we can use in-page functions -->
+<c:set var="baseUrl" value="${fn:substringBefore(config.issuer, 'oidc')}" />
 <script type="text/javascript" src="resources/js/lib/jquery.js"></script>
 <script type="text/javascript" charset="UTF-8" src="resources/js/lib/moment-with-locales.js"></script>
 <script type="text/javascript" src="resources/js/lib/i18next.js"></script>
@@ -98,7 +100,6 @@
 <script type="text/javascript" src="resources/js/lib/bootstrapx-clickover.js"></script>
 <script type="text/javascript" src="resources/js/lib/bootstrap-sheet.js"></script>
 <script type="text/javascript" src="resources/js/lib/bootpag.js"></script>
-<script type="text/javascript" src="resources/js/lib/retina.js"></script>
 <c:if test="${js != null && js != ''}">
     <script type="text/javascript">
 
