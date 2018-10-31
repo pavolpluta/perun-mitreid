@@ -1,4 +1,4 @@
-<%@ tag import="org.springframework.web.context.support.WebApplicationContextUtils" %>
+<%@ tag import="org.springframework.web.context.support.WebApplicationContextUtils" trimDirectiveWhitespaces="true" %>
 <%@ tag import="cz.muni.ics.oidc.PerunOidcConfig" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
