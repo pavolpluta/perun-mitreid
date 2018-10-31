@@ -1,11 +1,10 @@
-<%@ tag pageEncoding="UTF-8" %>
+<%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ attribute name="title" required="false" %>
 <%@ attribute name="reqURL" required="false" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags/common" %>
-<%@ tag import="com.google.gson.Gson" %>
 <c:choose>
     <c:when test="${theme eq 'cesnet'}">
         <c:set var="logo" value="cesnet_RGB.png"/>
