@@ -1,14 +1,21 @@
 package cz.muni.ics.oidc.controllers;
 
 
+import com.google.common.collect.Sets;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import cz.muni.ics.oidc.PerunConnector;
 import cz.muni.ics.oidc.PerunOidcConfig;
+import cz.muni.ics.oidc.PerunScopeClaimTranslationService;
 import cz.muni.ics.oidc.PerunUserInfo;
 import cz.muni.ics.oidc.exceptions.LanguageFileException;
 import cz.muni.ics.oidc.models.Facility;
 import org.mitre.oauth2.model.ClientDetailsEntity;
+import org.mitre.oauth2.model.SystemScope;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
+import org.mitre.oauth2.service.SystemScopeService;
 import org.mitre.oauth2.web.OAuthConfirmationController;
+import org.mitre.openid.connect.model.UserInfo;
 import org.mitre.openid.connect.service.UserInfoService;
 import org.mitre.openid.connect.view.HttpCodeView;
 import org.slf4j.Logger;
@@ -25,8 +32,13 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Controller of the pages where user accepts that information
@@ -59,6 +71,12 @@ public class PerunOAuthConfirmationController{
     private PerunOidcConfig perunOidcConfig;
 
     @Autowired
+    private SystemScopeService scopeService;
+
+    @Autowired
+    private PerunScopeClaimTranslationService scopeClaimTranslationService;
+
+    @Autowired
     public PerunOAuthConfirmationController() {
         super();
     }
@@ -89,10 +107,13 @@ public class PerunOAuthConfirmationController{
         model.put("client", client);
         model.put("theme", perunOidcConfig.getTheme().toLowerCase());
 
+        //get result
+        String result = oAuthConfirmationController.confimAccess(model, authRequest, p);
+
+        //prepare scopes in our way
         PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsername(p.getName());
         setLanguageForPage(model, req);
-        // check if user is allowed to access depending on his membership in groups
-        // we use perunUserInfoRepository which for sure returns PerunUserInfo object
+        setScopesAndClaims(model, authRequest, user);
 
         if (!isUserInApprovedGroups(authRequest.getClientId(), user.getId())) {
             model.put("title", "Unapproved access");
@@ -100,7 +121,6 @@ public class PerunOAuthConfirmationController{
             return "unapproved";
         }
 
-        String result = oAuthConfirmationController.confimAccess(model, authRequest, p);
         if (result.equals("approve") && perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
             return "approve";
         } else if (result.equals("approve")) {
@@ -109,6 +129,50 @@ public class PerunOAuthConfirmationController{
         }
 
         return result;
+    }
+
+    private void setScopesAndClaims(Map<String, Object> model, AuthorizationRequest authRequest, UserInfo user) {
+        Set<SystemScope> scopes = scopeService.fromStrings(authRequest.getScope());
+        Set<SystemScope> sortedScopes = new LinkedHashSet<>(scopes.size());
+        Set<SystemScope> systemScopes = scopeService.getAll();
+
+        // sort scopes for display based on the inherent order of system scopes
+        for (SystemScope s : systemScopes) {
+            if (scopes.contains(s)) {
+                sortedScopes.add(s);
+            }
+        }
+
+        // add in any scopes that aren't system scopes to the end of the list
+        sortedScopes.addAll(Sets.difference(scopes, systemScopes));
+
+        model.put("scopes", sortedScopes);
+
+        Map<String, Map<String, Object>> claimsForScopes = new LinkedHashMap<>();
+        if (user != null) {
+            JsonObject userJson = user.toJson();
+
+            for (SystemScope systemScope : sortedScopes) {
+                Map<String, Object> claimValues = new LinkedHashMap<>();
+
+                Set<String> claims = scopeClaimTranslationService.getClaimsForScope(systemScope.getValue());
+                for (String claim : claims) {
+                    if (userJson.has(claim) && userJson.get(claim).isJsonPrimitive()) {
+                        claimValues.put(claim, userJson.get(claim).getAsString());
+                    } else if (userJson.has(claim) && userJson.get(claim).isJsonArray()) {
+                        JsonArray arr = userJson.getAsJsonArray(claim);
+                        List<String> values = new ArrayList<>();
+                        for (int i = 0; i < arr.size(); i++) {
+                            values.add(arr.get(i).getAsString());
+                        }
+                        claimValues.put(claim, values);
+                    }
+                }
+                claimsForScopes.put(systemScope.getValue(), claimValues);
+            }
+        }
+
+        model.put("claims", claimsForScopes);
     }
 
     private void setLanguageForPage(Map<String, Object> model, HttpServletRequest req) {

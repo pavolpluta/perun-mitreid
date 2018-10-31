@@ -1,10 +1,5 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ page import="org.springframework.security.core.AuthenticationException"%>
-<%@ page import="org.springframework.security.oauth2.common.exceptions.UnapprovedClientAuthenticationException"%>
-<%@ page import="org.springframework.security.web.WebAttributes"%>
-<%@ taglib prefix="authz" uri="http://www.springframework.org/security/tags"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common" %>
@@ -52,27 +47,47 @@
 									</span>
 								</label>
 							</div>
-							<c:if test="${ not empty claims[scope.value] }">
-							<div class="attrvalue">
-								<c:choose>
-									<c:when test="${fn:length(claims[scope.value]) > 1}">
-										<ul>
-											<c:forEach var="claim" items="${ claims[scope.value] }">
-												<c:set var="claimKey" value="${langProps[claim.key]}"/>
-												<c:if test="${empty fn:trim(claimKey)}">
-													<c:set var="scopeValue" value="${claim.key}"/>
-												</c:if>
-												<li><strong><c:out value="${claimKey}" />:</strong> <c:out value="${claim.value}" /></li>
-											</c:forEach>
-										</ul>
-									</c:when>
-									<c:otherwise>
-										<c:forEach var="claim" items="${ claims[scope.value] }">
-											<c:out value="${claim.value}" />
+							<c:if test="${not empty claims[scope.value]}">
+								<!-- PRINT OUT CLAIMS -->
+								<div class="attrvalue">
+									<ul>
+										<c:set var="singleClaim" value="${fn:length(claims[scope.value]) eq 1}" />
+										<c:forEach var="claim" items="${claims[scope.value]}">
+											<c:choose>
+												<c:when test="${not singleClaim}">
+													<li>
+														<c:set var="claimKey" value="${langProps[claim.key]}"/>
+														<c:if test="${empty fn:trim(claimKey)}">
+															<c:set var="claimKey" value="${claim.key}"/>
+														</c:if>
+														<strong><c:out value="${claimKey}" />:</strong>
+														<c:choose>
+															<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
+																<br/>
+																<ul>
+																	<c:forEach var="subValue" items="${claim.value}">
+																		<li><c:out value="${subValue}"/></li>
+																	</c:forEach>
+																</ul>
+															</c:when>
+															<c:otherwise>
+																<c:out value="${claim.value}" />
+															</c:otherwise>
+														</c:choose>
+													</li>
+												</c:when>
+												<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
+													<c:forEach var="subValue" items="${claim.value}">
+														<li><c:out value="${subValue}"/></li>
+													</c:forEach>
+												</c:when>
+												<c:otherwise>
+													<li><c:out value="${claim.value}" /></li>
+												</c:otherwise>
+											</c:choose>
 										</c:forEach>
-									</c:otherwise>
-								</c:choose>
-							</div>
+									</ul>
+								</div>
 							</c:if>
 						</td>
 					</tr>
