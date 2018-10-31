@@ -81,7 +81,7 @@ public class DatasetPermissionsAccessTokenModifier implements PerunTokenEnhancer
 				log.error("not found rems.url, rems.header or rems.key in file {}, giving up", DATASETS_PROPERTIES);
 				return;
 			}
-			String actionUrl = remsUrl + sub + "/";
+			String actionUrl = remsUrl + sub;
 			Object perms = getPermissions(actionUrl, new AddHeaderInterceptor(remsHeader, remsHeaderValue));
 			if (perms != null) {
 				builder.claim(PERMISSIONS_REMS, perms);
