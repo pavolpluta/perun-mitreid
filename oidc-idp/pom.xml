@@ -12,7 +12,26 @@
 	<artifactId>oidc-idp</artifactId>
 	<packaging>war</packaging>
 
+	<properties>
+		<config.location>/etc/perun/perun-mitreid.properties</config.location>
+		<log.to>FILE</log.to>
+		<log.contextName>oidc</log.contextName>
+		<log.facility>LOCAL7</log.facility>
+		<log.level>info</log.level>
+		<final.name>oidc</final.name>
+	</properties>
+
 	<build>
+		<finalName>${final.name}</finalName>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>logback.xml</include>
+				</includes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -24,6 +43,15 @@
 				<artifactId>maven-war-plugin</artifactId>
 				<version>2.1.1</version>
 				<configuration>
+					<webResources>
+						<resource>
+							<filtering>true</filtering>
+							<directory>src/main/webapp</directory>
+							<includes>
+								<include>WEB-INF/user-context.xml</include>
+							</includes>
+						</resource>
+					</webResources>
 					<overlays>
 						<overlay>
 							<groupId>org.mitre</groupId>
