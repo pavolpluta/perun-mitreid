@@ -123,7 +123,7 @@
 	<c:when test="${theme eq 'cesnet'}">
 		<cesnet:footer />
 	</c:when>
-	<c:when test="${theme eq 'bbmri-eric'}">
+	<c:when test="${theme eq 'bbmri'}">
 		<bbmri:footer />
 	</c:when>
 	<c:when test="${theme eq 'ceitec'}">
