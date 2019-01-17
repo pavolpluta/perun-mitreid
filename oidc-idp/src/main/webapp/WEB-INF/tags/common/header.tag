@@ -8,21 +8,18 @@
 <c:choose>
     <c:when test="${theme eq 'cesnet'}">
         <c:set var="logo" value="cesnet_RGB.png"/>
-        <c:set var="favicon" value="module.php/cesnet/res/img"/>
     </c:when>
     <c:when test="${theme eq 'elixir'}">
         <c:set var="logo" value="logo_256.png"/>
-        <c:set var="favicon" value="module.php/elixir/res/img"/>
     </c:when>
     <c:when test="${theme eq 'ceitec'}">
         <c:set var="logo" value="logo_512.png"/>
-        <c:set var="favicon" value="resources"/>
     </c:when>
-    <c:when test="${theme eq 'bbmri-eric'}">
+    <c:when test="${theme eq 'bbmri'}">
         <c:set var="logo" value="BBMRI-ERIC-gateway-for-health_430.png"/>
-        <c:set var="favicon" value="resources"/>
     </c:when>
 </c:choose>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="${lang}" xml:lang="${lang}">
 <head>
@@ -35,7 +32,7 @@
     <meta name="robots" content="noindex, nofollow" />
     <!-- link -->
     <link rel="icon" type="image/icon"
-          href="<c:out value='${baseUrl}proxy/${favicon}/icons/favicon.ico'/>" />
+          href="<c:out value='${baseUrl}proxy/module.php/${theme}/res/img/icons/favicon.ico'/>" />
     <link rel="stylesheet" type="text/css"
           href="<c:out value='${baseUrl}proxy/resources/default.css' />" />
     <link rel="stylesheet" type="text/css"
