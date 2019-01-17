@@ -92,7 +92,8 @@
 		<property name="properties" ref="defaultCoreProperties"/>
 		<property name="locations">
 			<list>
-				<value>file:/etc/perun/perun-mitreid.properties</value>
+				<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+				<value>file://${config.location}</value>
 			</list>
 		</property>
 		<property name="ignoreResourceNotFound" value="false"/>

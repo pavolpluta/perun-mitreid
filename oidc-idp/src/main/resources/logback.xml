@@ -1,9 +1,9 @@
 <configuration packagingData="true" debug="false" scan="false" scanPeriod="30 seconds">
-	<contextName>oidc</contextName>
-	<!--
+	<contextName>${log.contextName}</contextName>
+
 	<if condition='isDefined("catalina.base")'>
 		<then>
-			<appender name="APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 				<file>${catalina.base}/logs/${CONTEXT_NAME}.log</file>
 				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
 					<fileNamePattern>${catalina.base}/logs/${CONTEXT_NAME}.log.%d{yyyy-MM-dd}</fileNamePattern>
@@ -14,25 +14,24 @@
 			</appender>
 		</then>
 		<else>
-			<appender name="APP" class="ch.qos.logback.core.ConsoleAppender">
+			<appender name="FILE" class="ch.qos.logback.core.ConsoleAppender">
 				<encoder>
 					<pattern>%d [%thread] %-5level %logger{120} - %msg%n</pattern>
 				</encoder>
 			</appender>
 		</else>
 	</if>
-	<root level="info">
-		<appender-ref ref="APP"/>
-	</root>
-	-->
 	<appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
-		<facility>LOCAL7</facility>
-		<suffixPattern>%d %-5level %logger{40} - %msg%n</suffixPattern>
+		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+		<facility>${log.facility}</facility>
+		<throwableExcluded>true</throwableExcluded>
+		<suffixPattern>%cn : %-5level %logger{40} - %m%n%xException</suffixPattern>
 	</appender>
-	<root level="info">
-		<appender-ref ref="SYSLOG"/>
-	</root>
 
+	<root level="info">
+		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+		<appender-ref ref="${log.to}"/>
+	</root>
 
 	<!-- keep Spring quiet -->
 	<logger name="org.springframework" level="warn"/>
@@ -47,11 +46,8 @@
 	<!--<logger name="org.springframework.web.client" level="debug"/>-->
 	<logger name="com.zaxxer.hikari" level="warn"/>
 	<logger name="org.mitre" level="info"/>
-	<logger name="cz.muni.ics.oidc" level="info"/>
-	<logger name="cz.muni.ics.oidc.filters.ProxyStatisticsFilter" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunConnectorLdap" level="info"/>
-	<logger name="cz.muni.ics.oidc.PerunConnectorRpc" level="info"/>
-	<logger name="cz.muni.ics.oidc.controllers.PerunOAuthConfirmationController" level="info"/>
+	<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+	<logger name="cz.muni.ics.oidc" level="${log.level}"/>
 
 
 </configuration>
