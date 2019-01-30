@@ -66,21 +66,16 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 	private static final String REQ_PATTERN = "/authorize";
 	private RequestMatcher requestMatcher = new AntPathRequestMatcher(REQ_PATTERN);
 
-	private String identityProvidersTableName;
+	private String statisticsTableName;
 	private String identityProvidersMapTableName;
-	private String serviceProvidersTableName;
 	private String serviceProvidersMapTableName;
 
-	public void setIdentityProvidersTableName(String identityProvidersTableName) {
-		this.identityProvidersTableName = identityProvidersTableName;
+	public void setStatisticsTableName(String statisticsTableName) {
+		this.statisticsTableName = statisticsTableName;
 	}
 
 	public void setIdentityProvidersMapTableName(String identityProvidersMapTableName) {
 		this.identityProvidersMapTableName = identityProvidersMapTableName;
-	}
-
-	public void setServiceProvidersTableName(String serviceProvidersTableName) {
-		this.serviceProvidersTableName = serviceProvidersTableName;
 	}
 
 	public void setServiceProvidersMapTableName(String serviceProvidersMapTableName) {
@@ -159,24 +154,17 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName) {
 		LocalDate date = LocalDate.now();
 
-		String queryIdp = "INSERT INTO " + identityProvidersTableName + "(year, month, day, sourceIdp, count) VALUES(?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
+		String queryStatistics = "INSERT INTO " + statisticsTableName + "(year, month, day, sourceIdp, service, count) VALUES(?,?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
 		String queryIdPMap = "INSERT INTO " + identityProvidersMapTableName + "(entityId, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
-		String queryService = "INSERT INTO " + serviceProvidersTableName + "(year, month, day, service, count) VALUES(?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
 		String queryServiceMap = "INSERT INTO " + serviceProvidersMapTableName + "(identifier, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
 
 		try (Connection c = mitreIdStats.getConnection()) {
-			try (PreparedStatement preparedStatement = c.prepareStatement(queryIdp)) {
+			try (PreparedStatement preparedStatement = c.prepareStatement(queryStatistics)) {
 				preparedStatement.setInt(1, date.getYear());
 				preparedStatement.setInt(2, date.getMonthValue());
 				preparedStatement.setInt(3, date.getDayOfMonth());
 				preparedStatement.setString(4, idpEntityId);
-				preparedStatement.execute();
-			}
-			try (PreparedStatement preparedStatement = c.prepareStatement(queryService)) {
-				preparedStatement.setInt(1, date.getYear());
-				preparedStatement.setInt(2, date.getMonthValue());
-				preparedStatement.setInt(3, date.getDayOfMonth());
-				preparedStatement.setString(4, spIdentifier);
+				preparedStatement.setString(5, spIdentifier);
 				preparedStatement.execute();
 			}
 			if (!Strings.isNullOrEmpty(idpName)) {
