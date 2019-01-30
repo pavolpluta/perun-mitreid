@@ -29,6 +29,7 @@
 				<filtering>true</filtering>
 				<includes>
 					<include>logback.xml</include>
+					<include>**/*</include>
 				</includes>
 			</resource>
 		</resources>
