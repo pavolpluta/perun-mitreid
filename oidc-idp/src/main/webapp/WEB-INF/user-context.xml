@@ -38,9 +38,8 @@
 				<prop key="stats.jdbc.url">jdbc:mariadb://localhost:3306/STATS</prop>
 				<prop key="stats.jdbc.user">user</prop>
 				<prop key="stats.jdbc.password">password</prop>
-				<prop key="stats.tableName.identityProviders">identityProviders</prop>
+				<prop key="stats.tableName.statistics">statistics</prop>
 				<prop key="stats.tableName.identityProvidersMap">identityProvidersMap</prop>
-				<prop key="stats.tableName.serviceProviders">serviceProviders</prop>
 				<prop key="stats.tableName.serviceProvidersMap">serviceProvidersMap</prop>
 				<prop key="stats.idp.name.attribute">sourceIdPName</prop>
 				<prop key="stats.idp.entityID.attribute">sourceIdPEntityID</prop>
@@ -174,9 +173,8 @@
 
 	<!-- Save statistics about logins -->
 	<bean id="proxyStatisticsFilter" class="cz.muni.ics.oidc.filters.ProxyStatisticsFilter">
-		<property name="identityProvidersTableName" value="${stats.tableName.identityProviders}"/>
+		<property name="statisticsTableName" value="${stats.tableName.statistics}"/>
 		<property name="identityProvidersMapTableName" value="${stats.tableName.identityProvidersMap}"/>
-		<property name="serviceProvidersTableName" value="${stats.tableName.serviceProviders}"/>
 		<property name="serviceProvidersMapTableName" value="${stats.tableName.serviceProvidersMap}"/>
 		<property name="idpNameAttributeName" value="${stats.idp.name.attribute}"/>
 		<property name="idpEntityIdAttributeName" value="${stats.idp.entityID.attribute}"/>
