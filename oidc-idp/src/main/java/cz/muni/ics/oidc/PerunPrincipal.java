@@ -8,7 +8,7 @@ public class PerunPrincipal {
 	private String extLogin;
 	private String extSourceName;
 
-	PerunPrincipal(String extLogin, String extSourceName) {
+	public PerunPrincipal(String extLogin, String extSourceName) {
 		this.extLogin = extLogin;
 		this.extSourceName = extSourceName;
 	}

@@ -2,10 +2,13 @@ package cz.muni.ics.oidc;
 
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
+import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
+import cz.muni.ics.oidc.models.Vo;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Connects to Perun and obtains information.
@@ -49,20 +52,33 @@ public interface PerunConnector {
 	boolean isMembershipCheckEnabledOnFacility(Facility facility);
 
 	/**
-	 * Decide whether the user is allowed to access the facility.
-	 *
+	 * Perform check if user can access based on his/her membership in groups assigned to facility resources
 	 * @param facility facility to be accessed
-	 * @param userId   id of user to check
-	 * @return true if the user is member of any group assigned to a resource on the facility
+	 * @param userId id of user to check
+	 * @return true if user can access, false otherwise
 	 */
-	boolean isUserAllowedOnFacility(Facility facility, Long userId);
+	boolean canUserAccessBasedOnMembership(Facility facility, Long userId);
 
 	/**
-	 * Provides a list of groups which connect the user to the facility.
-	 *
-	 * @param facility acility to be accessed
-	 * @param userId   id of user to check
-	 * @return list of all groups such that the user is member of the group and the group is assigned to a resource of the facility
+	 * Get list of groups where user can register to gain access to the service
+	 * @param facility facility the user tries to access
+	 * @param userId id of user
+	 * @return List of groups where user can register or empty list
 	 */
-	Set<Group> getUserGroupsAllowedOnFacility(Facility facility, Long userId);
+	Map<Vo, List<Group>> getGroupsForRegistration(Facility facility, Long userId, List<String> voShortNames);
+
+	/**
+	 * Decide if there is a group where user can register
+	 * @param facility facility being accessed
+	 * @return true if at least one group with registration form exists
+	 */
+	boolean groupWhereCanRegisterExists(Facility facility);
+
+	/**
+	 * Get facility attributes
+	 * @param facility facility having requested attributes
+	 * @param attributes attributes to be fetched
+	 * @return Map in format attribute URN, attribute
+	 */
+	Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributes);
 }

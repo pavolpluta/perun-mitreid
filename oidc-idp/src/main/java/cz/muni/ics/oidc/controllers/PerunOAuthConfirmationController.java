@@ -4,12 +4,9 @@ package cz.muni.ics.oidc.controllers;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import cz.muni.ics.oidc.PerunConnector;
-import cz.muni.ics.oidc.PerunOidcConfig;
 import cz.muni.ics.oidc.PerunScopeClaimTranslationService;
 import cz.muni.ics.oidc.PerunUserInfo;
-import cz.muni.ics.oidc.exceptions.LanguageFileException;
-import cz.muni.ics.oidc.models.Facility;
+import cz.muni.ics.oidc.configurations.PerunOidcConfig;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.model.SystemScope;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
@@ -30,14 +27,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -46,9 +41,7 @@ import java.util.Set;
  *
  * @author Dominik František Bučík bucik@ics.muni.cz
  * @author Peter Jancus jancus@ics.muni.cz
- *
  */
-
 @Controller
 @SessionAttributes("authorizationRequest")
 public class PerunOAuthConfirmationController{
@@ -65,9 +58,6 @@ public class PerunOAuthConfirmationController{
     private UserInfoService userInfoService;
 
     @Autowired
-    private PerunConnector perunConnector;
-
-    @Autowired
     private PerunOidcConfig perunOidcConfig;
 
     @Autowired
@@ -76,14 +66,9 @@ public class PerunOAuthConfirmationController{
     @Autowired
     private PerunScopeClaimTranslationService scopeClaimTranslationService;
 
-    @Autowired
-    public PerunOAuthConfirmationController() {
-        super();
-    }
-
     @RequestMapping(value = "/oauth/confirm_access", params = { "client_id" })
-    public String confirmAccess(Map<String, Object> model, HttpServletRequest req, @ModelAttribute("authorizationRequest") AuthorizationRequest authRequest,
-                                Principal p) {
+    public String confirmAccess(Map<String, Object> model, HttpServletRequest req, Principal p,
+                                @ModelAttribute("authorizationRequest") AuthorizationRequest authRequest) {
         ClientDetailsEntity client;
 
         try {
@@ -112,14 +97,8 @@ public class PerunOAuthConfirmationController{
 
         //prepare scopes in our way
         PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsername(p.getName());
-        setLanguageForPage(model, req);
+        ControllerUtils.setLanguageForPage(model, req, perunOidcConfig.getTheme());
         setScopesAndClaims(model, authRequest, user);
-
-        if (!isUserInApprovedGroups(authRequest.getClientId(), user.getId())) {
-            model.put("title", "Unapproved access");
-            model.put("page", "unapproved");
-            return "unapproved";
-        }
 
         if (result.equals("approve") && perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
             return "approve";
@@ -174,51 +153,5 @@ public class PerunOAuthConfirmationController{
 
         model.put("claims", claimsForScopes);
     }
-
-    private void setLanguageForPage(Map<String, Object> model, HttpServletRequest req) {
-        String langFile = "en.properties";
-        model.put("lang", "en");
-        log.trace("Resolving URL for possible language bar");
-        model.put("reqURL", req.getRequestURL().toString() + '?' + req.getQueryString());
-        if (perunOidcConfig.getTheme().equalsIgnoreCase("CESNET")) {
-            log.trace("Resolving Language for CESNET ");
-            if (req.getParameter("lang") != null && req.getParameter("lang").equalsIgnoreCase("CS")) {
-                langFile = "cs.properties";
-                model.put("lang", "cs");
-            }
-        }
-
-        Properties langProperties = new Properties();
-        try {
-            log.trace("Loading properties file containing messages - filename: {}", langFile);
-            langProperties.load(PerunOAuthConfirmationController.class.getResourceAsStream(langFile));
-        } catch (IOException e) {
-            log.error("Cannot load properties file '{}' with messages", langFile);
-            throw new LanguageFileException("Cannot load file: " + langFile);
-        }
-
-        model.put("langProps", langProperties);
-    }
-
-    private boolean isUserInApprovedGroups(String clientId, Long userId) throws IllegalArgumentException {
-
-        if (clientId == null || userId == null) {
-            log.error("isUserInApprovedGroups wrong parameters clientId({}), userId({})", clientId, userId);
-            throw new IllegalArgumentException("isUserInApprovedGroups wrong parameters");
-        }
-
-        Facility facility = perunConnector.getFacilityByClientId(clientId);
-        if (facility == null) {
-            //if no facilities are defined for the OIDC client in Perun, no check is performed
-            log.info("Facility with OIDCClientID({}) was not found", clientId);
-            return true;
-        } else {
-            //if membership check is enabled, check whether the user is allowed to access the facility
-            return !perunConnector.isMembershipCheckEnabledOnFacility(facility) ||
-                    perunConnector.isUserAllowedOnFacility(facility, userId);
-        }
-
-    }
-
 
 }

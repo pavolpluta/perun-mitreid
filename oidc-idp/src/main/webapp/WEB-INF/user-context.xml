@@ -47,6 +47,12 @@
 				<prop key="admins">3197,59835</prop>
 				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.PerunTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
 				<prop key="web.theme">default</prop>
+				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
+				<prop key="facility.attrs.checkGroupMembership">urn:perun:facility:attribute-def:def:OIDCCheckGroupMembership</prop>
+				<prop key="facility.attrs.allowRegistration">urn:perun:facility:attribute-def:def:allowRegistration</prop>
+				<prop key="facility.attrs.registrationURL">urn:perun:facility:attribute-def:def:registrationURL</prop>
+				<prop key="facility.attrs.dynamicRegistration">urn:perun:facility:attribute-def:def:dynamicRegistration</prop>
+				<prop key="facility.attrs.voShortNames">urn:perun:facility:attribute-def:virt:voShortNames</prop>
 				<!-- for LDAP
 				<prop key="attribute.openid.sub">login;x-ns-einfraid-persistent-shadow</prop>
 				<prop key="attribute.profile.preferred_username">login;x-ns-einfra</prop>
@@ -78,7 +84,6 @@
 				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
 				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
 				<prop key="attribute.oidc.clientid">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
-				<prop key="attribute.oidc.checkMembership">urn:perun:facility:attribute-def:def:OIDCCheckGroupMembership</prop>
 				<prop key="custom.claims">organization,eppns</prop>
 				<prop key="custom.claim.organization.scope">organization</prop>
 				<prop key="custom.claim.organization.attribute">urn:perun:user:attribute-def:def:organization</prop>
@@ -126,12 +131,21 @@
 		<constructor-arg name="translator" ref="scopeClaimTranslator"/>
 	</bean>
 
-	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.PerunOidcConfig">
+	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.configurations.PerunOidcConfig">
 		<property name="rpcUrl" value="${perun.rpc.url}"/>
 		<property name="configBean" ref="configBean"/>
 		<property name="jwk" value="${jwk}"/>
 		<property name="jdbcUrl" value="${jdbc.url}"/>
 		<property name="theme" value="${web.theme}"/>
+		<property name="registrarUrl" value="${registrar.url}"/>
+	</bean>
+
+	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.configurations.FacilityAttrsConfig">
+		<property name="checkGroupMembershipAttr" value="${facility.attrs.checkGroupMembership}" />
+		<property name="allowRegistrationAttr" value="${facility.attrs.allowRegistration}" />
+		<property name="registrationURLAttr" value="${facility.attrs.registrationURL}" />
+		<property name="dynamicRegistrationAttr" value="${facility.attrs.dynamicRegistration}" />
+		<property name="voShortNamesAttr" value="${facility.attrs.voShortNames}" />
 	</bean>
 	<!-- authentication -->
 
@@ -141,7 +155,8 @@
 		<security:intercept-url pattern="/authorize" access="hasRole('ROLE_USER')"/>
 		<security:intercept-url pattern="/**" access="permitAll"/>
 		<security:custom-filter ref="perunAuthenticationFilter" before="PRE_AUTH_FILTER"/>
-		<security:custom-filter ref="proxyStatisticsFilter" before="BASIC_AUTH_FILTER"/>
+		<security:custom-filter ref="perunAuthorizationFilter" before="BASIC_AUTH_FILTER"/>
+		<security:custom-filter ref="proxyStatisticsFilter" after="BASIC_AUTH_FILTER"/>
 	</security:http>
 
 	<security:authentication-manager id="authenticationManager">
@@ -180,6 +195,8 @@
 		<property name="idpEntityIdAttributeName" value="${stats.idp.entityID.attribute}"/>
 	</bean>
 
+	<bean id="perunAuthorizationFilter" class="cz.muni.ics.oidc.filters.PerunAuthorizationFilter" />
+
 	<!-- decides who is admin -->
 	<bean id="userDetailsService" class="cz.muni.ics.oidc.PerunAuthenticationUserDetailsService">
 		<property name="perunConnector" ref="perunConnector"/>
@@ -192,7 +209,7 @@
 		<property name="perunUser" value="${perun.rpc.user}"/>
 		<property name="perunPassword" value="${perun.rpc.password}"/>
 		<property name="oidcClientIdAttr" value="${attribute.oidc.clientid}" />
-		<property name="oidcCheckMembershipAttr" value="${attribute.oidc.checkMembership}"/>
+		<property name="oidcCheckMembershipAttr" value="${facility.attrs.checkGroupMembership}"/>
 	</bean>
 
 	<!--

@@ -100,7 +100,7 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 			return;
 		}
 		AuthorizationRequest authRequest = authRequestFactory.createAuthorizationRequest(
-				createRequestMap(request.getParameterMap()));
+				FiltersUtils.createRequestMap(request.getParameterMap()));
 
 		ClientDetailsEntity client;
 		if (Strings.isNullOrEmpty(authRequest.getClientId())) {
@@ -136,18 +136,6 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 		insertLogin(idpEntityId, idpName, clientIdentifier, clientName);
 
 		chain.doFilter(req, res);
-	}
-
-	private Map<String, String> createRequestMap(Map<String, String[]> parameterMap) {
-		Map<String, String> requestMap = new HashMap<>();
-		for (String key : parameterMap.keySet()) {
-			String[] val = parameterMap.get(key);
-			if (val != null && val.length > 0) {
-				requestMap.put(key, val[0]); // add the first value only (which is what Spring seems to do)
-			}
-		}
-
-		return requestMap;
 	}
 
 	@SuppressWarnings("Duplicates")

@@ -1,4 +1,4 @@
-package cz.muni.ics.oidc;
+package cz.muni.ics.oidc.configurations;
 
 import org.mitre.openid.connect.config.ConfigurationPropertiesBean;
 import org.slf4j.Logger;
@@ -27,6 +27,7 @@ public class PerunOidcConfig {
 	private String jwk;
 	private String jdbcUrl;
 	private String theme;
+	private String registrarUrl;
 
 	@Autowired
 	private ServletContext servletContext;
@@ -56,6 +57,14 @@ public class PerunOidcConfig {
 
 	public String getTheme() {
 		return theme;
+	}
+
+	public String getRegistrarUrl() {
+		return registrarUrl;
+	}
+
+	public void setRegistrarUrl(String registrarUrl) {
+		this.registrarUrl = registrarUrl;
 	}
 
 	private String perunOIDCVersion;
@@ -96,6 +105,7 @@ public class PerunOidcConfig {
 		log.info("JDBC URL: {}", jdbcUrl);
 		log.info("LDAP: ldaps://{}/{}",coreProperties.getProperty("ldap.host"),coreProperties.getProperty("ldap.baseDN"));
 		log.info("THEME: {}", theme);
+		log.info("Registrar URL: {}", registrarUrl);
 		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 		log.info("MitreID version: {}", getMitreidVersion());
 		log.info("Perun OIDC version: {}", getPerunOIDCVersion());

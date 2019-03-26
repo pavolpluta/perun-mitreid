@@ -5,9 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Member;
+import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
-import cz.muni.ics.oidc.models.Resource;
 import cz.muni.ics.oidc.models.RichUser;
+import cz.muni.ics.oidc.models.Vo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -25,7 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Connects to Perun. Should be using LDAP, but for now  RPC calls would do
@@ -99,62 +100,6 @@ public class PerunConnectorRpc implements PerunConnector {
 		return facility;
 	}
 
-	private List<Resource> getAssignedResourcesForFacility(Facility facility) {
-		Map<String, Object> map = new LinkedHashMap<>();
-		map.put("facility", facility.getId());
-		ArrayList<Resource> resources = new ArrayList<>();
-		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getAssignedResources", map);
-		for (int i = 0; i < jsonNode.size(); i++) {
-			resources.add(Mapper.mapResource(jsonNode.get(i)));
-		}
-		log.trace("getAssignedResourcesForFacility({}) returns {}", facility, resources);
-		return resources;
-	}
-
-	private List<Group> getAssignedGroups(Resource resource, Member member) {
-		Map<String, Object> map = new LinkedHashMap<>();
-		map.put("resource", resource.getId());
-		map.put("member", member.getId());
-		ArrayList<Group> groups = new ArrayList<>();
-		JsonNode jsonNode = makeRpcCall("/resourcesManager/getAssignedGroups", map);
-		for (int i = 0; i < jsonNode.size(); i++) {
-			groups.add(Mapper.mapGroup(jsonNode.get(i)));
-		}
-		//add vo short names
-		Set<Long> voIds = new HashSet<>();
-		for (Group group : groups) {
-			voIds.add(group.getVoId());
-		}
-		Map<Long, String> voId2shortName = new HashMap<>();
-		for (Long voId : voIds) {
-			Map<String, Object> m = new LinkedHashMap<>();
-			m.put("id", voId);
-			JsonNode r = makeRpcCall("/vosManager/getVoById", m);
-			voId2shortName.put(voId, r.path("shortName").asText());
-		}
-		for (Group group : groups) {
-			group.setUniqueGroupName(voId2shortName.get(group.getVoId()) + ":" + group.getName());
-		}
-		log.trace("getAssignedGroups(resource={},member={}) returns {}", resource, member, groups);
-		return groups;
-	}
-
-	private List<Member> getValidMembersByUser(Long userId) {
-		Map<String, Object> map = new LinkedHashMap<>();
-		map.put("user", userId);
-
-		ArrayList<Member> members = new ArrayList<>();
-		JsonNode jsonNode = makeRpcCall("/membersManager/getMembersByUser", map);
-		for (int i = 0; i < jsonNode.size(); i++) {
-			Member member = Mapper.mapMember(jsonNode.get(i));
-			if ("VALID".equals(member.getStatus())) {
-				members.add(member);
-			}
-		}
-		log.trace("getMembersByUser({}) returns {}", userId, members);
-		return members;
-	}
-
 	@Override
 	public boolean isMembershipCheckEnabledOnFacility(Facility facility) {
 		Map<String, Object> map = new LinkedHashMap<>();
@@ -166,47 +111,169 @@ public class PerunConnectorRpc implements PerunConnector {
 		return result;
 	}
 
-	/**
-	 * Decide whether the user is in any group assigned to the facility.
-	 *
-	 * @param facility facility to be accessed
-	 * @param userId   id of user to check
-	 * @return true if the user is member of any group assigned to a resource of the facility
-	 */
 	@Override
-	public boolean isUserAllowedOnFacility(Facility facility, Long userId) {
-		Map<String, Object> map = new LinkedHashMap<>();
-		map.put("facility", facility.getId());
-		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getAllowedUsers", map);
-		for (int i = 0; i < jsonNode.size(); i++) {
-			JsonNode userJson = jsonNode.get(i);
-			if (userId == userJson.get("id").asLong()) {
-				return true;
+	public boolean canUserAccessBasedOnMembership(Facility facility, Long userId) {
+		List<Group> activeGroups = getGroupsWhereUserIsActive(facility, userId);
+
+		return (activeGroups != null && !activeGroups.isEmpty());
+	}
+
+	@Override
+	public boolean groupWhereCanRegisterExists(Facility facility) {
+		List<Group> allowedGroups = getAllowedGroups(facility);
+
+		if (allowedGroups != null && !allowedGroups.isEmpty()) {
+			for (Group group: allowedGroups) {
+				if (getApplicationForm(group)) {
+					return true;
+				}
 			}
 		}
+
 		return false;
 	}
 
-	/**
-	 * Provides a list of groups which connect the user to the facility.
-	 *
-	 * @param facility acility to be accessed
-	 * @param userId   id of user to check
-	 * @return collection of all groups such that the user is member of the group and the group is assigned to a resource of the facility
-	 */
 	@Override
-	public Set<Group> getUserGroupsAllowedOnFacility(Facility facility, Long userId) {
-		List<Resource> assignedResourcesForFacility = getAssignedResourcesForFacility(facility);
-		List<Member> membersByUser = getValidMembersByUser(userId);
-		Set<Group> groups = new HashSet<>();
-		for (Member member : membersByUser) {
-			for (Resource resource : assignedResourcesForFacility) {
-				if (!resource.getVoId().equals(member.getVoId())) continue;
-				groups.addAll(getAssignedGroups(resource, member));
+	public Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributes) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facility.getId());
+		map.put("attrNames", attributes);
+		JsonNode res = makeRpcCall("/attributesManager/getAttributes", map);
+
+		Map<String, PerunAttribute> attrs = Mapper.mapAttributes(res);
+		log.trace("getFacilityAttributes returns: {}", attrs);
+		return attrs;
+	}
+
+	@Override
+	public Map<Vo, List<Group>> getGroupsForRegistration(Facility facility, Long userId, List<String> voShortNames) {
+		List<Vo> vos = getVosByShortNames(voShortNames);
+		Map<Long, Vo> vosMap = convertVoListToMap(vos);
+		List<Member> userMembers = getMembersByUser(userId);
+		userMembers = new ArrayList<>(new HashSet<>(userMembers));
+
+		List<Member> validAndExpiredMembers = userMembers.stream()
+				.filter(member -> ("VALID".equalsIgnoreCase(member.getStatus()) || "EXPIRED".equalsIgnoreCase(member.getStatus())))
+				.collect(Collectors.toList());
+		Map<Long, Vo> vosForRegistration = new HashMap<>();
+		for(Member m: validAndExpiredMembers) {
+			if (vosMap.containsKey(m.getVoId())) {
+				vosForRegistration.put(m.getVoId(), vosMap.get(m.getVoId()));
 			}
 		}
-		log.trace("getUserGroupsAllowedOnFacility(facility={},userId={}) returns {}", facility, userId, groups);
-		return groups;
+
+		List<Group> allowedGroups = getAllowedGroups(facility);
+		List<Group> groupsWithForms = allowedGroups.stream()
+				.filter(this::getApplicationForm)
+				.collect(Collectors.toList());
+		List<Group> groupsForRegistration = groupsWithForms.stream()
+				.filter(group -> vosForRegistration.containsKey(group.getVoId()))
+				.collect(Collectors.toList());
+		Map<Vo, List<Group>> result = new HashMap<>();
+		for (Group group: groupsForRegistration) {
+			Vo vo = vosForRegistration.get(group.getVoId());
+			if (! result.containsKey(vo)) {
+				result.put(vo, new ArrayList<>());
+			}
+			List<Group> list = result.get(vo);
+			list.add(group);
+		}
+
+		return result;
+	}
+
+	private List<Member> getMembersByUser(Long userId) {
+		Map<String, Object> params = new LinkedHashMap<>();
+		params.put("user", userId);
+		JsonNode jsonNode = makeRpcCall("/membersManager/getMembersByUser", params);
+
+		List<Member> userMembers = Mapper.mapMembers(jsonNode);
+		log.trace("getMembersByUser returns: {}", userMembers);
+		return userMembers;
+	}
+
+	private Map<Long, Vo> convertVoListToMap(List<Vo> vos) {
+		Map<Long, Vo> map = new HashMap<>();
+		for (Vo vo: vos) {
+			map.put(vo.getId(), vo);
+		}
+
+		return map;
+	}
+
+	private List<Vo> getVosByShortNames(List<String> voShortNames) {
+		List<Vo> vos = new ArrayList<>();
+		for (String shortName: voShortNames) {
+			Vo vo = getVoByShortName(shortName);
+			vos.add(vo);
+		}
+
+		log.trace("getVosByShortNames returns: {}", vos);
+		return vos;
+	}
+
+	private Vo getVoByShortName(String shortName) {
+		Map<String, Object> params = new LinkedHashMap<>();
+		params.put("shortName", shortName);
+		JsonNode jsonNode = makeRpcCall("/vosManager/getVoByShortName", params);
+
+		Vo vo = Mapper.mapVo(jsonNode);
+		log.trace("getVoByShortName returns: {}", vo);
+		return vo;
+	}
+
+	private List<Group> getAllowedGroups(Facility facility) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facility.getId());
+		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getAllowedGroups", map);
+		List<Group> result = new ArrayList<>();
+		for (int i = 0; i < jsonNode.size(); i++) {
+			JsonNode groupNode = jsonNode.get(i);
+			result.add(Mapper.mapGroup(groupNode));
+		}
+
+		return result;
+	}
+
+	private boolean getApplicationForm(Group group) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("group", group.getId());
+		try {
+			if (group.getName().equalsIgnoreCase("members")) {
+				return getApplicationForm(group.getVoId());
+			} else {
+				makeRpcCall("/registrarManager/getApplicationForm", map);
+			}
+		} catch (Exception e) {
+			// when group does not have form exception is thrown. Every error thus is supposed as group without form
+			// this method will be used after calling other RPC methods - if RPC is not available other methods should discover it first
+			return false;
+		}
+
+		return true;
+	}
+
+	private boolean getApplicationForm(Long voId) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("vo", voId);
+		try {
+			makeRpcCall("/registrarManager/getApplicationForm", map);
+		} catch (Exception e) {
+			// when vo does not have form exception is thrown. Every error thus is supposed as vo without form
+			// this method will be used after calling other RPC methods - if RPC is not available other methods should discover it first
+			return false;
+		}
+
+		return true;
+	}
+
+	private List<Group> getGroupsWhereUserIsActive(Facility facility, Long userId) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facility.getId());
+		map.put("user", userId);
+		JsonNode jsonNode = makeRpcCall("/usersManager/getGroupsWhereUserIsActive", map);
+
+		return Mapper.mapGroups(jsonNode);
 	}
 
 	private JsonNode makeRpcCall(String urlPart, Map<String, Object> map) {

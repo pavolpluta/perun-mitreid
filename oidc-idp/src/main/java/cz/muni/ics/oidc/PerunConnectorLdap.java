@@ -5,11 +5,12 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.TextNode;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
+import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
+import cz.muni.ics.oidc.models.Vo;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Attribute;
-import org.apache.directory.api.ldap.model.entry.Entry;
 import org.apache.directory.api.ldap.model.entry.Value;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.ldap.client.api.DefaultLdapConnectionFactory;
@@ -22,11 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.Map;
 
 import static org.apache.directory.ldap.client.api.search.FilterBuilder.and;
 import static org.apache.directory.ldap.client.api.search.FilterBuilder.equal;
@@ -162,69 +160,28 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	}
 
 	@Override
-	public boolean isUserAllowedOnFacility(Facility facility, Long userId) {
-		if (this.getUserGroupsAllowedOnFacility(facility, userId).isEmpty()) {
-			log.debug("groupCheckForFacility(facility={},user={}) - no group matches", facility.getId(), userId);
-			return false;
-		}
-		return true;
+	public boolean canUserAccessBasedOnMembership(Facility facility, Long userId) {
+		//TODO implement
+		boolean b = fallbackConnector.isMembershipCheckEnabledOnFacility(facility);
+		log.trace("isMembershipCheckEnabledOnFacility({}) returns {}", facility, b);
+		return b;
 	}
 
 	@Override
-	public Set<Group> getUserGroupsAllowedOnFacility(Facility facility, Long userId) {
-		Set<String> facilityGroupsDNs = getFacilityGroupsDNs(facility);
-		Set<String> userGroupsDNs = getUserGroupsDNs(userId);
-		Set<Group> groups = new HashSet<>();
-		for (String dn : facilityGroupsDNs) {
-			if (userGroupsDNs.contains(dn)) {
-				Group group = ldap.lookup(ldap.newDn(dn), new String[]{PERUN_GROUP_ID, PERUN_UNIQUE_GROUP_NAME, CN, DESCRIPTION}, e -> {
-					Attribute parentGid = e.get(PERUN_PARENT_GROUP_ID);
-					return new Group(
-							Long.parseLong(e.get(PERUN_GROUP_ID).getString()),
-							parentGid != null ? Long.parseLong(parentGid.get().getValue()) : null,
-							e.get(CN).getString(),
-							e.get(DESCRIPTION).getString(),
-							e.get(PERUN_UNIQUE_GROUP_NAME).getString()
-					);
-				});
-				log.trace("facility={},user={} - group {} matches", facility.getId(), userId, group);
-				groups.add(group);
-			}
-		}
-		return groups;
+	public Map<Vo, List<Group>> getGroupsForRegistration(Facility facility, Long userId, List<String> voShortNames) {
+		//TODO: implement
+		return fallbackConnector.getGroupsForRegistration(facility, userId, voShortNames);
 	}
 
-	/**
-	 * Gets DNs of all groups of a user.
-	 */
-	private Set<String> getUserGroupsDNs(Long userId) {
-		String userDN = PERUN_USER_ID + "=" + userId + ",ou=People," + baseDN;
-		return new HashSet<>(ldap.lookup(ldap.newDn(userDN), new String[]{MEMBER_OF}, e -> getAttributeValues(e, MEMBER_OF)));
+	@Override
+	public boolean groupWhereCanRegisterExists(Facility facility) {
+		//TODO: implement
+		 return fallbackConnector.groupWhereCanRegisterExists(facility);
 	}
 
-	/**
-	 * Gets DNs of all groups assigned to all resources of the facility.
-	 */
-	private Set<String> getFacilityGroupsDNs(Facility facility) {
-		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_RESOURCE), equal(PERUN_FACILITY_ID, Long.toString(facility.getId())));
-		Set<String> groupDNs = new HashSet<>();
-		ldap.search(ldap.newDn(baseDN), filter, SearchScope.SUBTREE,
-				new String[]{PERUN_VO_ID, ASSIGNED_GROUP_ID}, e ->
-				{
-					String voId = e.get(PERUN_VO_ID).getString();
-					for (String groupId : getAttributeValues(e, ASSIGNED_GROUP_ID)) {
-						groupDNs.add(PERUN_GROUP_ID + "=" + groupId + "," + PERUN_VO_ID + "=" + voId + "," + baseDN);
-					}
-					return null;
-				}
-		);
-		return groupDNs;
-	}
-
-	/**
-	 * Gets all String values of an attribute from a LDAP entry.
-	 */
-	private static List<String> getAttributeValues(Entry e, String attributeName) {
-		return StreamSupport.stream(e.get(attributeName).spliterator(), false).map(Value::getValue).collect(Collectors.toList());
+	@Override
+	public Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributes) {
+		//TODO: implement
+		return fallbackConnector.getFacilityAttributes(facility, attributes);
 	}
 }
