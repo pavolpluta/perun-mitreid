@@ -18,12 +18,7 @@
     </c:otherwise>
 </c:choose>
 <div id="content">
-    <style>
-        .error_message{
-            word-wrap: break-word;
-        }
-    </style>
-    <div class="error_message">
+    <div class="error_message" style="word-wrap: break-word;">
         <c:forEach var="contactIter" items="${client.contacts}" end="0">
             <c:set var="contact" value="${contactIter}" />
         </c:forEach>

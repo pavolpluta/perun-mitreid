@@ -13,16 +13,16 @@
             <div class="row">
                 <div class="col-md-4 logo">
                     <a href="http://www.cesnet.cz/">
-                        <img src="<c:out value='${baseUrl}'/>proxy/module.php/cesnet/res/img/logo-cesnet.png" style="width: 250px;">
+                        <img src="${baseUrl}proxy/module.php/cesnet/res/img/logo-cesnet.png" alt="CESNET logo" style="width: 250px;">
                     </a>
                     <a href="https://www.cerit-sc.cz">
-                        <img src="<c:out value='${baseUrl}'/>proxy/module.php/cesnet/res/img/logo-cerit.png">
+                        <img src="${baseUrl}proxy/module.php/cesnet/res/img/logo-cerit.png" alt="CERIT-SC Logo">
                     </a>
                 </div>
                 <div class="col-md-8">
                     <div class="row">
                         <div class="col col-sm-6">
-                            <h2><c:out value="${langProps['footer_other_projects']}"/></h2>
+                            <h2>${langProps['footer_other_projects']}</h2>
                             <ul>
                                 <li><a href="http://www.cesnet.cz/wp-content/uploads/2014/04/CzechLight-family_Posp%C3%ADchal.pdf">CzechLight</a></li>
                                 <li><a href="http://www.ultragrid.cz/en">UltraGrid</a></li>
@@ -33,7 +33,7 @@
                             </ul>
                         </div>
                         <div class="col col-sm-6">
-                            <h2><c:out value="${langProps['footer_helpdesk']}"/></h2>
+                            <h2>${langProps['footer_helpdesk']}</h2>
                             TEL: +420 224 352 994<br>
                             GSM: +420 602 252 531<br>
                             FAX: +420 224 313 211<br>

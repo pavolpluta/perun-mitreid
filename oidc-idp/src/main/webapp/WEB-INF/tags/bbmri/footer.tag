@@ -10,7 +10,7 @@
 <div id="footer">
     <div style="margin: 0px auto; max-width: 1000px;">
         <div style="float: left;">
-            <img src="<c:out value='${baseUrl}'/>proxy/module.php/bbmri/res/img/BBMRI-ERIC-gateway-for-health_216.png">
+            <img src="${baseUrl}proxy/module.php/bbmri/res/img/BBMRI-ERIC-gateway-for-health_216.png" alt="BBMRI-ERIC Logo">
         </div>
 
         <div style="float: left;">

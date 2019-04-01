@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Replaces (overlays) the same-name file from project org.mitre.openid-connect-server-webapp.
+ Replaces (overlays) the same-name file from project org.server.openid-connect-server-webapp.
 -->
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -45,7 +45,7 @@
 				<prop key="stats.idp.entityID.attribute">sourceIdPEntityID</prop>
 				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
 				<prop key="admins">3197,59835</prop>
-				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.PerunTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
+				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
 				<prop key="web.theme">default</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
 				<prop key="facility.attrs.checkGroupMembership">urn:perun:facility:attribute-def:def:OIDCCheckGroupMembership</prop>
@@ -104,7 +104,7 @@
 	</bean>
 
 	<!-- defines our own user data source -->
-	<bean id="userInfoRepository" primary="true" class="cz.muni.ics.oidc.PerunUserInfoRepository">
+	<bean id="userInfoRepository" primary="true" class="cz.muni.ics.oidc.server.PerunUserInfoRepository">
 		<property name="perunConnector" ref="perunConnector"/>
 		<property name="subAttribute" value="${attribute.openid.sub}"/>
 		<property name="preferredUsernameAttribute" value="${attribute.profile.preferred_username}"/>
@@ -122,16 +122,16 @@
 	</bean>
 
 	<!-- replaces default translation service with our own for custom scope with custom claims. -->
-	<bean id="scopeClaimTranslator" primary="true" class="cz.muni.ics.oidc.PerunScopeClaimTranslationService">
+	<bean id="scopeClaimTranslator" primary="true" class="cz.muni.ics.oidc.server.PerunScopeClaimTranslationService">
 		<property name="perunUserInfoRepository" ref="userInfoRepository"/>
 	</bean>
 
-	<bean id="introspectionResultAssembler" class="cz.muni.ics.oidc.PerunIntrospectionResultAssembler" primary="true">
+	<bean id="introspectionResultAssembler" class="cz.muni.ics.oidc.server.PerunIntrospectionResultAssembler" primary="true">
 		<constructor-arg name="configBean" ref="configBean"/>
 		<constructor-arg name="translator" ref="scopeClaimTranslator"/>
 	</bean>
 
-	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.configurations.PerunOidcConfig">
+	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.server.configurations.PerunOidcConfig">
 		<property name="rpcUrl" value="${perun.rpc.url}"/>
 		<property name="configBean" ref="configBean"/>
 		<property name="jwk" value="${jwk}"/>
@@ -140,7 +140,7 @@
 		<property name="registrarUrl" value="${registrar.url}"/>
 	</bean>
 
-	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.configurations.FacilityAttrsConfig">
+	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig">
 		<property name="checkGroupMembershipAttr" value="${facility.attrs.checkGroupMembership}" />
 		<property name="allowRegistrationAttr" value="${facility.attrs.allowRegistration}" />
 		<property name="registrationURLAttr" value="${facility.attrs.registrationURL}" />
@@ -170,24 +170,24 @@
 	</bean>
 
 
-	<bean id="perunTimeStamper" class="cz.muni.ics.oidc.PerunAuthenticationSuccessHandler">
+	<bean id="perunTimeStamper" class="cz.muni.ics.oidc.server.PerunAuthenticationSuccessHandler">
 	</bean>
 
     <bean id="accessTokenClaimsModifier" class="${accessTokenClaimsModifier}">
 
     </bean>
-	<bean id="tokenEnhancer" class="cz.muni.ics.oidc.PerunTokenEnhancer" primary="true">
+	<bean id="tokenEnhancer" class="cz.muni.ics.oidc.server.PerunTokenEnhancer" primary="true">
         <property name="accessTokenClaimsModifier" ref="accessTokenClaimsModifier"/>
 	</bean>
 
 	<!-- extracts user from HTTP request and looks it up in Perun-->
-	<bean id="perunAuthenticationFilter" class="cz.muni.ics.oidc.PerunAuthenticationFilter">
+	<bean id="perunAuthenticationFilter" class="cz.muni.ics.oidc.server.filters.PerunAuthenticationFilter">
 		<property name="authenticationManager" ref="authenticationManager"/>
 		<property name="authenticationSuccessHandler" ref="perunTimeStamper"/>
 	</bean>
 
 	<!-- Save statistics about logins -->
-	<bean id="proxyStatisticsFilter" class="cz.muni.ics.oidc.filters.ProxyStatisticsFilter">
+	<bean id="proxyStatisticsFilter" class="cz.muni.ics.oidc.server.filters.ProxyStatisticsFilter">
 		<property name="statisticsTableName" value="${stats.tableName.statistics}"/>
 		<property name="identityProvidersMapTableName" value="${stats.tableName.identityProvidersMap}"/>
 		<property name="serviceProvidersMapTableName" value="${stats.tableName.serviceProvidersMap}"/>
@@ -195,16 +195,16 @@
 		<property name="idpEntityIdAttributeName" value="${stats.idp.entityID.attribute}"/>
 	</bean>
 
-	<bean id="perunAuthorizationFilter" class="cz.muni.ics.oidc.filters.PerunAuthorizationFilter" />
+	<bean id="perunAuthorizationFilter" class="cz.muni.ics.oidc.server.filters.PerunAuthorizationFilter" />
 
 	<!-- decides who is admin -->
-	<bean id="userDetailsService" class="cz.muni.ics.oidc.PerunAuthenticationUserDetailsService">
+	<bean id="userDetailsService" class="cz.muni.ics.oidc.server.PerunAuthenticationUserDetailsService">
 		<property name="perunConnector" ref="perunConnector"/>
 		<property name="admins" value="#{'${admins}'.split('\s*,\s*')}"/>
 	</bean>
 
 	<!-- communicates with Perun -->
-	<bean id="perunConnector" class="cz.muni.ics.oidc.PerunConnectorRpc">
+	<bean id="perunConnector" class="cz.muni.ics.oidc.server.connectors.impl.PerunConnectorRpc">
 		<property name="perunUrl" value="${perun.rpc.url}"/>
 		<property name="perunUser" value="${perun.rpc.user}"/>
 		<property name="perunPassword" value="${perun.rpc.password}"/>
@@ -213,7 +213,7 @@
 	</bean>
 
 	<!--
-	<bean id="perunConnectorLdap" class="cz.muni.ics.oidc.PerunConnectorLdap">
+	<bean id="perunConnectorLdap" class="cz.muni.ics.oidc.serverr.connectors.impl.PerunConnectorLdap">
 		<constructor-arg name="ldapHost" value="${ldap.host}"/>
 		<constructor-arg name="ldapUser" value="${ldap.user}"/>
 		<constructor-arg name="ldapPassword" value="${ldap.password}"/>
