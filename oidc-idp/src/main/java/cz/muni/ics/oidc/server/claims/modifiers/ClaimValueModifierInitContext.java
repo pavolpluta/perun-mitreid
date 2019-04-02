@@ -1,4 +1,4 @@
-package cz.muni.ics.oidc.server.claims;
+package cz.muni.ics.oidc.server.claims.modifiers;
 
 import java.util.Properties;
 

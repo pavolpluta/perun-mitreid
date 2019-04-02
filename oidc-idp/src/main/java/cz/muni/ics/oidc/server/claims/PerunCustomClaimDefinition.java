@@ -1,5 +1,7 @@
 package cz.muni.ics.oidc.server.claims;
 
+import cz.muni.ics.oidc.server.claims.modifiers.ClaimValueModifier;
+
 /**
  * Keeps definition of a custom user claim.
  * <ul>

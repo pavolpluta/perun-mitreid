@@ -1,7 +1,7 @@
-package cz.muni.ics.oidc.server.claims;
+package cz.muni.ics.oidc.server.claims.modifiers;
 
 /**
- * Just appends a String.
+ * Appending modifier. Appends the given text to the claim value.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */

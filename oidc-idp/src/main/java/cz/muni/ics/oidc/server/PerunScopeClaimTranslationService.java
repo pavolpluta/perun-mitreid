@@ -13,7 +13,7 @@ import java.util.Set;
 /**
  * Translates scopes to claims. A single scope can provide access to multiple claims.
  * Set this as spring bean named "scopeClaimTranslator". This code is copied from class
- * org.server.openid.connect.service.impl.DefaultScopeClaimTranslationService
+ * org.mitre.openid.connect.service.impl.DefaultScopeClaimTranslationService
  * which for some reason is not accessible in this project, and extended.
  *
  * @author Martin Kuba makub@ics.muni.cz
@@ -64,7 +64,7 @@ public class PerunScopeClaimTranslationService implements ScopeClaimTranslationS
 	}
 
 	/* (non-Javadoc)
-	 * @see org.server.openid.connect.service.ScopeClaimTranslationService#getClaimsForScope(java.lang.String)
+	 * @see org.mitre.openid.connect.service.ScopeClaimTranslationService#getClaimsForScope(java.lang.String)
 	 */
 	@Override
 	public Set<String> getClaimsForScope(String scope) {
@@ -77,7 +77,7 @@ public class PerunScopeClaimTranslationService implements ScopeClaimTranslationS
 	}
 
 	/* (non-Javadoc)
-	 * @see org.server.openid.connect.service.ScopeClaimTranslationService#getClaimsForScopeSet(java.util.Set)
+	 * @see org.mitre.openid.connect.service.ScopeClaimTranslationService#getClaimsForScopeSet(java.util.Set)
 	 */
 	@Override
 	public Set<String> getClaimsForScopeSet(Set<String> scopes) {

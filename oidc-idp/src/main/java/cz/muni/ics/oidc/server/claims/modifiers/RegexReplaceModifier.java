@@ -1,9 +1,9 @@
-package cz.muni.ics.oidc.server.claims;
+package cz.muni.ics.oidc.server.claims.modifiers;
 
 import java.util.regex.Pattern;
 
 /**
- * Replaces parts matched by regex with string using backreferences to groups.
+ * Replace regex modifier. Replaces parts matched by regex with string using backreferences to groups.
  *
  * @see java.util.regex.Matcher#replaceAll(String)
  * @author Martin Kuba makub@ics.muni.cz

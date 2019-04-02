@@ -1,4 +1,4 @@
-package cz.muni.ics.oidc.server.claims;
+package cz.muni.ics.oidc.server.claims.modifiers;
 
 /**
  * Interface for all code that needs to modify claim values .

@@ -1,9 +1,9 @@
-package cz.muni.ics.oidc.server.claims;
+package cz.muni.ics.oidc.server.claims.modifiers;
 
 import com.google.common.net.UrlEscapers;
 
 /**
- * Converts groupName values to AARC format.
+ * GroupName to AARC Format modifier. Converts groupName values to AARC format.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */
