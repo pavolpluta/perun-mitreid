@@ -32,7 +32,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Connects to Perun. Should be using LDAP, but for now  RPC calls would do
+ * Connects to Perun via RPC.
  *
  * @author Martin Kuba makub@ics.muni.cz
  * @author Dominik František Bučík bucik@ics.muni.cz
@@ -45,7 +45,6 @@ public class PerunConnectorRpc implements PerunConnector {
 	private String perunUrl;
 	private String perunUser;
 	private String perunPassword;
-
 	private String oidcClientIdAttr;
 	private String oidcCheckMembershipAttr;
 
@@ -77,11 +76,13 @@ public class PerunConnectorRpc implements PerunConnector {
 	@Override
 	public PerunUser getPreauthenticatedUserId(PerunPrincipal perunPrincipal) {
 		log.trace("getPreauthenticatedUserId({})", perunPrincipal);
-		//make call
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("extLogin", perunPrincipal.getExtLogin());
 		map.put("extSourceName", perunPrincipal.getExtSourceName());
-		return Mapper.mapPerunUser(makeRpcCall("/usersManager/getUserByExtSourceNameAndExtLogin", map));
+
+		PerunUser res = Mapper.mapPerunUser(makeRpcCall("/usersManager/getUserByExtSourceNameAndExtLogin", map));
+		log.trace("getPreauthenticatedUserId({}) returns: {}", perunPrincipal, res);
+		return res;
 	}
 
 	@Override
@@ -89,7 +90,10 @@ public class PerunConnectorRpc implements PerunConnector {
 		log.trace("getUserAttributes({})", userId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("user", userId);
-		return Mapper.mapRichUser(makeRpcCall("/usersManager/getRichUserWithAttributes", map));
+
+		RichUser res = Mapper.mapRichUser(makeRpcCall("/usersManager/getRichUserWithAttributes", map));
+		log.trace("getUserAttributes({}) returns: {}", userId, res);
+		return res;
 	}
 
 	@Override
@@ -98,6 +102,7 @@ public class PerunConnectorRpc implements PerunConnector {
 		map.put("attributeName", oidcClientIdAttr);
 		map.put("attributeValue", clientId);
 		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getFacilitiesByAttribute", map);
+
 		Facility facility = (jsonNode.size() > 0) ? Mapper.mapFacility(jsonNode.get(0)) : null;
 		log.trace("getFacilitiesByClientId({}) returns {}", clientId, facility);
 		return facility;
@@ -105,10 +110,12 @@ public class PerunConnectorRpc implements PerunConnector {
 
 	@Override
 	public boolean isMembershipCheckEnabledOnFacility(Facility facility) {
+		log.trace("isMembershipCheckEnabledOnFacility({})", facility);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
 		map.put("attributeName", oidcCheckMembershipAttr);
 		JsonNode res = makeRpcCall("/attributesManager/getAttribute", map);
+
 		boolean result = res.get("value").asBoolean(false);
 		log.trace("isMembershipCheckEnabledOnFacility({}) returns {}", facility, result);
 		return result;
@@ -116,40 +123,17 @@ public class PerunConnectorRpc implements PerunConnector {
 
 	@Override
 	public boolean canUserAccessBasedOnMembership(Facility facility, Long userId) {
+		log.trace("canUserAccessBasedOnMembership({}, {})", facility, userId);
 		List<Group> activeGroups = getGroupsWhereUserIsActive(facility, userId);
 
-		return (activeGroups != null && !activeGroups.isEmpty());
-	}
-
-	@Override
-	public boolean groupWhereCanRegisterExists(Facility facility) {
-		List<Group> allowedGroups = getAllowedGroups(facility);
-
-		if (allowedGroups != null && !allowedGroups.isEmpty()) {
-			for (Group group: allowedGroups) {
-				if (getApplicationForm(group)) {
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	@Override
-	public Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributes) {
-		Map<String, Object> map = new LinkedHashMap<>();
-		map.put("facility", facility.getId());
-		map.put("attrNames", attributes);
-		JsonNode res = makeRpcCall("/attributesManager/getAttributes", map);
-
-		Map<String, PerunAttribute> attrs = Mapper.mapAttributes(res);
-		log.trace("getFacilityAttributes returns: {}", attrs);
-		return attrs;
+		boolean res = (activeGroups != null && !activeGroups.isEmpty());
+		log.trace("canUserAccessBasedOnMembership({}, {}) returns: {}", facility, userId, res);
+		return res;
 	}
 
 	@Override
 	public Map<Vo, List<Group>> getGroupsForRegistration(Facility facility, Long userId, List<String> voShortNames) {
+		log.trace("getGroupsForRegistration({}, {}, {})", facility, userId, voShortNames);
 		List<Vo> vos = getVosByShortNames(voShortNames);
 		Map<Long, Vo> vosMap = convertVoListToMap(vos);
 		List<Member> userMembers = getMembersByUser(userId);
@@ -182,50 +166,77 @@ public class PerunConnectorRpc implements PerunConnector {
 			list.add(group);
 		}
 
+		log.trace("getGroupsForRegistration({}, {}, {}) returns: {}", facility, userId, voShortNames, result);
 		return result;
 	}
 
+	@Override
+	public boolean groupWhereCanRegisterExists(Facility facility) {
+		log.trace("groupsWhereCanRegisterExists({})", facility);
+		List<Group> allowedGroups = getAllowedGroups(facility);
+
+		if (allowedGroups != null && !allowedGroups.isEmpty()) {
+			for (Group group: allowedGroups) {
+				if (getApplicationForm(group)) {
+					log.trace("groupsWhereCanRegisterExists({}) returns: true", facility);
+					return true;
+				}
+			}
+		}
+
+		log.trace("groupsWhereCanRegisterExists({}) returns: false", facility);
+		return false;
+	}
+
+	@Override
+	public Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributeNames) {
+		log.trace("getFacilityAttributes({}, {})", facility, attributeNames);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facility.getId());
+		map.put("attrNames", attributeNames);
+		JsonNode res = makeRpcCall("/attributesManager/getAttributes", map);
+
+		Map<String, PerunAttribute> attrs = Mapper.mapAttributes(res);
+		log.trace("getFacilityAttributes({}, {}) returns: {}", facility, attributeNames, attrs);
+		return attrs;
+	}
+
 	private List<Member> getMembersByUser(Long userId) {
+		log.trace("getMemberByUser({})", userId);
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("user", userId);
 		JsonNode jsonNode = makeRpcCall("/membersManager/getMembersByUser", params);
 
 		List<Member> userMembers = Mapper.mapMembers(jsonNode);
-		log.trace("getMembersByUser returns: {}", userMembers);
+		log.trace("getMembersByUser({}) returns: {}", userId, userMembers);
 		return userMembers;
 	}
 
-	private Map<Long, Vo> convertVoListToMap(List<Vo> vos) {
-		Map<Long, Vo> map = new HashMap<>();
-		for (Vo vo: vos) {
-			map.put(vo.getId(), vo);
-		}
-
-		return map;
-	}
-
 	private List<Vo> getVosByShortNames(List<String> voShortNames) {
+		log.trace("getVosByShortNames({})", voShortNames);
 		List<Vo> vos = new ArrayList<>();
 		for (String shortName: voShortNames) {
 			Vo vo = getVoByShortName(shortName);
 			vos.add(vo);
 		}
 
-		log.trace("getVosByShortNames returns: {}", vos);
+		log.trace("getVosByShortNames({}) returns: {}", voShortNames, vos);
 		return vos;
 	}
 
 	private Vo getVoByShortName(String shortName) {
+		log.trace("getVoByShortName({})", shortName);
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("shortName", shortName);
 		JsonNode jsonNode = makeRpcCall("/vosManager/getVoByShortName", params);
 
 		Vo vo = Mapper.mapVo(jsonNode);
-		log.trace("getVoByShortName returns: {}", vo);
+		log.trace("getVoByShortName({}) returns: {}", shortName, vo);
 		return vo;
 	}
 
 	private List<Group> getAllowedGroups(Facility facility) {
+		log.trace("getAllowedGroups({})", facility);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
 		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getAllowedGroups", map);
@@ -235,14 +246,17 @@ public class PerunConnectorRpc implements PerunConnector {
 			result.add(Mapper.mapGroup(groupNode));
 		}
 
+		log.trace("getAllowedGroups({}) returns: {}", facility, result);
 		return result;
 	}
 
 	private boolean getApplicationForm(Group group) {
+		log.trace("getApplicationForm({})", group);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("group", group.getId());
 		try {
 			if (group.getName().equalsIgnoreCase("members")) {
+				log.trace("getApplicationForm({}) continues to call regForm for VO {}", group, group.getVoId());
 				return getApplicationForm(group.getVoId());
 			} else {
 				makeRpcCall("/registrarManager/getApplicationForm", map);
@@ -250,13 +264,16 @@ public class PerunConnectorRpc implements PerunConnector {
 		} catch (Exception e) {
 			// when group does not have form exception is thrown. Every error thus is supposed as group without form
 			// this method will be used after calling other RPC methods - if RPC is not available other methods should discover it first
+			log.trace("getApplicationForm({}) returns: false", group);
 			return false;
 		}
 
+		log.trace("getApplicationForm({}) returns: true", group);
 		return true;
 	}
 
 	private boolean getApplicationForm(Long voId) {
+		log.trace("getApplicationForm({})", voId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("vo", voId);
 		try {
@@ -264,19 +281,33 @@ public class PerunConnectorRpc implements PerunConnector {
 		} catch (Exception e) {
 			// when vo does not have form exception is thrown. Every error thus is supposed as vo without form
 			// this method will be used after calling other RPC methods - if RPC is not available other methods should discover it first
+			log.trace("getApplicationForm({}) returns: false", voId);
 			return false;
 		}
 
+		log.trace("getApplicationForm({}) returns: true", voId);
 		return true;
 	}
 
 	private List<Group> getGroupsWhereUserIsActive(Facility facility, Long userId) {
+		log.trace("getGroupsWhereUserIsActive({}, {})", facility, userId);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
 		map.put("user", userId);
 		JsonNode jsonNode = makeRpcCall("/usersManager/getGroupsWhereUserIsActive", map);
 
-		return Mapper.mapGroups(jsonNode);
+		List<Group> res = Mapper.mapGroups(jsonNode);
+		log.trace("getGroupsWhereUserIsActive({}, {}) returns: {}", facility, userId, res);
+		return res;
+	}
+
+	private Map<Long, Vo> convertVoListToMap(List<Vo> vos) {
+		Map<Long, Vo> map = new HashMap<>();
+		for (Vo vo: vos) {
+			map.put(vo.getId(), vo);
+		}
+
+		return map;
 	}
 
 	private JsonNode makeRpcCall(String urlPart, Map<String, Object> map) {

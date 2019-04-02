@@ -62,6 +62,8 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	private final LdapConnectionPool pool;
 	private final LdapConnectionTemplate ldap;
 
+	private PerunConnector fallbackConnector;
+
 	public PerunConnectorLdap(String ldapHost, String ldapUser, String ldapPassword, long timeoutSecs, String baseDN) {
 		this.baseDN = baseDN;
 		LdapConnectionConfig config = new LdapConnectionConfig();
@@ -79,16 +81,20 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 		log.debug("initialized");
 	}
 
+	public void setFallbackConnector(PerunConnector fallbackConnector) {
+		this.fallbackConnector = fallbackConnector;
+	}
+
 	/**
 	 * Invoked by a BeanFactory on destruction of a Spring bean.
 	 */
 	@Override
 	public void destroy() {
+		log.trace("destroy()");
 		if (!pool.isClosed()) {
 			pool.close();
 		}
 	}
-
 
 	/**
 	 * Fetch user based on his principal (extLogin and extSource) from Perun
@@ -113,6 +119,7 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	 */
 	@Override
 	public RichUser getUserAttributes(Long userId) {
+		log.trace("getUserAttributes({})", userId);
 		RichUser richUser = ldap.lookup(ldap.newDn(PERUN_USER_ID + "=" + userId + ",ou=People," + baseDN), entry -> {
 			RichUser r = new RichUser(userId);
 			for (Attribute attr : entry) {
@@ -131,24 +138,21 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 			}
 			return r;
 		});
+
 		log.trace("getUserAttributes({}) returns {}", userId, richUser);
 		return richUser;
 	}
 
-	private PerunConnector fallbackConnector;
-
-	public void setFallbackConnector(PerunConnector fallbackConnector) {
-		this.fallbackConnector = fallbackConnector;
-	}
-
 	@Override
 	public Facility getFacilityByClientId(String clientId) {
+		log.trace("getFacilityByClientId({})", clientId);
 		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_RESOURCE), equal(OIDC_CLIENT_ID, clientId));
 		Facility facility = ldap.searchFirst(ldap.newDn(baseDN), filter, SearchScope.SUBTREE,
 				new String[]{PERUN_FACILITY_ID, DESCRIPTION, CN},
 				e -> new Facility(Long.parseLong(e.get(PERUN_FACILITY_ID).getString()),
 						e.get(CN).getString(),
 						e.get(DESCRIPTION).getString()));
+
 		log.trace("getFacilitiesByClientId({}) returns {}", clientId, facility);
 		return facility;
 	}
@@ -156,7 +160,9 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	@Override
 	public boolean isMembershipCheckEnabledOnFacility(Facility facility) {
 		//TODO cannot be read from LDAP yet, implement after changing LDAP
+		log.trace("isMembershipCheckEnabledOnFacility({})", facility);
 		boolean b = fallbackConnector.isMembershipCheckEnabledOnFacility(facility);
+
 		log.trace("isMembershipCheckEnabledOnFacility({}) returns {}", facility, b);
 		return b;
 	}
@@ -164,26 +170,40 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	@Override
 	public boolean canUserAccessBasedOnMembership(Facility facility, Long userId) {
 		//TODO implement
+		log.trace("canUserAccessBasedOnMembership({}, {})", facility, userId);
 		boolean b = fallbackConnector.isMembershipCheckEnabledOnFacility(facility);
-		log.trace("isMembershipCheckEnabledOnFacility({}) returns {}", facility, b);
+
+		log.trace("canUserAccessBasedOnMembership({}, {}) returns {}", facility, userId, b);
 		return b;
 	}
 
 	@Override
 	public Map<Vo, List<Group>> getGroupsForRegistration(Facility facility, Long userId, List<String> voShortNames) {
-		//TODO: implement
-		return fallbackConnector.getGroupsForRegistration(facility, userId, voShortNames);
+		//TODO: cannot be read from LDAP yet, implement after changing LDAP
+		log.trace("getGroupsForRegistration({}, {})", facility, userId);
+		Map<Vo, List<Group>> res = fallbackConnector.getGroupsForRegistration(facility, userId, voShortNames);
+
+		log.trace("getGroupsForRegistration({}, {}) returns {}", facility, userId, res);
+		return res;
 	}
 
 	@Override
 	public boolean groupWhereCanRegisterExists(Facility facility) {
-		//TODO: implement
-		 return fallbackConnector.groupWhereCanRegisterExists(facility);
+		//TODO: cannot be read from LDAP yet, implement after changing LDAP
+		log.trace("groupWhereCanRegisterExists({})", facility);
+		boolean res = fallbackConnector.groupWhereCanRegisterExists(facility);
+
+		log.trace("groupWhereCanRegisterExists({}) returns {}", facility, res);
+		return res;
 	}
 
 	@Override
-	public Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributes) {
-		//TODO: implement
-		return fallbackConnector.getFacilityAttributes(facility, attributes);
+	public Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributeNames) {
+		//TODO: cannot be read from LDAP yet, implement after changing LDAP
+		log.trace("getFacilityAttributes({}, {})", facility, attributeNames);
+		Map<String, PerunAttribute> attrs = fallbackConnector.getFacilityAttributes(facility, attributeNames);
+
+		log.trace("getFacilityAttributes({}, {}) returns {}", facility, attributeNames, attrs);
+		return attrs;
 	}
 }

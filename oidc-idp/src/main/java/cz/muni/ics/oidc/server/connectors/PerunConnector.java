@@ -13,6 +13,7 @@ import java.util.Map;
 
 /**
  * Connects to Perun and obtains information.
+ * Used for fetching necessary data about users, services etc.
  *
  * @author Martin Kuba makub@ics.muni.czc
  * @author Dominik František Bučík bucik@ics.muni.cz
@@ -37,7 +38,7 @@ public interface PerunConnector {
 	RichUser getUserAttributes(Long userId);
 
 	/**
-	 * Fetch facility registered in Perun for the given OIDC client.
+	 * Fetch facility registered in Perun for the given OIDC client_id.
 	 *
 	 * @param clientId value for attribute OIDCClientID
 	 * @return facility if it was found or null
@@ -53,7 +54,9 @@ public interface PerunConnector {
 	boolean isMembershipCheckEnabledOnFacility(Facility facility);
 
 	/**
-	 * Perform check if user can access based on his/her membership in groups assigned to facility resources
+	 * Perform check if user can access service based on his/her membership
+	 * in groups assigned to facility resources
+	 *
 	 * @param facility facility to be accessed
 	 * @param userId id of user to check
 	 * @return true if user can access, false otherwise
@@ -62,6 +65,7 @@ public interface PerunConnector {
 
 	/**
 	 * Get list of groups where user can register to gain access to the service
+	 *
 	 * @param facility facility the user tries to access
 	 * @param userId id of user
 	 * @return List of groups where user can register or empty list
@@ -70,16 +74,18 @@ public interface PerunConnector {
 
 	/**
 	 * Decide if there is a group where user can register
+	 *
 	 * @param facility facility being accessed
 	 * @return true if at least one group with registration form exists
 	 */
 	boolean groupWhereCanRegisterExists(Facility facility);
 
 	/**
-	 * Get facility attributes
+	 * Get specified attributes for facility.
+	 *
 	 * @param facility facility having requested attributes
-	 * @param attributes attributes to be fetched
+	 * @param attributeNames attributes to be fetched
 	 * @return Map in format attribute URN, attribute
 	 */
-	Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributes);
+	Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributeNames);
 }
