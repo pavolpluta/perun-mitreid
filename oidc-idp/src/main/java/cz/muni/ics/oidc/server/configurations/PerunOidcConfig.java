@@ -11,11 +11,11 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
+ * Configuration of OIDC server in context of Perun.
  * Logs some interesting facts.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */
-@SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 public class PerunOidcConfig {
 	private final static Logger log = LoggerFactory.getLogger(PerunOidcConfig.class);
 	private static final String OIDC_POM_FILE = "/META-INF/maven/cz.muni.ics/oidc-idp/pom.properties";
@@ -27,6 +27,8 @@ public class PerunOidcConfig {
 	private String jdbcUrl;
 	private String theme;
 	private String registrarUrl;
+	private String perunOIDCVersion;
+	private String mitreidVersion;
 
 	@Autowired
 	private ServletContext servletContext;
@@ -66,16 +68,12 @@ public class PerunOidcConfig {
 		this.registrarUrl = registrarUrl;
 	}
 
-	private String perunOIDCVersion;
-
 	public String getPerunOIDCVersion() {
 		if (perunOIDCVersion == null) {
 			perunOIDCVersion = readPomVersion(OIDC_POM_FILE);
 		}
 		return perunOIDCVersion;
 	}
-
-	private String mitreidVersion;
 
 	public String getMitreidVersion() {
 		if (mitreidVersion == null) {
@@ -102,13 +100,12 @@ public class PerunOidcConfig {
 		log.info("RPC URL: {}", rpcUrl);
 		log.info("JSON Web Keys: {}", jwk);
 		log.info("JDBC URL: {}", jdbcUrl);
-		log.info("LDAP: ldaps://{}/{}",coreProperties.getProperty("ldap.host"),coreProperties.getProperty("ldap.baseDN"));
+		log.info("LDAP: ldaps://{}/{}", coreProperties.getProperty("ldap.host"), coreProperties.getProperty("ldap.baseDN"));
 		log.info("THEME: {}", theme);
 		log.info("Registrar URL: {}", registrarUrl);
 		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 		log.info("MitreID version: {}", getMitreidVersion());
 		log.info("Perun OIDC version: {}", getPerunOIDCVersion());
 	}
-
 
 }

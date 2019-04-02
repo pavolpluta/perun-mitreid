@@ -2,8 +2,6 @@ package cz.muni.ics.oidc.server.connectors.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cz.muni.ics.oidc.server.PerunPrincipal;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Mapper;
@@ -12,6 +10,8 @@ import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
 import cz.muni.ics.oidc.models.Vo;
+import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;

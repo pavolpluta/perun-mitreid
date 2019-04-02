@@ -1,8 +1,8 @@
 package cz.muni.ics.oidc.server;
 
+import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.server.filters.PerunAuthenticationFilter;
-import cz.muni.ics.oidc.models.PerunUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Created with IntelliJ IDEA.
+ * Authentication user detail service. Specific for Perun.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */

@@ -1,12 +1,12 @@
 package cz.muni.ics.oidc.web.controllers;
 
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
-import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
-import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.Vo;
+import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.mitre.openid.connect.view.HttpCodeView;

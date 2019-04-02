@@ -1,21 +1,19 @@
 package cz.muni.ics.oidc.server.filters;
 
-import com.google.common.base.Strings;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
-import cz.muni.ics.oidc.server.PerunPrincipal;
-import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
-import cz.muni.ics.oidc.web.controllers.ControllerUtils;
-import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
-import cz.muni.ics.oidc.web.controllers.PerunUnapprovedRegistrationController;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
+import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.web.controllers.ControllerUtils;
+import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
+import cz.muni.ics.oidc.web.controllers.PerunUnapprovedRegistrationController;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.provider.AuthorizationRequest;
 import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -33,8 +31,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-
-@SuppressWarnings("Duplicates")
+/**
+ * Authorization filter. Decides if user can access the service based on his/hers
+ * membership in the groups assigned to the Perun facility resources. Facility represents
+ * client in this context.
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 public class PerunAuthorizationFilter extends GenericFilterBean {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthorizationFilter.class);
@@ -63,26 +66,9 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
 
-		if (!requestMatcher.matches(request) || request.getParameter("response_type") == null) {
-			chain.doFilter(req, res);
-			return;
-		}
-
-		AuthorizationRequest authRequest = authRequestFactory.createAuthorizationRequest(
-				FiltersUtils.createRequestMap(request.getParameterMap()));
-
-		ClientDetailsEntity client;
-		if (Strings.isNullOrEmpty(authRequest.getClientId())) {
-			log.warn("ClientID is null or empty, skip to next filter");
-			chain.doFilter(req, res);
-			return;
-		}
-		
-		client = clientService.loadClientByClientId(authRequest.getClientId());
-		log.debug("Found client: {}", client.getClientId());
-
-		if (Strings.isNullOrEmpty(client.getClientName())) {
-			log.warn("ClientName is null or empty, skip to next filter");
+		ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
+		if (client == null) {
+			log.debug("Could not fetch client, skip to next filter");
 			chain.doFilter(req, res);
 			return;
 		}

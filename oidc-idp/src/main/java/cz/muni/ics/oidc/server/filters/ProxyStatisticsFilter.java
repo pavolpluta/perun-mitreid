@@ -1,14 +1,11 @@
 package cz.muni.ics.oidc.server.filters;
 
 import com.google.common.base.Strings;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
-import org.mitre.openid.connect.service.UserInfoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.oauth2.provider.AuthorizationRequest;
 import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -21,6 +18,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -51,12 +50,6 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 
 	@Autowired
 	private ClientDetailsEntityService clientService;
-
-	@Autowired
-	private UserInfoService userInfoService;
-
-	@Autowired
-	private PerunConnector perunConnector;
 
 	@Autowired
 	private DataSource mitreIdStats;
@@ -93,24 +86,9 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 			throws IOException, ServletException {
 		HttpServletRequest request = (HttpServletRequest) req;
 
-		if (!requestMatcher.matches(request) || request.getParameter("response_type") == null) {
-			chain.doFilter(req, res);
-			return;
-		}
-		AuthorizationRequest authRequest = authRequestFactory.createAuthorizationRequest(
-				FiltersUtils.createRequestMap(request.getParameterMap()));
-
-		ClientDetailsEntity client;
-		if (Strings.isNullOrEmpty(authRequest.getClientId())) {
-			log.warn("ClientID is null or empty, skip to next filter");
-			chain.doFilter(req, res);
-			return;
-		}
-		client = clientService.loadClientByClientId(authRequest.getClientId());
-		log.debug("Found client: {}", client.getClientId());
-
-		if (Strings.isNullOrEmpty(client.getClientName())) {
-			log.warn("ClientName is null or empty, skip to next filter");
+		ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
+		if (client == null) {
+			log.debug("Could not fetch client, skip to next filter");
 			chain.doFilter(req, res);
 			return;
 		}
@@ -118,34 +96,39 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 		String clientIdentifier = client.getClientId();
 		String clientName = client.getClientName();
 
-
 		if (Strings.isNullOrEmpty((String) request.getAttribute(idpEntityIdAttributeName))) {
 			log.warn("Attribute '" + idpEntityIdAttributeName + "' is null or empty, skip to next filter");
 			chain.doFilter(req, res);
 			return;
 		}
 
-		String idpEntityId = new String(((String) request.getAttribute(idpEntityIdAttributeName)).getBytes("iso-8859-1"), "utf-8");
-		String idpName = null;
+		String idpEntityIdFromRequest = (String) request.getAttribute(idpEntityIdAttributeName);
+		String idpNameFromRequest = (String) request.getAttribute(idpNameAttributeName);
 
-		if (!Strings.isNullOrEmpty((String) request.getAttribute(idpNameAttributeName))) {
-			idpName = new String(((String) request.getAttribute(idpNameAttributeName)).getBytes("iso-8859-1"), "utf-8");
-		}
+		String idpEntityId = changeEncodingOfParam(idpEntityIdFromRequest,
+				StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8);
+		String idpName = changeEncodingOfParam(idpNameFromRequest,
+				StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8);
+
 		insertLogin(idpEntityId, idpName, clientIdentifier, clientName);
 
 		chain.doFilter(req, res);
 	}
 
-	@SuppressWarnings("Duplicates")
 	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName) {
 		LocalDate date = LocalDate.now();
 
-		String queryStatistics = "INSERT INTO " + statisticsTableName + "(year, month, day, sourceIdp, service, count) VALUES(?,?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
-		String queryIdPMap = "INSERT INTO " + identityProvidersMapTableName + "(entityId, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
-		String queryServiceMap = "INSERT INTO " + serviceProvidersMapTableName + "(identifier, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
+		String queryStats = "INSERT INTO " + statisticsTableName + "(year, month, day, sourceIdp, service, count)" +
+				" VALUES(?,?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
+
+		String queryIdPMap = "INSERT INTO " + identityProvidersMapTableName + "(entityId, name)" +
+				" VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
+
+		String queryServiceMap = "INSERT INTO " + serviceProvidersMapTableName + "(identifier, name)" +
+				" VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
 
 		try (Connection c = mitreIdStats.getConnection()) {
-			try (PreparedStatement preparedStatement = c.prepareStatement(queryStatistics)) {
+			try (PreparedStatement preparedStatement = c.prepareStatement(queryStats)) {
 				preparedStatement.setInt(1, date.getYear());
 				preparedStatement.setInt(2, date.getMonthValue());
 				preparedStatement.setInt(3, date.getDayOfMonth());
@@ -172,7 +155,16 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 			log.debug("The login log was successfully stored into database: ({},{},{},{})", idpEntityId, idpName, spIdentifier, spName);
 		} catch (SQLException ex) {
 			log.warn("Statistics weren't updated due to SQLException.");
-			log.debug("SQLException {}", ex);
+			log.debug("SQLException ({})", ex);
 		}
+	}
+
+	private String changeEncodingOfParam(String original, Charset source, Charset destination) {
+		if (original != null && !original.isEmpty()) {
+			byte[] sourceBytes = original.getBytes(source);
+			return new String(sourceBytes, destination);
+		}
+
+		return null;
 	}
 }

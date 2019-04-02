@@ -1,7 +1,7 @@
 package cz.muni.ics.oidc.server.exceptions;
 
 /**
- * Excepiton thrown when controller cannot load properties file for JSP with messages.
+ * Exception thrown when controller cannot load properties file for JSP with messages.
  *
  * @author Dominik František Bučík <bucik@ics.muni.cz>
  */

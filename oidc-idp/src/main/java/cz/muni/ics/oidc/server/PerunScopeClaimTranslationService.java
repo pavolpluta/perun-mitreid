@@ -18,7 +18,6 @@ import java.util.Set;
  *
  * @author Martin Kuba makub@ics.muni.cz
  */
-//@Service("scopeClaimTranslator")
 public class PerunScopeClaimTranslationService implements ScopeClaimTranslationService {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunScopeClaimTranslationService.class);

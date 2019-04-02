@@ -1,12 +1,12 @@
 package cz.muni.ics.oidc.server.connectors;
 
-import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
 import cz.muni.ics.oidc.models.Vo;
+import cz.muni.ics.oidc.server.PerunPrincipal;
 
 import java.util.List;
 import java.util.Map;

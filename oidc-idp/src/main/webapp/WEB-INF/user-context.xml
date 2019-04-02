@@ -15,7 +15,7 @@
 	<context:property-placeholder properties-ref="coreProperties"/>
 	<context:component-scan base-package="cz.muni.ics.oidc"/>
 
-	<!-- default config values, override in file /etc/perun/perun-mitreid.properties -->
+	<!-- default config values, by default override in file /etc/perun/perun-mitreid.properties -->
 	<bean id="defaultCoreProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
 		<property name="properties">
 			<props>
@@ -53,6 +53,7 @@
 				<prop key="facility.attrs.registrationURL">urn:perun:facility:attribute-def:def:registrationURL</prop>
 				<prop key="facility.attrs.dynamicRegistration">urn:perun:facility:attribute-def:def:dynamicRegistration</prop>
 				<prop key="facility.attrs.voShortNames">urn:perun:facility:attribute-def:virt:voShortNames</prop>
+				<prop key="facility.attrs.clientId">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
 				<!-- for LDAP
 				<prop key="attribute.openid.sub">login;x-ns-einfraid-persistent-shadow</prop>
 				<prop key="attribute.profile.preferred_username">login;x-ns-einfra</prop>
@@ -83,7 +84,6 @@
 				<prop key="attribute.email.email">urn:perun:user:attribute-def:def:preferredMail</prop>
 				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
 				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
-				<prop key="attribute.oidc.clientid">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
 				<prop key="custom.claims">organization,eppns</prop>
 				<prop key="custom.claim.organization.scope">organization</prop>
 				<prop key="custom.claim.organization.attribute">urn:perun:user:attribute-def:def:organization</prop>
@@ -208,7 +208,7 @@
 		<property name="perunUrl" value="${perun.rpc.url}"/>
 		<property name="perunUser" value="${perun.rpc.user}"/>
 		<property name="perunPassword" value="${perun.rpc.password}"/>
-		<property name="oidcClientIdAttr" value="${attribute.oidc.clientid}" />
+		<property name="oidcClientIdAttr" value="${facility.attrs.clientId}" />
 		<property name="oidcCheckMembershipAttr" value="${facility.attrs.checkGroupMembership}"/>
 	</bean>
 

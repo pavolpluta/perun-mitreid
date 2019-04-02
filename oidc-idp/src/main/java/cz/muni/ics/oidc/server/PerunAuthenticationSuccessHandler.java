@@ -14,7 +14,7 @@ import java.util.Date;
 import static org.mitre.openid.connect.web.AuthenticationTimeStamper.AUTH_TIMESTAMP;
 
 /**
- * Must create timestamp and some logging.
+ * Authentication success handler. Performs operation when authentication has been successful.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */

@@ -12,7 +12,6 @@ import java.util.List;
  *
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
-@SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 public class FacilityAttrsConfig {
 
 	private final static Logger log = LoggerFactory.getLogger(FacilityAttrsConfig.class);

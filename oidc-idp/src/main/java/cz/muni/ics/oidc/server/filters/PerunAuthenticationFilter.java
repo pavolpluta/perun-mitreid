@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
- * Extracts preauthenticated user id. The user must be alredy authenticated by Kerberos, Shibboleth, X509,
+ * Extracts preauthenticated user id. The user must be already authenticated by Kerberos, Shibboleth, X509,
  * this class only gets extSourceName and extLogin from HTTP request.
  *
  * @author Martin Kuba <makub@ics.muni.cz>
@@ -60,6 +60,5 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	protected Object getPreAuthenticatedCredentials(HttpServletRequest httpServletRequest) {
 		return "no credentials";
 	}
-
 
 }

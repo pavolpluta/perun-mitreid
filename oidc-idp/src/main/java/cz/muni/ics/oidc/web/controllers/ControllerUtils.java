@@ -9,20 +9,34 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Utility class with common methods used for Controllers
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 public class ControllerUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(ControllerUtils.class);
 
+	private static final String CESNET = "CESNET";
+	private static final String CS = "CS";
+	private static final String EN_KEY = "en";
+	private static final String CS_KEY = "cs";
+	private static final String LANG_KEY = "lang";
+	private static final String REQ_URL_KEY = "reqURL";
+	private static final String EN_PROPERTIES = "en.properties";
+	private static final String CS_PROPERTIES = "cs.properties";
+
 	public static void setLanguageForPage(Map<String, Object> model, HttpServletRequest req, String theme) {
-		String langFile = "en.properties";
-		model.put("lang", "en");
+		String langFile = EN_PROPERTIES;
+		model.put(LANG_KEY, EN_KEY);
 		log.trace("Resolving URL for possible language bar");
-		model.put("reqURL", req.getRequestURL().toString() + '?' + req.getQueryString());
-		if ("CESNET".equalsIgnoreCase(theme)) {
-			log.trace("Resolving Language for CESNET ");
-			if (req.getParameter("lang") != null && req.getParameter("lang").equalsIgnoreCase("CS")) {
-				langFile = "cs.properties";
-				model.put("lang", "cs");
+		model.put(REQ_URL_KEY, req.getRequestURL().toString() + '?' + req.getQueryString());
+		if (CESNET.equalsIgnoreCase(theme)) {
+			log.trace("Resolving Language for CESNET");
+			if (req.getParameter(LANG_KEY) != null && req.getParameter(LANG_KEY).equalsIgnoreCase(CS)) {
+				langFile = CS_PROPERTIES;
+				model.put(LANG_KEY, CS_KEY);
 			}
 		}
 
@@ -40,7 +54,7 @@ public class ControllerUtils {
 
 	public static String createRedirectUrl(HttpServletRequest request, String removedPart,
 									 String pathPart, Map<String, String> params) {
-		log.debug("Creating redirect URL");
+		log.trace("createRedirectUrl({}, {}, {}, {})", request, removedPart, pathPart, params);
 		int endIndex = request.getRequestURL().toString().indexOf(removedPart);
 		String baseUrl = request.getRequestURL().toString().substring(0, endIndex);
 
@@ -58,7 +72,7 @@ public class ControllerUtils {
 			builder.deleteCharAt(builder.length() - 1);
 		}
 
-		log.debug("createdUrl: {}", builder.toString());
+		log.trace("createRedirectUrl returns: {}", builder.toString());
 		return builder.toString();
 	}
 }
