@@ -201,6 +201,18 @@ public class PerunConnectorRpc implements PerunConnector {
 		return attrs;
 	}
 
+	public PerunAttribute getFacilityAttribute(Facility facility, String attributeName) {
+		log.trace("getFacilityAttribute({}, {})", facility, attributeName);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facility.getId());
+		map.put("attributeName", attributeName);
+		JsonNode res = makeRpcCall("/attributesManager/getAttribute", map);
+
+		PerunAttribute attr = Mapper.mapAttribute(res);
+		log.trace("getFacilityAttribute({}, {}) returns: {}", facility, attributeName, attr);
+		return attr;
+	}
+
 	private List<Member> getMembersByUser(Long userId) {
 		log.trace("getMemberByUser({})", userId);
 		Map<String, Object> params = new LinkedHashMap<>();

@@ -27,6 +27,8 @@ public class PerunOidcConfig {
 	private String jdbcUrl;
 	private String theme;
 	private String registrarUrl;
+	private String loginUrl;
+	private boolean askPerunForIdpFiltersEnabled;
 	private String perunOIDCVersion;
 	private String mitreidVersion;
 
@@ -93,6 +95,22 @@ public class PerunOidcConfig {
 		}
 	}
 
+	public void setLoginUrl(String loginUrl) {
+		this.loginUrl = loginUrl;
+	}
+
+	public String getLoginUrl() {
+		return loginUrl;
+	}
+
+	public boolean isAskPerunForIdpFiltersEnabled() {
+		return askPerunForIdpFiltersEnabled;
+	}
+
+	public void setAskPerunForIdpFiltersEnabled(boolean askPerunForIdpFiltersEnabled) {
+		this.askPerunForIdpFiltersEnabled = askPerunForIdpFiltersEnabled;
+	}
+
 	@PostConstruct
 	public void postInit() {
 		log.info("Perun OIDC initialized");
@@ -103,6 +121,7 @@ public class PerunOidcConfig {
 		log.info("LDAP: ldaps://{}/{}", coreProperties.getProperty("ldap.host"), coreProperties.getProperty("ldap.baseDN"));
 		log.info("THEME: {}", theme);
 		log.info("Registrar URL: {}", registrarUrl);
+		log.info("LOGIN URL: {}", loginUrl);
 		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 		log.info("MitreID version: {}", getMitreidVersion());
 		log.info("Perun OIDC version: {}", getPerunOIDCVersion());

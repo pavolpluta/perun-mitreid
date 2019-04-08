@@ -206,4 +206,5 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 		log.trace("getFacilityAttributes({}, {}) returns {}", facility, attributeNames, attrs);
 		return attrs;
 	}
+
 }

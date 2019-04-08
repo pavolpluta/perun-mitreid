@@ -94,7 +94,7 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 	private void decideAccess(FilterChain chain, Facility facility, PerunUser user, HttpServletRequest request,
 							  HttpServletResponse response, String clientIdentifier) throws IOException, ServletException {
 		Map<String, PerunAttribute> facilityAttributes = perunConnector.getFacilityAttributes(
-				facility, facilityAttrsConfig.getAttrNamesAsList());
+				facility, facilityAttrsConfig.getMembershipAttrsAsList());
 
 		if (! facilityAttributes.get(facilityAttrsConfig.getCheckGroupMembershipAttr()).valueAsBoolean()) {
 			log.debug("Membership check not requested, skipping filter");

@@ -22,6 +22,7 @@
 				<prop key="main.oidc.issuer.url">https://perun-dev.meta.zcu.cz/oidc/</prop>
 				<prop key="logo.image.url">resources/images/perun_24px.png</prop>
 				<prop key="topbar.title">Perun OIDC</prop>
+				<prop key="proxy.login.url">https://login.cesnet.cz/Shibboleth.sso/Login</prop>
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
 				<prop key="perun.rpc.user">xxxxx</prop>
 				<prop key="perun.rpc.password">yyyyy</prop>
@@ -47,6 +48,7 @@
 				<prop key="admins">3197,59835</prop>
 				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
 				<prop key="web.theme">default</prop>
+				<prop key="idpFilters.askPerun.enabled">false</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
 				<prop key="facility.attrs.checkGroupMembership">urn:perun:facility:attribute-def:def:OIDCCheckGroupMembership</prop>
 				<prop key="facility.attrs.allowRegistration">urn:perun:facility:attribute-def:def:allowRegistration</prop>
@@ -54,6 +56,8 @@
 				<prop key="facility.attrs.dynamicRegistration">urn:perun:facility:attribute-def:def:dynamicRegistration</prop>
 				<prop key="facility.attrs.voShortNames">urn:perun:facility:attribute-def:virt:voShortNames</prop>
 				<prop key="facility.attrs.clientId">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
+				<prop key="facility.attrs.wayfFilter">urn:perun:facility:attribute-def:def:wayfFilter</prop>
+				<prop key="facility.attrs.wayfEFilter">urn:perun:facility:attribute-def:def:wayfEFilter</prop>
 				<!-- for LDAP
 				<prop key="attribute.openid.sub">login;x-ns-einfraid-persistent-shadow</prop>
 				<prop key="attribute.profile.preferred_username">login;x-ns-einfra</prop>
@@ -138,6 +142,8 @@
 		<property name="jdbcUrl" value="${jdbc.url}"/>
 		<property name="theme" value="${web.theme}"/>
 		<property name="registrarUrl" value="${registrar.url}"/>
+		<property name="loginUrl" value="${proxy.login.url}"/>
+		<property name="askPerunForIdpFiltersEnabled" value="${idpFilters.askPerun.enabled}"/>
 	</bean>
 
 	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig">
@@ -146,6 +152,8 @@
 		<property name="registrationURLAttr" value="${facility.attrs.registrationURL}" />
 		<property name="dynamicRegistrationAttr" value="${facility.attrs.dynamicRegistration}" />
 		<property name="voShortNamesAttr" value="${facility.attrs.voShortNames}" />
+		<property name="wayfFilterAttr" value="${facility.attrs.wayfFilter}" />
+		<property name="wayfEFilterAttr" value="${facility.attrs.wayfEFilter}" />
 	</bean>
 	<!-- authentication -->
 
@@ -154,7 +162,7 @@
 	               authentication-manager-ref="authenticationManager">
 		<security:intercept-url pattern="/authorize" access="hasRole('ROLE_USER')"/>
 		<security:intercept-url pattern="/**" access="permitAll"/>
-		<security:custom-filter ref="perunAuthenticationFilter" before="PRE_AUTH_FILTER"/>
+		<security:custom-filter ref="perunAuthenticationFilter" after="PRE_AUTH_FILTER"/>
 		<security:custom-filter ref="perunAuthorizationFilter" before="BASIC_AUTH_FILTER"/>
 		<security:custom-filter ref="proxyStatisticsFilter" after="BASIC_AUTH_FILTER"/>
 	</security:http>

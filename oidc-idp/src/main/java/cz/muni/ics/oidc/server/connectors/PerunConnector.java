@@ -88,4 +88,5 @@ public interface PerunConnector {
 	 * @return Map in format attribute URN, attribute
 	 */
 	Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributeNames);
+
 }

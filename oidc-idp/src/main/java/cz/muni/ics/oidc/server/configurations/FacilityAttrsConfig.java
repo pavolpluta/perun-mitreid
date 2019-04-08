@@ -21,6 +21,8 @@ public class FacilityAttrsConfig {
 	private String allowRegistrationAttr;
 	private String dynamicRegistrationAttr;
 	private String voShortNamesAttr;
+	private String wayfFilterAttr;
+	private String wayfEFilterAttr;
 
 	public String getCheckGroupMembershipAttr() {
 		return checkGroupMembershipAttr;
@@ -62,7 +64,23 @@ public class FacilityAttrsConfig {
 		this.voShortNamesAttr = voShortNamesAttr;
 	}
 
-	public List<String> getAttrNamesAsList() {
+	public String getWayfFilterAttr() {
+		return wayfFilterAttr;
+	}
+
+	public void setWayfFilterAttr(String wayfFilterAttr) {
+		this.wayfFilterAttr = wayfFilterAttr;
+	}
+
+	public String getWayfEFilterAttr() {
+		return wayfEFilterAttr;
+	}
+
+	public void setWayfEFilterAttr(String wayfEFilterAttr) {
+		this.wayfEFilterAttr = wayfEFilterAttr;
+	}
+
+	public List<String> getMembershipAttrsAsList() {
 		List<String> res = new ArrayList<>();
 		if (checkGroupMembershipAttr != null && !checkGroupMembershipAttr.isEmpty()) {
 			res.add(checkGroupMembershipAttr);
@@ -91,6 +109,7 @@ public class FacilityAttrsConfig {
 		log.info("Registration URL attr mapped to urn: {}", registrationURLAttr);
 		log.info("Allow dynamic registration attr mapped to urn: {}", dynamicRegistrationAttr);
 		log.info("Vo short names attr mapped to urn: {}", voShortNamesAttr);
+		log.info("IDP Filter attr mapped to urn: {}", wayfFilterAttr);
+		log.info("IDP E-Filter attr mapped to urn: {}", wayfEFilterAttr);
 	}
-
 }
