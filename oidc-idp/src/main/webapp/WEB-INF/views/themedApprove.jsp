@@ -30,67 +30,65 @@
 			<p>${langProps['consent_privacypolicy']}
 				&#32;<a target='_blank' href='${fn:escapeXml(client.policyUri)}'><em>${fn:escapeXml(client.clientName)}</em></a>
 			</p>
-			<table id="table_with_attributes" class="table attributes" summary="List the information about you that is about to be transmitted to the service you are going to login to">
+			<table id="table_with_attributes" class="table attributes" summary="List the information about you that is about to be transmitted to the service you are going to login to" style="border: none">
+				<c:set var="counter" value="${1}"/>
 				<c:forEach var="scope" items="${scopes}">
-					<tr>
+					<tr class="${(counter % 2 == 1) ? "odd" : "even"}">
 						<td>
-							<div class="checkbox">
-								<input type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
+							<input type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
 									   id="scope_${fn:escapeXml(scope.value)}" value="${fn:escapeXml(scope.value)}">
-								<label class="form-check-label" for="scope_${fn:escapeXml(scope.value)}">
-									<span class="attrname">
-										<c:set var="scopeValue" value="${langProps[scope.value]}"/>
-										<c:if test="${empty fn:trim(scopeValue)}">
-											<c:set var="scopeValue" value="${scope.value}"/>
-										</c:if>
+							<span class="attrname">
+								<c:set var="scopeValue" value="${langProps[scope.value]}"/>
+								<c:if test="${empty fn:trim(scopeValue)}">
+									<c:set var="scopeValue" value="${scope.value}"/>
+								</c:if>
 										${scopeValue}
-									</span>
-								</label>
-							</div>
+							</span>
 							<c:if test="${not empty claims[scope.value]}">
 								<!-- PRINT OUT CLAIMS -->
-								<div class="attrvalue">
-									<ul>
-										<c:set var="singleClaim" value="${fn:length(claims[scope.value]) eq 1}" />
-										<c:forEach var="claim" items="${claims[scope.value]}">
-											<c:choose>
-												<c:when test="${not singleClaim}">
-													<li>
-														<c:set var="claimKey" value="${langProps[claim.key]}"/>
-														<c:if test="${empty fn:trim(claimKey)}">
-															<c:set var="claimKey" value="${claim.key}"/>
-														</c:if>
-														<strong>${claimKey}:</strong>
-														<c:choose>
-															<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
-																<br/>
-																<ul>
-																	<c:forEach var="subValue" items="${claim.value}">
-																		<li>${subValue}</li>
-																	</c:forEach>
-																</ul>
-															</c:when>
-															<c:otherwise>
-																${claim.value}
-															</c:otherwise>
-														</c:choose>
-													</li>
-												</c:when>
-												<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
-													<c:forEach var="subValue" items="${claim.value}">
-														<li>${subValue}</li>
-													</c:forEach>
-												</c:when>
-												<c:otherwise>
-													<li>${claim.value}</li>
-												</c:otherwise>
-											</c:choose>
-										</c:forEach>
-									</ul>
-								</div>
-							</c:if>
+							<div class="attrvalue">
+								<ul>
+									<c:set var="singleClaim" value="${fn:length(claims[scope.value]) eq 1}" />
+									<c:forEach var="claim" items="${claims[scope.value]}">
+										<c:choose>
+											<c:when test="${not singleClaim}">
+												<li>
+													<c:set var="claimKey" value="${langProps[claim.key]}"/>
+													<c:if test="${empty fn:trim(claimKey)}">
+														<c:set var="claimKey" value="${claim.key}"/>
+													</c:if>
+													<strong>${claimKey}:</strong>
+													<c:choose>
+														<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
+															<br/>
+															<ul>
+																<c:forEach var="subValue" items="${claim.value}">
+																	<li>${subValue}</li>
+																</c:forEach>
+															</ul>
+														</c:when>
+														<c:otherwise>
+															${claim.value}
+														</c:otherwise>
+													</c:choose>
+												</li>
+											</c:when>
+											<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
+												<c:forEach var="subValue" items="${claim.value}">
+													<li>${subValue}</li>
+												</c:forEach>
+											</c:when>
+											<c:otherwise>
+												<li>${claim.value}</li>
+											</c:otherwise>
+										</c:choose>
+									</c:forEach>
+								</ul>
+							</div>
+						</c:if>
 						</td>
 					</tr>
+					<c:set var="counter" value="${counter + 1}"/>
 				</c:forEach>
 			</table>
 			<div class="row" style="margin: .5em 0;">

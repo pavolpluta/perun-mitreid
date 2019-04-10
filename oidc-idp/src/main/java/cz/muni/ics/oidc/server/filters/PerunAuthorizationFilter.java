@@ -26,6 +26,9 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,7 +65,6 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 	@Override
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
 			throws IOException, ServletException {
-		log.debug("PerunAuthorizationFilter::doFilter({}, {}, {})", req, res, chain);
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
 
@@ -112,11 +114,14 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 			log.info("User not allowed to access the service");
 			boolean canRegister = perunConnector.groupWhereCanRegisterExists(facility);
 			if (canRegister) {
-				String customRegUrl = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr()).valueAsString();
-				if (customRegUrl != null && !customRegUrl.isEmpty()) {
-					// redirect to custom registration URL
-					log.debug("Redirect to custom registration URL: {}", customRegUrl);
-					if (customRegUrl.startsWith("http://") || customRegUrl.startsWith("https://")) {
+				PerunAttribute customRegUrlAttr = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr());
+				if (customRegUrlAttr != null && customRegUrlAttr.getValue()!= null) {
+					String customRegUrl = facilityAttributes.get(
+							facilityAttrsConfig.getRegistrationURLAttr()).valueAsString();
+					customRegUrl = validateUrl(customRegUrl);
+					if (customRegUrl != null) {
+						// redirect to custom registration URL
+						log.debug("Redirect to custom registration URL: {}", customRegUrl);
 						response.reset();
 						response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 						response.setHeader("Location", customRegUrl);
@@ -148,6 +153,36 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 		response.reset();
 		response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 		response.setHeader("Location", redirectUrl);
+	}
+
+	private String validateUrl(String customRegUrl) {
+		if (customRegUrl == null || customRegUrl.isEmpty()) {
+			return null;
+		}
+
+		if (!customRegUrl.startsWith("http://")) {
+			customRegUrl = "http://" + customRegUrl;
+		}
+
+		try {
+			URL url = new URL(customRegUrl);
+			URLConnection conn = url.openConnection();
+			conn.connect();
+			return customRegUrl;
+		} catch (IOException e) {
+			//this is ok, we can try add https:// to the url
+		}
+
+		customRegUrl = customRegUrl.replace("http://", "https://");
+
+		try {
+			URL url = new URL(customRegUrl);
+			URLConnection conn = url.openConnection();
+			conn.connect();
+			return customRegUrl;
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 }

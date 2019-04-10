@@ -139,26 +139,30 @@ public class PerunConnectorRpc implements PerunConnector {
 		List<Member> userMembers = getMembersByUser(userId);
 		userMembers = new ArrayList<>(new HashSet<>(userMembers));
 
-		List<Member> validAndExpiredMembers = userMembers.stream()
-				.filter(member -> ("VALID".equalsIgnoreCase(member.getStatus()) || "EXPIRED".equalsIgnoreCase(member.getStatus())))
-				.collect(Collectors.toList());
+		//Filter out vos where member is other than valid or expired. These vos cannot be used for registration
+		Map<Long, String> memberVoStatuses = convertMembersListToStatusesMap(userMembers);
 		Map<Long, Vo> vosForRegistration = new HashMap<>();
-		for(Member m: validAndExpiredMembers) {
-			if (vosMap.containsKey(m.getVoId())) {
-				vosForRegistration.put(m.getVoId(), vosMap.get(m.getVoId()));
+		for (Map.Entry<Long, Vo> entry: vosMap.entrySet()) {
+			if (memberVoStatuses.containsKey(entry.getKey())) {
+				String status = memberVoStatuses.get(entry.getKey());
+				if (status.equalsIgnoreCase("VALID") || status.equalsIgnoreCase("EXPIRED")) {
+					vosForRegistration.put(entry.getKey(), entry.getValue());
+				}
+			} else {
+				vosForRegistration.put(entry.getKey(), entry.getValue());
 			}
 		}
 
+		// filter groups only if their VO is in the allowed VOs and if they have registration form
 		List<Group> allowedGroups = getAllowedGroups(facility);
-		List<Group> groupsWithForms = allowedGroups.stream()
-				.filter(this::getApplicationForm)
+		List<Group> groupsForRegistration = allowedGroups.stream()
+				.filter(group -> vosForRegistration.containsKey(group.getVoId()) && getApplicationForm(group))
 				.collect(Collectors.toList());
-		List<Group> groupsForRegistration = groupsWithForms.stream()
-				.filter(group -> vosForRegistration.containsKey(group.getVoId()))
-				.collect(Collectors.toList());
+
+		// create map for processing
 		Map<Vo, List<Group>> result = new HashMap<>();
 		for (Group group: groupsForRegistration) {
-			Vo vo = vosForRegistration.get(group.getVoId());
+			Vo vo = vosMap.get(group.getVoId());
 			if (! result.containsKey(vo)) {
 				result.put(vo, new ArrayList<>());
 			}
@@ -168,6 +172,15 @@ public class PerunConnectorRpc implements PerunConnector {
 
 		log.trace("getGroupsForRegistration({}, {}, {}) returns: {}", facility, userId, voShortNames, result);
 		return result;
+	}
+
+	private Map<Long, String> convertMembersListToStatusesMap(List<Member> userMembers) {
+		Map<Long, String> res = new HashMap<>();
+		for (Member m: userMembers) {
+			res.put(m.getVoId(), m.getStatus());
+		}
+
+		return res;
 	}
 
 	@Override

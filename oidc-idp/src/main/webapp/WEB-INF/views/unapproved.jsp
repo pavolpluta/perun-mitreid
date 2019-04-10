@@ -39,7 +39,7 @@
             </c:choose>
         </c:if>
         <h1>${langProps['403_header']}</h1>
-        <p>${langProps['403_text']} ${fn:escapeXml(client.clientName)}
+        <p>${langProps['403_text']}&#32;${fn:escapeXml(client.clientName)}
             <br/>
             <c:if test="${not empty client.clientUri}">
                 ${langProps['403_informationPage']}&#32;
