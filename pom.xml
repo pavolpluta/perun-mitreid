@@ -22,14 +22,14 @@
 	</modules>
 
 	<properties>
-		<mitreid-version>1.3.3.1-makub</mitreid-version>
+		<mitreid-version>1.3.3</mitreid-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java-version>8</java-version>
 		<maven.compiler.source>${java-version}</maven.compiler.source>
 		<maven.compiler.target>${java-version}</maven.compiler.target>
 	</properties>
 
-	<!-- needed for Travis Continuous Integration to succeed, because MITREid 1.3.3-SNAPSHOT is not released -->
+	<!-- needed for Travis Continuous Integration to succeed when MITREid is not released 
 	<repositories>
 		<repository>
 			<id>acrab.ics.muni.cz</id>
@@ -44,6 +44,7 @@
 			</releases>
 		</repository>
 	</repositories>
+    -->
 
 	<dependencyManagement>
 		<dependencies>
