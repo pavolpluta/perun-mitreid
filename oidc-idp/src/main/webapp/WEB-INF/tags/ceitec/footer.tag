@@ -10,7 +10,7 @@
 <div id="footer">
     <div style="margin: 0px auto; max-width: 1000px;">
         <div style="float: left;">
-            <img src="<c:out value='${baseUrl}'/>proxy/module.php/ceitec/res/img/logo_64.png">
+            <img src="${baseUrl}proxy/module.php/ceitec/res/img/logo_64.png" alt="CEITEC Logo">
         </div>
         <div style="float: left;">
             <p>CEITEC, Masaryk University, Žerotínovo nám. 9, 601 77 Brno, Czech Republic

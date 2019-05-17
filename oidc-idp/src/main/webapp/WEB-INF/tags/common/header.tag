@@ -1,9 +1,8 @@
 <%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ attribute name="title" required="false" %>
 <%@ attribute name="reqURL" required="false" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags/common" %>
 <c:choose>
     <c:when test="${theme eq 'cesnet'}">
@@ -32,18 +31,26 @@
     <meta name="robots" content="noindex, nofollow" />
     <!-- link -->
     <link rel="icon" type="image/icon"
-          href="<c:out value='${baseUrl}proxy/module.php/${theme}/res/img/icons/favicon.ico'/>" />
+          href="${baseUrl}proxy/module.php/${theme}/res/img/icons/favicon.ico" />
     <link rel="stylesheet" type="text/css"
-          href="<c:out value='${baseUrl}proxy/resources/default.css' />" />
+          href="${baseUrl}proxy/resources/default.css" />
     <link rel="stylesheet" type="text/css"
-          href="<c:out value='${baseUrl}proxy/module.php/${theme}/res/bootstrap/css/bootstrap.min.css'/>" />
+          href="${baseUrl}proxy/module.php/${theme}/res/bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css"
-          href="<c:out value='${baseUrl}proxy/module.php/${theme}/res/css/${theme}.css'/>" />
+          href="${baseUrl}proxy/module.php/${theme}/res/css/${theme}.css" />
     <c:if test="${page eq 'consent'}">
-    <link rel="stylesheet" media="screen" type="text/css"
-          href="<c:out value='${baseUrl}proxy/module.php/consent/style.css'/>" />
-    <link rel="stylesheet" media="screen" type="text/css"
-          href="<c:out value='${baseUrl}proxy/module.php/${theme}/res/css/consent.css'/>" />
+        <link rel="stylesheet" media="screen" type="text/css"
+              href="${baseUrl}proxy/module.php/consent/style.css" />
+        <link rel="stylesheet" media="screen" type="text/css"
+              href="${baseUrl}proxy/module.php/${theme}/res/css/consent.css" />
+    </c:if>
+    <c:if test="${page eq 'regForm'}">
+        <link rel="stylesheet" media="screen" type="text/css"
+              href="${baseUrl}proxy/module.php/perun/res/css/perun_identity_choose_vo_and_group.css" />
+    </c:if>
+    <c:if test="${page eq 'regContinue'}">
+        <link rel="stylesheet" media="screen" type="text/css"
+              href="${baseUrl}proxy/module.php/perun/res/css/perun_identity_go_to_registration.css" />
     </c:if>
 </head>
 <body>
@@ -52,13 +59,15 @@
         <o:langbar />
     </c:if>
     <div id="header">
-        <img src="<c:out value='${baseUrl}proxy/module.php/${theme}/res/img/${logo}'/>" alt="<c:out value='${theme} '/>logo">
+        <img src="${baseUrl}proxy/module.php/${theme}/res/img/${logo}" alt="${theme} logo">
         <c:choose>
             <c:when test="${page eq 'consent'}">
-                <h1 style="color: #222;"><c:out value="${langProps['consent_header']}"/></h1>
+                <h1 style="color: #222;">${langProps['consent_header']}</h1>
             </c:when>
             <c:when test="${page eq 'unapproved'}">
-                <h1><a class="header-link" href="/proxy/">Proxy IdP</a></h1>
+                <h1>
+                    <a class="header-link" href="/proxy/">Proxy IdP</a>
+                </h1>
             </c:when>
         </c:choose>
     </div>

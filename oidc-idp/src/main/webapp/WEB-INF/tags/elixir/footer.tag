@@ -10,7 +10,7 @@
 <div id="footer">
     <div style="margin: 0 auto; max-width: 1000px;">
         <div style="float: left;">
-            <img src="<c:out value='${baseUrl}'/>proxy/module.php/elixir/res/img/logo_64.png">
+            <img src="${baseUrl}proxy/module.php/elixir/res/img/logo_64.png" alt="ELIXIR Logo">
         </div>
         <div style="float: left;">
             <p>ELIXIR, Wellcome Trust Genome Campus, Hinxton, Cambridgeshire, CB10 1SD, UK&nbsp; &nbsp; +44&nbsp;(0)1223&nbsp;492-670&nbsp;&nbsp;
