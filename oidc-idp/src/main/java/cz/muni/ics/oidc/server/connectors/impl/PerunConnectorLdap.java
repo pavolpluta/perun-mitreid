@@ -127,11 +127,11 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 					if (attr.size() > 1) {
 						ArrayNode arrayNode = JsonNodeFactory.instance.arrayNode(attr.size());
 						for (Value value : attr) {
-							arrayNode.add(value.getValue());
+							arrayNode.add(value.getString());
 						}
 						r.getAttributes().put(attr.getUpId(), arrayNode);
 					} else {
-						String value = attr.get().getValue();
+						String value = attr.get().getString();
 						r.getAttributes().put(attr.getUpId(), TextNode.valueOf(value));
 					}
 				}
