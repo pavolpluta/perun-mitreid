@@ -9,6 +9,7 @@ import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 
 import javax.servlet.FilterChain;
@@ -117,7 +118,10 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		PerunPrincipal perunPrincipal = extractPerunPrincipal(req);
 		if (perunPrincipal == null) {
-			String shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+			String shibIdentityProvider = config.getProxyExtSourceName();
+			if (shibIdentityProvider == null) {
+				shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+			}
 			String remoteUser = req.getRemoteUser();
 			throw new IllegalStateException("ExtSource name or userExtSourceLogin is null. " +
 					"extSourceName: " + shibIdentityProvider + ", " +
@@ -137,7 +141,10 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		String extLogin = null;
 		String extSourceName = null;
 
-		String shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+		String shibIdentityProvider = config.getProxyExtSourceName();
+		if (shibIdentityProvider == null) {
+			shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+		}
 		String remoteUser = req.getRemoteUser();
 
 		if (isNotEmpty(shibIdentityProvider)) {

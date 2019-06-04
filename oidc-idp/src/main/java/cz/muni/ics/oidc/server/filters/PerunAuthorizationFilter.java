@@ -5,6 +5,7 @@ import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.web.controllers.ControllerUtils;
 import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
@@ -57,6 +58,9 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 	@Autowired
 	private FacilityAttrsConfig facilityAttrsConfig;
 
+	@Autowired
+	private PerunOidcConfig perunOidcConfig;
+
 	private static final String REQ_PATTERN = "/authorize";
 	private static final String SHIB_IDENTITY_PROVIDER = "Shib-Identity-Provider";
 	private RequestMatcher requestMatcher = new AntPathRequestMatcher(REQ_PATTERN);
@@ -86,7 +90,10 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 		}
 
 		Principal p = request.getUserPrincipal();
-		String shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+		String shibIdentityProvider = perunOidcConfig.getProxyExtSourceName();
+		if (shibIdentityProvider == null) {
+			shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+		}
 		PerunPrincipal principal = new PerunPrincipal(p.getName(), shibIdentityProvider);
 		PerunUser user = perunConnector.getPreauthenticatedUserId(principal);
 

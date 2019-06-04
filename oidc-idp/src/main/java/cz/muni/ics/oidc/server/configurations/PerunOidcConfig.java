@@ -31,6 +31,7 @@ public class PerunOidcConfig {
 	private boolean askPerunForIdpFiltersEnabled;
 	private String perunOIDCVersion;
 	private String mitreidVersion;
+	private String proxyExtSourceName;
 
 	@Autowired
 	private ServletContext servletContext;
@@ -111,6 +112,18 @@ public class PerunOidcConfig {
 		this.askPerunForIdpFiltersEnabled = askPerunForIdpFiltersEnabled;
 	}
 
+	public String getProxyExtSourceName() {
+		return proxyExtSourceName;
+	}
+
+	public void setProxyExtSourceName(String proxyExtSourceName) {
+		if (proxyExtSourceName == null || proxyExtSourceName.isEmpty()) {
+			this.proxyExtSourceName = null;
+		} else {
+			this.proxyExtSourceName = proxyExtSourceName;
+		}
+	}
+
 	@PostConstruct
 	public void postInit() {
 		log.info("Perun OIDC initialized");
@@ -123,8 +136,8 @@ public class PerunOidcConfig {
 		log.info("Registrar URL: {}", registrarUrl);
 		log.info("LOGIN URL: {}", loginUrl);
 		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
+		log.info("Proxy EXT_SOURCE name: {}", proxyExtSourceName);
 		log.info("MitreID version: {}", getMitreidVersion());
 		log.info("Perun OIDC version: {}", getPerunOIDCVersion());
 	}
-
 }

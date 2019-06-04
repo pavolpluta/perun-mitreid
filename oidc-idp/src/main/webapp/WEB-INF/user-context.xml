@@ -23,6 +23,7 @@
 				<prop key="logo.image.url">resources/images/perun_24px.png</prop>
 				<prop key="topbar.title">Perun OIDC</prop>
 				<prop key="proxy.login.url">https://login.cesnet.cz/Shibboleth.sso/Login</prop>
+				<prop key="proxy.extSource.name"/>
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
 				<prop key="perun.rpc.user">xxxxx</prop>
 				<prop key="perun.rpc.password">yyyyy</prop>
@@ -144,6 +145,7 @@
 		<property name="registrarUrl" value="${registrar.url}"/>
 		<property name="loginUrl" value="${proxy.login.url}"/>
 		<property name="askPerunForIdpFiltersEnabled" value="${idpFilters.askPerun.enabled}"/>
+		<property name="proxyExtSourceName" value="${proxy.extSource.name}"/>
 	</bean>
 
 	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig">
