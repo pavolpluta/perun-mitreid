@@ -126,6 +126,10 @@
 		<property name="customClaimNames" value="#{'${custom.claims}'.split('\s*,\s*')}"/>
 	</bean>
 
+	<!-- defines our own user info service which is called from UserInfoEndpoint -->
+	<bean id="userInfoService" primary="true" class="cz.muni.ics.oidc.server.PerunUserInfoService">
+	</bean>
+
 	<!-- replaces default translation service with our own for custom scope with custom claims. -->
 	<bean id="scopeClaimTranslator" primary="true" class="cz.muni.ics.oidc.server.PerunScopeClaimTranslationService">
 		<property name="perunUserInfoRepository" ref="userInfoRepository"/>
