@@ -2,6 +2,7 @@ package cz.muni.ics.oidc.server.connectors.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Mapper;
@@ -212,6 +213,21 @@ public class PerunConnectorRpc implements PerunConnector {
 		Map<String, PerunAttribute> attrs = Mapper.mapAttributes(res);
 		log.trace("getFacilityAttributes({}, {}) returns: {}", facility, attributeNames, attrs);
 		return attrs;
+	}
+
+	@Override
+	public boolean isUserInGroup(Long userId, Long groupId) {
+		Group group = Mapper.mapGroup(makeRpcCall("/groupsManager/getGroupById", ImmutableMap.of("id", groupId)));
+		Member member = Mapper.mapMember(makeRpcCall("/membersManager/getMemberByUser", ImmutableMap.of("vo", group.getVoId(), "user", userId)));
+		JsonNode res = makeRpcCall("/groupsManager/isGroupMember", ImmutableMap.of("group", groupId, "member", member.getId()));
+		boolean result = res.asBoolean(false);
+		log.trace("isUserInGroup(userId={},group={}) returns {}", userId, group.getName(), result);
+		return result;
+	}
+
+	@Override
+	public PerunAttribute getUserAttribute(Long userId, String attributeName) {
+		return Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("user", userId, "attributeName", attributeName)));
 	}
 
 	public PerunAttribute getFacilityAttribute(Facility facility, String attributeName) {

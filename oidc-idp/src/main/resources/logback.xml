@@ -53,6 +53,7 @@
 	<logger name="cz.muni.ics.oidc.server.PerunUserInfoRepository" level="info"/>
 	<logger name="cz.muni.ics.oidc.server.PerunTokenEnhancer" level="warn"/>
 	<logger name="cz.muni.ics.oidc.server.PerunAuthenticationUserDetailsService" level="info"/>
-
+    <logger name="cz.muni.ics.oidc.server.elixir.GA4GHClaimSource" level="trace"/>
+	<logger name="cz.muni.ics.oidc.server.connectors.impl.PerunConnectorRpc" level="trace"/>
 
 </configuration>

@@ -281,7 +281,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			//address.setCountry("Czech Republic");
 			ui.setAddress(address);
 			//custom claims
-			ClaimSourceProduceContext pctx = new ClaimSourceProduceContext(perunUserId, sub, richUser);
+			ClaimSourceProduceContext pctx = new ClaimSourceProduceContext(perunUserId, sub, richUser, perunConnector);
 			log.trace("processing custom claims");
 			for (PerunCustomClaimDefinition pccd : customClaims) {
 				log.trace("producing value for claim {}",pccd.getClaim());

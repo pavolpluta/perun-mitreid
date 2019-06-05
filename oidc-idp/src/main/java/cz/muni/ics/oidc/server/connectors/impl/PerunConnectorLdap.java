@@ -207,4 +207,15 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 		return attrs;
 	}
 
+	@Override
+	public boolean isUserInGroup(Long userId, Long groupId) {
+		//TODO: implement
+		return fallbackConnector.isUserInGroup(userId, groupId);
+	}
+
+	@Override
+	public PerunAttribute getUserAttribute(Long userId, String attributeName) {
+		//TODO: implement
+		return fallbackConnector.getUserAttribute(userId, attributeName);
+	}
 }

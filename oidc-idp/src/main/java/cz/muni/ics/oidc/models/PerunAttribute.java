@@ -24,6 +24,8 @@ public class PerunAttribute extends PerunAttributeDefinition {
 	private final static String LARGE_ARRAY_LIST_TYPE = "java.lang.LargeArrayList";
 
 	private Object value;
+	private String valueCreatedAt;
+
 
 	public PerunAttribute() { }
 
@@ -33,6 +35,14 @@ public class PerunAttribute extends PerunAttributeDefinition {
 		super(id, friendlyName, namespace, description, type, displayName, writable, unique, entity, baseFriendlyName,
 				friendlyNameParameter);
 		this.value = value;
+	}
+
+	public String getValueCreatedAt() {
+		return valueCreatedAt;
+	}
+
+	public void setValueCreatedAt(String valueCreatedAt) {
+		this.valueCreatedAt = valueCreatedAt;
 	}
 
 	public Object getValue() {

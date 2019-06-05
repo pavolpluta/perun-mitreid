@@ -1,17 +1,20 @@
 package cz.muni.ics.oidc.server.claims;
 
 import cz.muni.ics.oidc.models.RichUser;
+import cz.muni.ics.oidc.server.connectors.PerunConnector;
 
 public class ClaimSourceProduceContext {
 
 	private final long perunUserId;
 	private final String sub;
-	private RichUser richUser;
+	private final RichUser richUser;
+	private final PerunConnector perunConnector;
 
-	public ClaimSourceProduceContext(long perunUserId, String sub, RichUser richUser) {
+	public ClaimSourceProduceContext(long perunUserId, String sub, RichUser richUser, PerunConnector perunConnector) {
 		this.perunUserId = perunUserId;
 		this.sub = sub;
 		this.richUser = richUser;
+		this.perunConnector = perunConnector;
 	}
 
 	public RichUser getRichUser() {
@@ -24,6 +27,10 @@ public class ClaimSourceProduceContext {
 
 	public String getSub() {
 		return sub;
+	}
+
+	public PerunConnector getPerunConnector() {
+		return perunConnector;
 	}
 
 	@Override

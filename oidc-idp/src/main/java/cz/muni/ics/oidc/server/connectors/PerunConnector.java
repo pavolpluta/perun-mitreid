@@ -89,4 +89,13 @@ public interface PerunConnector {
 	 */
 	Map<String, PerunAttribute> getFacilityAttributes(Facility facility, List<String> attributeNames);
 
+	/**
+	 * Gets user membership in group.
+	 * @param userId id of user
+	 * @param groupId id of group
+	 * @return true if the user is member of the group
+	 */
+	boolean isUserInGroup(Long userId,Long groupId);
+
+	PerunAttribute getUserAttribute(Long userId, String attributeName);
 }
