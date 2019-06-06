@@ -10,6 +10,7 @@ import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
 import cz.muni.ics.oidc.models.Vo;
 import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.connectors.Affiliation;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.entry.Attribute;
@@ -217,5 +218,17 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	public PerunAttribute getUserAttribute(Long userId, String attributeName) {
 		//TODO: implement
 		return fallbackConnector.getUserAttribute(userId, attributeName);
+	}
+
+	@Override
+	public List<Affiliation> getUserExtSourcesAffiliations(Long userId) {
+		//TODO: implement
+		return fallbackConnector.getUserExtSourcesAffiliations(userId);
+	}
+
+	@Override
+	public List<Affiliation> getGroupAffiliations(Long userId) {
+		//TODO: implement
+		return fallbackConnector.getGroupAffiliations(userId);
 	}
 }

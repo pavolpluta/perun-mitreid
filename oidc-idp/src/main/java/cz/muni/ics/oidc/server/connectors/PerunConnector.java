@@ -97,5 +97,25 @@ public interface PerunConnector {
 	 */
 	boolean isUserInGroup(Long userId,Long groupId);
 
+	/**
+	 * Gets the attribute of the user.
+	 * @param userId id of user
+	 * @param attributeName full name of attribute
+	 * @return attribute
+	 */
 	PerunAttribute getUserAttribute(Long userId, String attributeName);
+
+	/**
+	 * For the given user, gets all string values of the affiliation attribute of all UserExtSources of type ExtSourceIdp
+	 * @param userId id of user
+	 * @return list of values of attribute affiliation
+	 */
+	List<Affiliation> getUserExtSourcesAffiliations(Long userId);
+
+	/**
+	 * For the given user, gets all string values of the groupAffiliation attribute of groups of the user
+	 * @param userId id of user
+	 * @return list of values of attribute affiliation
+	 */
+	List<Affiliation> getGroupAffiliations(Long userId);
 }

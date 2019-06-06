@@ -2,6 +2,7 @@ package cz.muni.ics.oidc.server.connectors.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.google.common.collect.ImmutableMap;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
@@ -12,6 +13,7 @@ import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
 import cz.muni.ics.oidc.models.Vo;
 import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.connectors.Affiliation;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
@@ -34,6 +36,7 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -280,6 +283,56 @@ public class PerunConnectorRpc implements PerunConnector {
 	@Override
 	public PerunAttribute getUserAttribute(Long userId, String attributeName) {
 		return Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("user", userId, "attributeName", attributeName)));
+	}
+
+	@Override
+	public List<Affiliation> getUserExtSourcesAffiliations(Long userId) {
+		log.trace("getUserExtSourcesAffiliations(user={})", userId);
+		String attributeName = "urn:perun:ues:attribute-def:def:affiliation";
+		ArrayNode listOfUes = (ArrayNode) makeRpcCall("/usersManager/getUserExtSources", ImmutableMap.of("user", userId));
+		List<Affiliation> affiliations = new ArrayList<>();
+		for (JsonNode ues : listOfUes) {
+			JsonNode extSource = ues.path("extSource");
+			if (extSource.path("type").asText().equals("cz.metacentrum.perun.core.impl.ExtSourceIdp")) {
+				long id = ues.path("id").asLong();
+				String login = ues.path("login").asText();
+				String name = extSource.path("name").asText();
+				log.trace("ues id={},name={},login={}", id, name, login);
+				PerunAttribute perunAttribute = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("userExtSource", id, "attributeName", attributeName)));
+				String value = perunAttribute.valueAsString();
+				if (value != null) {
+					long linuxTime = Timestamp.valueOf(perunAttribute.getValueModifiedAt()).getTime() / 1000L;
+					for (String v : value.split(";")) {
+						Affiliation affiliation = new Affiliation(name, v, linuxTime);
+						log.debug("found {} from IdP {} with modif time {}", v, name, perunAttribute.getValueModifiedAt());
+						affiliations.add(affiliation);
+					}
+				}
+			}
+		}
+		return affiliations;
+	}
+
+	@Override
+	public List<Affiliation> getGroupAffiliations(Long userId) {
+		log.trace("getGroupAffiliations(user={})", userId);
+		List<Affiliation> affiliations = new ArrayList<>();
+		for (Member member : Mapper.mapMembers(makeRpcCall("/membersManager/getMembersByUser", ImmutableMap.of("user", userId)))) {
+			if ("VALID".equals(member.getStatus())) {
+				for (Group group : Mapper.mapGroups(makeRpcCall("/groupsManager/getMemberGroups", ImmutableMap.of("member", member.getId())))) {
+					PerunAttribute attr = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("group", group.getId(), "attributeName", "urn:perun:group:attribute-def:def:groupAffiliations")));
+					if (attr.getValue() != null) {
+						long linuxTime = System.currentTimeMillis() / 1000L;
+						for (String value : attr.valueAsList()) {
+							Affiliation affiliation = new Affiliation(null, value, linuxTime);
+							log.debug("found {} on group {}", value, group.getName());
+							affiliations.add(affiliation);
+						}
+					}
+				}
+			}
+		}
+		return affiliations;
 	}
 
 	public PerunAttribute getFacilityAttribute(Facility facility, String attributeName) {
