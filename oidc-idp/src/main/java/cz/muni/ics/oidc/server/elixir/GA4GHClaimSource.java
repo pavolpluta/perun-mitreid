@@ -65,7 +65,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		//by=system for users with affiliation asserted by their IdP (set in UserExtSource attribute "affiliation")
 		StringBuilder sb = new StringBuilder("Affiliations: ");
 		for (Affiliation affiliation : affiliations) {
-			long expires = affiliation.getAsserted() + ONE_YEAR;
+			long expires = Instant.now().getEpochSecond() + ONE_YEAR;//values are not updated, setting one year in the future
 			sb.append(affiliation.getValue()).append(",");
 			affiliationAndRole.add(createRIClaim(affiliation.getValue(), affiliation.getSource(), "system", affiliation.getAsserted(), expires));
 		}
@@ -104,21 +104,23 @@ public class GA4GHClaimSource extends ClaimSource {
 		String valueCreatedAt = elixirBonaFideStatusREMS.getValueCreatedAt();
 		if (valueCreatedAt != null) {
 			long asserted = Timestamp.valueOf(valueCreatedAt).getTime() / 1000L;
-			long expires = asserted + ONE_YEAR;
+			long expires = Instant.now().getEpochSecond() + ONE_YEAR;
 			researcherStatus.add(createRIClaim(BONA_FIDE_URL, NO_ORG_URL, "peer", asserted, expires));
 			sb.append("peer on ").append(isoDate(asserted));
 		}
 		//by=system for users with faculty affiliation asserted by their IdP (set in UserExtSource attribute "affiliation")
 		for (Affiliation affiliation : affiliations) {
 			if (affiliation.getValue().startsWith("faculty@")) {
-				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue() + " " + affiliation.getSource(), "system", affiliation.getAsserted(), affiliation.getAsserted() + ONE_YEAR));
+				long expires = Instant.now().getEpochSecond() + ONE_YEAR;
+				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue() + " " + affiliation.getSource(), "system", affiliation.getAsserted(), expires));
 				sb.append("system as affiliation ").append(affiliation.getValue()).append(" on ").append(isoDate(affiliation.getAsserted()));
 			}
 		}
 		//by=so for users with faculty affiliation asserted by membership in a group with groupAffiliations attribute
 		for (Affiliation affiliation : pctx.getPerunConnector().getGroupAffiliations(pctx.getPerunUserId())) {
 			if (affiliation.getValue().startsWith("faculty@")) {
-				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue(), "so", affiliation.getAsserted(), affiliation.getAsserted() + ONE_YEAR));
+				long expires = Instant.now().getEpochSecond() + ONE_YEAR;
+				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue(), "so", affiliation.getAsserted(), expires));
 				sb.append("signing official as affiliation ").append(affiliation.getValue()).append(" on ").append(isoDate(affiliation.getAsserted()));
 			}
 		}
