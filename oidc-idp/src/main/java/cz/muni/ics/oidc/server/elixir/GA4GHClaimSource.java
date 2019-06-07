@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
@@ -13,6 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @SuppressWarnings("unused")
@@ -35,35 +40,45 @@ public class GA4GHClaimSource extends ClaimSource {
 		List<Affiliation> affiliations = pctx.getPerunConnector().getUserExtSourcesAffiliations(pctx.getPerunUserId());
 
 		ArrayNode affiliationAndRole = ga4gh.arrayNode();
-		addAffiliationAndRoles(pctx, affiliationAndRole, affiliations);
+		JsonNode affDesc = addAffiliationAndRoles(pctx, affiliationAndRole, affiliations);
+		ga4gh.set("AffiliationAndRole.description", affDesc);
 		ga4gh.set("AffiliationAndRole", affiliationAndRole);
 
 		ArrayNode controlledAccessGrants = ga4gh.arrayNode();
-		addControlledAccessGrants(pctx, controlledAccessGrants);
+		TextNode ctrlDesc = addControlledAccessGrants(pctx, controlledAccessGrants);
+		ga4gh.set("ControlledAccessGrants.description", ctrlDesc);
 		ga4gh.set("ControlledAccessGrants", controlledAccessGrants);
 
 		ArrayNode acceptedTermsAndPolicies = ga4gh.arrayNode();
-		addAcceptedTermsAndPolicies(pctx, acceptedTermsAndPolicies);
+		TextNode termsDesc = addAcceptedTermsAndPolicies(pctx, acceptedTermsAndPolicies);
+		ga4gh.set("AcceptedTermsAndPolicies.description", termsDesc);
 		ga4gh.set("AcceptedTermsAndPolicies", acceptedTermsAndPolicies);
 
 		ArrayNode researcherStatus = ga4gh.arrayNode();
-		addResearcherStatuses(pctx, researcherStatus, affiliations);
+		TextNode resDesc = addResearcherStatuses(pctx, researcherStatus, affiliations);
+		ga4gh.set("ResearcherStatus.description", resDesc);
 		ga4gh.set("ResearcherStatus", researcherStatus);
 		return ga4gh;
 	}
 
-	private void addAffiliationAndRoles(ClaimSourceProduceContext pctx, ArrayNode affiliationAndRole, List<Affiliation> affiliations) {
+	private JsonNode addAffiliationAndRoles(ClaimSourceProduceContext pctx, ArrayNode affiliationAndRole, List<Affiliation> affiliations) {
+		//by=system for users with affiliation asserted by their IdP (set in UserExtSource attribute "affiliation")
+		StringBuilder sb = new StringBuilder("Affiliations: ");
 		for (Affiliation affiliation : affiliations) {
-			affiliationAndRole.add(createRIClaim(affiliation.getValue(), affiliation.getSource(), "system", affiliation.getAsserted(), affiliation.getAsserted() + ONE_YEAR));
+			long expires = affiliation.getAsserted() + ONE_YEAR;
+			sb.append(affiliation.getValue()).append(",");
+			affiliationAndRole.add(createRIClaim(affiliation.getValue(), affiliation.getSource(), "system", affiliation.getAsserted(), expires));
 		}
+		sb.deleteCharAt(sb.length()-1);
+		return affiliationAndRole.textNode(sb.toString());
 	}
 
-	private void addControlledAccessGrants(ClaimSourceProduceContext pctx, ArrayNode controlledAccessGrants) {
-
+	private TextNode addControlledAccessGrants(ClaimSourceProduceContext pctx, ArrayNode controlledAccessGrants) {
+		return controlledAccessGrants.textNode("nothing so far");
 	}
 
-	private void addAcceptedTermsAndPolicies(ClaimSourceProduceContext pctx, ArrayNode acceptedTermsAndPolicies) {
-		// group 10432  is "Bona Fide Researchers"
+	private TextNode addAcceptedTermsAndPolicies(ClaimSourceProduceContext pctx, ArrayNode acceptedTermsAndPolicies) {
+		//by=self for members of the group 10432 "Bona Fide Researchers"
 		boolean userInGroup = pctx.getPerunConnector().isUserInGroup(pctx.getPerunUserId(), 10432L);
 		if (userInGroup) {
 			PerunAttribute bonaFideStatus = pctx.getPerunConnector().getUserAttribute(pctx.getPerunUserId(), "urn:perun:user:attribute-def:def:bonaFideStatus");
@@ -76,30 +91,42 @@ public class GA4GHClaimSource extends ClaimSource {
 			}
 			long expires = asserted + (ONE_YEAR * 100L);
 			acceptedTermsAndPolicies.add(createRIClaim(BONA_FIDE_URL, NO_ORG_URL, "self", asserted, expires));
+			return acceptedTermsAndPolicies.textNode("terms accepted on " + isoDate(asserted));
+		} else {
+			return acceptedTermsAndPolicies.textNode("not accepted");
 		}
 	}
 
-	private void addResearcherStatuses(ClaimSourceProduceContext pctx, ArrayNode researcherStatus, List<Affiliation> affiliations) {
-		//by=peer
+	private TextNode addResearcherStatuses(ClaimSourceProduceContext pctx, ArrayNode researcherStatus, List<Affiliation> affiliations) {
+		StringBuilder sb = new StringBuilder("Researcher status asserted by ");
+		//by=peer for users with attribute elixirBonaFideStatusREMS
 		PerunAttribute elixirBonaFideStatusREMS = pctx.getPerunConnector().getUserAttribute(pctx.getPerunUserId(), "urn:perun:user:attribute-def:def:elixirBonaFideStatusREMS");
 		String valueCreatedAt = elixirBonaFideStatusREMS.getValueCreatedAt();
 		if (valueCreatedAt != null) {
 			long asserted = Timestamp.valueOf(valueCreatedAt).getTime() / 1000L;
 			long expires = asserted + ONE_YEAR;
 			researcherStatus.add(createRIClaim(BONA_FIDE_URL, NO_ORG_URL, "peer", asserted, expires));
+			sb.append("peer on ").append(isoDate(asserted));
 		}
-		//by=system
+		//by=system for users with faculty affiliation asserted by their IdP (set in UserExtSource attribute "affiliation")
 		for (Affiliation affiliation : affiliations) {
 			if (affiliation.getValue().startsWith("faculty@")) {
-				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue()+" "+affiliation.getSource(), "system", affiliation.getAsserted(), affiliation.getAsserted() + ONE_YEAR));
+				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue() + " " + affiliation.getSource(), "system", affiliation.getAsserted(), affiliation.getAsserted() + ONE_YEAR));
+				sb.append("system as affiliation ").append(affiliation.getValue()).append(" on ").append(isoDate(affiliation.getAsserted()));
 			}
 		}
-		//by=so
+		//by=so for users with faculty affiliation asserted by membership in a group with groupAffiliations attribute
 		for (Affiliation affiliation : pctx.getPerunConnector().getGroupAffiliations(pctx.getPerunUserId())) {
 			if (affiliation.getValue().startsWith("faculty@")) {
 				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue(), "so", affiliation.getAsserted(), affiliation.getAsserted() + ONE_YEAR));
+				sb.append("signing official as affiliation ").append(affiliation.getValue()).append(" on ").append(isoDate(affiliation.getAsserted()));
 			}
 		}
+		return researcherStatus.textNode(researcherStatus.size() == 0 ? "not researcher" : sb.toString());
+	}
+
+	private String isoDate(long linuxTime) {
+		return DateTimeFormatter.ISO_LOCAL_DATE.format(ZonedDateTime.ofInstant(Instant.ofEpochSecond(linuxTime), ZoneId.systemDefault()));
 	}
 
 	private ObjectNode createRIClaim(String value, String source, String by, long asserted, long expires) {
