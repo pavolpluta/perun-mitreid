@@ -5,17 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import cz.muni.ics.oidc.server.PerunTokenEnhancer;
-import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
-import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.http.client.InterceptingClientHttpRequestFactory;
 import org.springframework.http.client.support.BasicAuthorizationInterceptor;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
@@ -28,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -98,28 +92,11 @@ public class DatasetPermissionsAccessTokenModifier implements PerunTokenEnhancer
 		//GA4GH
 		if(scopes.contains(GA4GH)) {
 			log.debug("adding claims required by GA4GH to access token");
-			builder.claim("ga4gh.userinfo_claims", Arrays.asList("AffiliationAndRole", "ControlledAccessGrants", "AcceptedTermsAndPolicies", "ResearcherStatus"));
+			builder.claim("ga4gh_userinfo_claims", Arrays.asList("AffiliationAndRole", "ControlledAccessGrants", "AcceptedTermsAndPolicies", "ResearcherStatus"));
 			builder.audience(Collections.singletonList(authentication.getOAuth2Request().getClientId()));
 			ArrayList<String> scopesList = new ArrayList<>(accessToken.getScope());
 			scopesList.sort(String::compareTo);
 			builder.claim("scope", scopesList);
-		}
-	}
-
-	private static class AddHeaderInterceptor implements ClientHttpRequestInterceptor {
-
-		private final String header;
-		private final String value;
-
-		AddHeaderInterceptor(String header, String value) {
-			this.header = header;
-			this.value = value;
-		}
-
-		@Override
-		public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
-			request.getHeaders().add(header, value);
-			return execution.execute(request, body);
 		}
 	}
 
