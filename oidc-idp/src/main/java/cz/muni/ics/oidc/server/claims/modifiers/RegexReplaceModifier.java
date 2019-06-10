@@ -1,5 +1,8 @@
 package cz.muni.ics.oidc.server.claims.modifiers;
 
+import cz.muni.ics.oidc.server.claims.ClaimModifier;
+import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
+
 import java.util.regex.Pattern;
 
 /**
@@ -9,15 +12,15 @@ import java.util.regex.Pattern;
  * @author Martin Kuba makub@ics.muni.cz
  */
 @SuppressWarnings("unused")
-public class RegexReplaceModifier extends ClaimValueModifier {
+public class RegexReplaceModifier extends ClaimModifier {
 
 	private Pattern regex;
 	private String replacement;
 
-	public RegexReplaceModifier(ClaimValueModifierInitContext ctx) {
+	public RegexReplaceModifier(ClaimModifierInitContext ctx) {
 		super(ctx);
-		regex = Pattern.compile(ctx.getProperties().getProperty(ctx.getPropertyPrefix() + ".find", ""));
-		replacement = ctx.getProperties().getProperty(ctx.getPropertyPrefix() + ".replace", "");
+		regex = Pattern.compile(ctx.getProperty("find", ""));
+		replacement = ctx.getProperty("replace", "");
 	}
 
 	@Override

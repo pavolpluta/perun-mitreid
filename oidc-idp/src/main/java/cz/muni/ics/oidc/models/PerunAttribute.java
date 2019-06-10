@@ -24,15 +24,25 @@ public class PerunAttribute extends PerunAttributeDefinition {
 	private final static String LARGE_ARRAY_LIST_TYPE = "java.lang.LargeArrayList";
 
 	private Object value;
+	private String valueCreatedAt;
+	private String valueModifiedAt;
 
 	public PerunAttribute() { }
 
-	public PerunAttribute(Long id, String friendlyName, String namespace, String description, String type,
-						  String displayName, boolean writable, boolean unique, String entity, String baseFriendlyName,
-						  String friendlyNameParameter, Object value) {
-		super(id, friendlyName, namespace, description, type, displayName, writable, unique, entity, baseFriendlyName,
-				friendlyNameParameter);
-		this.value = value;
+	public String getValueCreatedAt() {
+		return valueCreatedAt;
+	}
+
+	public void setValueCreatedAt(String valueCreatedAt) {
+		this.valueCreatedAt = valueCreatedAt;
+	}
+
+	public String getValueModifiedAt() {
+		return valueModifiedAt;
+	}
+
+	public void setValueModifiedAt(String valueModifiedAt) {
+		this.valueModifiedAt = valueModifiedAt;
 	}
 
 	public Object getValue() {

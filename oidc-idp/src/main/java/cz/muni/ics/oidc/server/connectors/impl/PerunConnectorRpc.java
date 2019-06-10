@@ -2,6 +2,8 @@ package cz.muni.ics.oidc.server.connectors.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.google.common.collect.ImmutableMap;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Mapper;
@@ -11,17 +13,30 @@ import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.RichUser;
 import cz.muni.ics.oidc.models.Vo;
 import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.connectors.Affiliation;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import org.apache.http.HeaderElement;
+import org.apache.http.HeaderElementIterator;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.message.BasicHeaderElementIterator;
+import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.InterceptingClientHttpRequestFactory;
 import org.springframework.http.client.support.BasicAuthorizationInterceptor;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -47,6 +62,7 @@ public class PerunConnectorRpc implements PerunConnector {
 	private String perunPassword;
 	private String oidcClientIdAttr;
 	private String oidcCheckMembershipAttr;
+	private RestTemplate restTemplate;
 
 	public void setPerunUrl(String perunUrl) {
 		log.trace("setting perunUrl to {}", perunUrl);
@@ -71,6 +87,46 @@ public class PerunConnectorRpc implements PerunConnector {
 	public void setOidcCheckMembershipAttr(String oidcCheckMembershipAttr) {
 		log.trace("setting OIDCCheckGroupMembership attr name");
 		this.oidcCheckMembershipAttr = oidcCheckMembershipAttr;
+	}
+
+	@PostConstruct
+	public void postInit() {
+		restTemplate = new RestTemplate();
+		//HTTP connection pooling, see https://howtodoinjava.com/spring-restful/resttemplate-httpclient-java-config/
+		RequestConfig requestConfig = RequestConfig.custom()
+				.setConnectionRequestTimeout(30000) // The timeout when requesting a connection from the connection manager
+				.setConnectTimeout(30000) // Determines the timeout in milliseconds until a connection is established
+				.setSocketTimeout(60000) // The timeout for waiting for data
+				.build();
+		PoolingHttpClientConnectionManager poolingConnectionManager = new PoolingHttpClientConnectionManager();
+		poolingConnectionManager.setMaxTotal(20); // maximum connections total
+		poolingConnectionManager.setDefaultMaxPerRoute(18);
+		ConnectionKeepAliveStrategy connectionKeepAliveStrategy = (response, context) -> {
+			HeaderElementIterator it = new BasicHeaderElementIterator
+					(response.headerIterator(HTTP.CONN_KEEP_ALIVE));
+			while (it.hasNext()) {
+				HeaderElement he = it.nextElement();
+				String param = he.getName();
+				String value = he.getValue();
+
+				if (value != null && param.equalsIgnoreCase("timeout")) {
+					return Long.parseLong(value) * 1000;
+				}
+			}
+			return 20000L;
+		};
+		CloseableHttpClient httpClient = HttpClients.custom()
+				.setDefaultRequestConfig(requestConfig)
+				.setConnectionManager(poolingConnectionManager)
+				.setKeepAliveStrategy(connectionKeepAliveStrategy)
+				.build();
+		HttpComponentsClientHttpRequestFactory poolingRequestFactory = new HttpComponentsClientHttpRequestFactory();
+		poolingRequestFactory.setHttpClient(httpClient);
+		//basic authentication
+		List<ClientHttpRequestInterceptor> interceptors =
+				Collections.singletonList(new BasicAuthorizationInterceptor(perunUser, perunPassword));
+		InterceptingClientHttpRequestFactory authenticatingRequestFactory = new InterceptingClientHttpRequestFactory(poolingRequestFactory, interceptors);
+		restTemplate.setRequestFactory(authenticatingRequestFactory);
 	}
 
 	@Override
@@ -142,7 +198,7 @@ public class PerunConnectorRpc implements PerunConnector {
 		//Filter out vos where member is other than valid or expired. These vos cannot be used for registration
 		Map<Long, String> memberVoStatuses = convertMembersListToStatusesMap(userMembers);
 		Map<Long, Vo> vosForRegistration = new HashMap<>();
-		for (Map.Entry<Long, Vo> entry: vosMap.entrySet()) {
+		for (Map.Entry<Long, Vo> entry : vosMap.entrySet()) {
 			if (memberVoStatuses.containsKey(entry.getKey())) {
 				String status = memberVoStatuses.get(entry.getKey());
 				if (status.equalsIgnoreCase("VALID") || status.equalsIgnoreCase("EXPIRED")) {
@@ -161,9 +217,9 @@ public class PerunConnectorRpc implements PerunConnector {
 
 		// create map for processing
 		Map<Vo, List<Group>> result = new HashMap<>();
-		for (Group group: groupsForRegistration) {
+		for (Group group : groupsForRegistration) {
 			Vo vo = vosMap.get(group.getVoId());
-			if (! result.containsKey(vo)) {
+			if (!result.containsKey(vo)) {
 				result.put(vo, new ArrayList<>());
 			}
 			List<Group> list = result.get(vo);
@@ -176,7 +232,7 @@ public class PerunConnectorRpc implements PerunConnector {
 
 	private Map<Long, String> convertMembersListToStatusesMap(List<Member> userMembers) {
 		Map<Long, String> res = new HashMap<>();
-		for (Member m: userMembers) {
+		for (Member m : userMembers) {
 			res.put(m.getVoId(), m.getStatus());
 		}
 
@@ -189,7 +245,7 @@ public class PerunConnectorRpc implements PerunConnector {
 		List<Group> allowedGroups = getAllowedGroups(facility);
 
 		if (allowedGroups != null && !allowedGroups.isEmpty()) {
-			for (Group group: allowedGroups) {
+			for (Group group : allowedGroups) {
 				if (getApplicationForm(group)) {
 					log.trace("groupsWhereCanRegisterExists({}) returns: true", facility);
 					return true;
@@ -212,6 +268,71 @@ public class PerunConnectorRpc implements PerunConnector {
 		Map<String, PerunAttribute> attrs = Mapper.mapAttributes(res);
 		log.trace("getFacilityAttributes({}, {}) returns: {}", facility, attributeNames, attrs);
 		return attrs;
+	}
+
+	@Override
+	public boolean isUserInGroup(Long userId, Long groupId) {
+		Group group = Mapper.mapGroup(makeRpcCall("/groupsManager/getGroupById", ImmutableMap.of("id", groupId)));
+		Member member = Mapper.mapMember(makeRpcCall("/membersManager/getMemberByUser", ImmutableMap.of("vo", group.getVoId(), "user", userId)));
+		JsonNode res = makeRpcCall("/groupsManager/isGroupMember", ImmutableMap.of("group", groupId, "member", member.getId()));
+		boolean result = res.asBoolean(false);
+		log.trace("isUserInGroup(userId={},group={}) returns {}", userId, group.getName(), result);
+		return result;
+	}
+
+	@Override
+	public PerunAttribute getUserAttribute(Long userId, String attributeName) {
+		return Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("user", userId, "attributeName", attributeName)));
+	}
+
+	@Override
+	public List<Affiliation> getUserExtSourcesAffiliations(Long userId) {
+		log.trace("getUserExtSourcesAffiliations(user={})", userId);
+		String attributeName = "urn:perun:ues:attribute-def:def:affiliation";
+		ArrayNode listOfUes = (ArrayNode) makeRpcCall("/usersManager/getUserExtSources", ImmutableMap.of("user", userId));
+		List<Affiliation> affiliations = new ArrayList<>();
+		for (JsonNode ues : listOfUes) {
+			JsonNode extSource = ues.path("extSource");
+			if (extSource.path("type").asText().equals("cz.metacentrum.perun.core.impl.ExtSourceIdp")) {
+				long id = ues.path("id").asLong();
+				String login = ues.path("login").asText();
+				String name = extSource.path("name").asText();
+				log.trace("ues id={},name={},login={}", id, name, login);
+				PerunAttribute perunAttribute = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("userExtSource", id, "attributeName", attributeName)));
+				String value = perunAttribute.valueAsString();
+				if (value != null) {
+					long linuxTime = Timestamp.valueOf(perunAttribute.getValueModifiedAt()).getTime() / 1000L;
+					for (String v : value.split(";")) {
+						Affiliation affiliation = new Affiliation(name, v, linuxTime);
+						log.debug("found {} from IdP {} with modif time {}", v, name, perunAttribute.getValueModifiedAt());
+						affiliations.add(affiliation);
+					}
+				}
+			}
+		}
+		return affiliations;
+	}
+
+	@Override
+	public List<Affiliation> getGroupAffiliations(Long userId) {
+		log.trace("getGroupAffiliations(user={})", userId);
+		List<Affiliation> affiliations = new ArrayList<>();
+		for (Member member : Mapper.mapMembers(makeRpcCall("/membersManager/getMembersByUser", ImmutableMap.of("user", userId)))) {
+			if ("VALID".equals(member.getStatus())) {
+				for (Group group : Mapper.mapGroups(makeRpcCall("/groupsManager/getMemberGroups", ImmutableMap.of("member", member.getId())))) {
+					PerunAttribute attr = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("group", group.getId(), "attributeName", "urn:perun:group:attribute-def:def:groupAffiliations")));
+					if (attr.getValue() != null) {
+						long linuxTime = System.currentTimeMillis() / 1000L;
+						for (String value : attr.valueAsList()) {
+							Affiliation affiliation = new Affiliation(null, value, linuxTime);
+							log.debug("found {} on group {}", value, group.getName());
+							affiliations.add(affiliation);
+						}
+					}
+				}
+			}
+		}
+		return affiliations;
 	}
 
 	public PerunAttribute getFacilityAttribute(Facility facility, String attributeName) {
@@ -240,7 +361,7 @@ public class PerunConnectorRpc implements PerunConnector {
 	private List<Vo> getVosByShortNames(List<String> voShortNames) {
 		log.trace("getVosByShortNames({})", voShortNames);
 		List<Vo> vos = new ArrayList<>();
-		for (String shortName: voShortNames) {
+		for (String shortName : voShortNames) {
 			Vo vo = getVoByShortName(shortName);
 			vos.add(vo);
 		}
@@ -328,7 +449,7 @@ public class PerunConnectorRpc implements PerunConnector {
 
 	private Map<Long, Vo> convertVoListToMap(List<Vo> vos) {
 		Map<Long, Vo> map = new HashMap<>();
-		for (Vo vo: vos) {
+		for (Vo vo : vos) {
 			map.put(vo.getId(), vo);
 		}
 
@@ -336,11 +457,6 @@ public class PerunConnectorRpc implements PerunConnector {
 	}
 
 	private JsonNode makeRpcCall(String urlPart, Map<String, Object> map) {
-		//prepare basic auth
-		RestTemplate restTemplate = new RestTemplate();
-		List<ClientHttpRequestInterceptor> interceptors =
-				Collections.singletonList(new BasicAuthorizationInterceptor(perunUser, perunPassword));
-		restTemplate.setRequestFactory(new InterceptingClientHttpRequestFactory(restTemplate.getRequestFactory(), interceptors));
 		String actionUrl = perunUrl + "/json" + urlPart;
 		//make the call
 		try {

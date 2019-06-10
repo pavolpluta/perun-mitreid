@@ -136,6 +136,7 @@ public class PerunTokenEnhancer implements TokenEnhancer {
 
     private void accessTokenClaimsHook(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
         if (accessTokenClaimsModifier != null) {
+            log.trace("calling accessTokenClaimsHook() on {}",accessTokenClaimsModifier.getClass().getName());
             accessTokenClaimsModifier.modifyClaims(sub, builder, accessToken, authentication);
         }
     }

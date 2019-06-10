@@ -8,9 +8,13 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import cz.muni.ics.oidc.models.RichUser;
+import cz.muni.ics.oidc.server.claims.ClaimModifier;
+import cz.muni.ics.oidc.server.claims.ClaimSource;
+import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
+import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import cz.muni.ics.oidc.server.claims.PerunCustomClaimDefinition;
-import cz.muni.ics.oidc.server.claims.modifiers.ClaimValueModifier;
-import cz.muni.ics.oidc.server.claims.modifiers.ClaimValueModifierInitContext;
+import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
+import cz.muni.ics.oidc.server.claims.sources.PerunAttributeClaimSource;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.mitre.openid.connect.model.Address;
 import org.mitre.openid.connect.model.DefaultAddress;
@@ -38,13 +42,14 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunUserInfoRepository.class);
 
+	private static final String SOURCE_CLASS = ".sourceClass";
 	private static final String MODIFIER_CLASS = ".modifierClass";
 
 	private PerunConnector perunConnector;
 	private Properties properties;
 
 	private String subAttribute;
-	private ClaimValueModifier subModifier;
+	private ClaimModifier subModifier;
 	private String preferredUsernameAttribute;
 	private String givenNameAttribute;
 	private String familyNameAttribute;
@@ -129,35 +134,30 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 				log.error("property {} not found, skipping custom claim {}", scopeProperty, claim);
 				continue;
 			}
-			//get Perun user attribute from which to get value
-			String attributeProperty = propertyPrefix + ".attribute";
-			String perunAttribute = properties.getProperty(attributeProperty);
-			if (perunAttribute == null) {
-				log.error("property {} not found, skipping custom claim {}", attributeProperty, claim);
-				continue;
-			}
+			//get ClaimSource
+			ClaimSource claimSource = loadClaimSource(propertyPrefix);
 			//optional claim value modifier
-			ClaimValueModifier claimValueModifier = loadClaimValueModifier(propertyPrefix);
+			ClaimModifier claimModifier = loadClaimValueModifier(propertyPrefix);
 			//add claim definition
-			customClaims.add(new PerunCustomClaimDefinition(scope, claim, perunAttribute, claimValueModifier));
+			customClaims.add(new PerunCustomClaimDefinition(scope, claim, claimSource, claimModifier));
 		}
 	}
 
-	private ClaimValueModifier loadClaimValueModifier(String propertyPrefix) {
+	private ClaimModifier loadClaimValueModifier(String propertyPrefix) {
 		String modifierClass = properties.getProperty(propertyPrefix + MODIFIER_CLASS);
 		if (modifierClass != null) {
 			try {
 				Class<?> rawClazz = Class.forName(modifierClass);
-				if (!ClaimValueModifier.class.isAssignableFrom(rawClazz)) {
-					log.error("modifier class {} does not extend ClaimValueModifier", modifierClass);
+				if (!ClaimModifier.class.isAssignableFrom(rawClazz)) {
+					log.error("modifier class {} does not extend ClaimModifier", modifierClass);
 					return null;
 				}
-				@SuppressWarnings("unchecked") Class<ClaimValueModifier> clazz = (Class<ClaimValueModifier>) rawClazz;
-				Constructor<ClaimValueModifier> constructor = clazz.getConstructor(ClaimValueModifierInitContext.class);
-				ClaimValueModifierInitContext ctx = new ClaimValueModifierInitContext(propertyPrefix, properties);
-				ClaimValueModifier claimValueModifier = constructor.newInstance(ctx);
-				log.info("loaded modifier '{}' for {}", claimValueModifier, propertyPrefix);
-				return claimValueModifier;
+				@SuppressWarnings("unchecked") Class<ClaimModifier> clazz = (Class<ClaimModifier>) rawClazz;
+				Constructor<ClaimModifier> constructor = clazz.getConstructor(ClaimModifierInitContext.class);
+				ClaimModifierInitContext ctx = new ClaimModifierInitContext(propertyPrefix, properties);
+				ClaimModifier claimModifier = constructor.newInstance(ctx);
+				log.info("loaded claim modifier '{}' for {}", claimModifier, propertyPrefix);
+				return claimModifier;
 			} catch (ClassNotFoundException e) {
 				log.error("modifier class {} not found", modifierClass);
 				return null;
@@ -171,6 +171,33 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			}
 		} else {
 			log.debug("property {} not found, skipping", propertyPrefix + MODIFIER_CLASS);
+			return null;
+		}
+	}
+
+	private ClaimSource loadClaimSource(String propertyPrefix) {
+		String sourceClass = properties.getProperty(propertyPrefix + SOURCE_CLASS, PerunAttributeClaimSource.class.getName());
+		try {
+			Class<?> rawClazz = Class.forName(sourceClass);
+			if (!ClaimSource.class.isAssignableFrom(rawClazz)) {
+				log.error("source class {} does not extend ClaimSource", sourceClass);
+				return null;
+			}
+			@SuppressWarnings("unchecked") Class<ClaimSource> clazz = (Class<ClaimSource>) rawClazz;
+			Constructor<ClaimSource> constructor = clazz.getConstructor(ClaimSourceInitContext.class);
+			ClaimSourceInitContext ctx = new ClaimSourceInitContext(propertyPrefix, properties);
+			ClaimSource claimSource = constructor.newInstance(ctx);
+			log.info("loaded claim source '{}' for {}", claimSource, propertyPrefix);
+			return claimSource;
+		} catch (ClassNotFoundException e) {
+			log.error("source class {} not found", sourceClass);
+			return null;
+		} catch (NoSuchMethodException e) {
+			log.error("source class {} does not have proper constructor", sourceClass);
+			return null;
+		} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+			log.error("cannot instantiate " + sourceClass, e);
+			log.error("source class {} cannot be instantiated", sourceClass);
 			return null;
 		}
 	}
@@ -199,7 +226,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 	public PerunUserInfoRepository() {
 		this.cache = CacheBuilder.newBuilder()
 				.maximumSize(100)
-				.expireAfterAccess(30, TimeUnit.SECONDS)
+				.expireAfterAccess(60, TimeUnit.SECONDS)
 				.build(cacheLoader);
 	}
 
@@ -211,7 +238,8 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 		public UserInfo load(String username) {
 			log.trace("load({})", username);
 			PerunUserInfo ui = new PerunUserInfo();
-			RichUser richUser = perunConnector.getUserAttributes(Long.parseLong(username));
+			long perunUserId = Long.parseLong(username);
+			RichUser richUser = perunConnector.getUserAttributes(perunUserId);
 			//process
 
 
@@ -224,7 +252,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 				sub = subModifier.modify(sub);
 			}
 
-			ui.setId(Long.parseLong(username));
+			ui.setId(perunUserId);
 			ui.setSub(sub); // Subject - Identifier for the End-User at the Issuer.
 
 			ui.setPreferredUsername(richUser.getAttributeValue(preferredUsernameAttribute)); // Shorthand name by which the End-User wishes to be referred to at the RP
@@ -253,19 +281,23 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 			//address.setCountry("Czech Republic");
 			ui.setAddress(address);
 			//custom claims
+			ClaimSourceProduceContext pctx = new ClaimSourceProduceContext(perunUserId, sub, richUser, perunConnector);
+			log.trace("processing custom claims");
 			for (PerunCustomClaimDefinition pccd : customClaims) {
-				JsonNode claimInJson = richUser.getJson(pccd.getPerunAttributeName());
+				log.trace("producing value for claim {}",pccd.getClaim());
+				JsonNode claimInJson = pccd.getClaimSource().produceValue(pctx);
+				log.trace("produced value {}",claimInJson);
 				if(claimInJson==null) {
-					log.warn("claim {} is null",pccd.getPerunAttributeName());
+					log.warn("claim {} is null",pccd.getClaim());
 					continue;
 				}
-				ClaimValueModifier claimValueModifier = pccd.getClaimValueModifier();
-				if (claimValueModifier != null) {
-					log.debug("modifying values of claim '{}' using {}", pccd.getClaim(), claimValueModifier);
+				ClaimModifier claimModifier = pccd.getClaimModifier();
+				if (claimModifier != null) {
+					log.debug("modifying values of claim '{}' using {}", pccd.getClaim(), claimModifier);
 					//transform values
 					if (claimInJson.isTextual()) {
 						//transform a simple string value
-						claimInJson = TextNode.valueOf(claimValueModifier.modify(claimInJson.asText()));
+						claimInJson = TextNode.valueOf(claimModifier.modify(claimInJson.asText()));
 					} else if (claimInJson.isArray()) {
 					    claimInJson = claimInJson.deepCopy();
 						//transform all strings in an array
@@ -274,7 +306,7 @@ public class PerunUserInfoRepository implements UserInfoRepository {
 							JsonNode item = arrayNode.get(i);
 							if (item.isTextual()) {
 								String original = item.asText();
-								String modified = claimValueModifier.modify(original);
+								String modified = claimModifier.modify(original);
 								log.debug("transforming value '{}' to '{}'", original, modified);
 								arrayNode.set(i, TextNode.valueOf(modified));
 							}

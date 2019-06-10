@@ -156,7 +156,10 @@ public class Mapper {
 		attribute.setBaseFriendlyName(jsonNode.get("baseFriendlyName").asText());
 		attribute.setFriendlyNameParameter(jsonNode.get("friendlyNameParameter").asText());
 		attribute.setValue((jsonNode.get("value").isNull()) ? null : attribute.getType(), jsonNode.get("value"));
-
+		JsonNode valueCreatedAt = jsonNode.get("valueCreatedAt");
+		attribute.setValueCreatedAt(valueCreatedAt.isNull() ? null : valueCreatedAt.asText());
+		JsonNode valueModifiedAt = jsonNode.get("valueModifiedAt");
+		attribute.setValueModifiedAt(valueModifiedAt.isNull() ? null : valueModifiedAt.asText());
 		return attribute;
 	}
 

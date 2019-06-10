@@ -1,30 +1,28 @@
 package cz.muni.ics.oidc.server.claims;
 
-import cz.muni.ics.oidc.server.claims.modifiers.ClaimValueModifier;
-
 /**
  * Keeps definition of a custom user claim.
  * <ul>
  *     <li><b>scope</b> - which scope must be granted to include the claim</li>
  *     <li><b>claim</b> - name of the claim</li>
- *     <li><b>perunAttributeName</b> - id of Perun user attribute to obtain values from</li>
- *     <li><b>claimValueModifier</b> - instance of a class implementing {@link ClaimValueModifier}</li>
+ *     <li><b>claimSource</b> - instance of a class implementing {@link ClaimSource}</li>
+ *     <li><b>claimModifier</b> - instance of a class implementing {@link ClaimModifier}</li>
  * </ul>
- * @see ClaimValueModifier
+ * @see ClaimModifier
  * @author Martin Kuba makub@ics.muni.cz
  */
 public class PerunCustomClaimDefinition {
 
 	private String scope;
 	private String claim;
-	private String perunAttributeName;
-	private ClaimValueModifier claimValueModifier;
+	private ClaimSource claimSource;
+	private ClaimModifier claimModifier;
 
-	public PerunCustomClaimDefinition(String scope, String claim, String perunAttributeName, ClaimValueModifier claimValueModifier) {
+	public PerunCustomClaimDefinition(String scope, String claim, ClaimSource claimSource, ClaimModifier claimModifier) {
 		this.scope = scope;
 		this.claim = claim;
-		this.perunAttributeName = perunAttributeName;
-		this.claimValueModifier = claimValueModifier;
+		this.claimSource = claimSource;
+		this.claimModifier = claimModifier;
 	}
 
 	public String getScope() {
@@ -35,12 +33,12 @@ public class PerunCustomClaimDefinition {
 		return claim;
 	}
 
-	public String getPerunAttributeName() {
-		return perunAttributeName;
+	public ClaimSource getClaimSource() {
+		return claimSource;
 	}
 
-	public ClaimValueModifier getClaimValueModifier() {
-		return claimValueModifier;
+	public ClaimModifier getClaimModifier() {
+		return claimModifier;
 	}
 
 }

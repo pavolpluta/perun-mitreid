@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import cz.muni.ics.oidc.server.PerunTokenEnhancer;
+import net.minidev.json.JSONArray;
+import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.slf4j.Logger;
@@ -23,7 +25,10 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -40,14 +45,16 @@ public class DatasetPermissionsAccessTokenModifier implements PerunTokenEnhancer
 	private static final String DATASETS_PROPERTIES = "/etc/perun/datasets.properties";
 	private static final String PERMISSIONS_EGA = "permissions_ega";
 	private static final String PERMISSIONS_REMS = "permissions_rems";
+	private static final String GA4GH = "ga4gh"; //Global Alliance for Genomics and Health
 
 	public DatasetPermissionsAccessTokenModifier() {
 	}
 
 	@Override
 	public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+		log.trace("modifyClaims(sub={})",sub);
 		Set<String> scopes = accessToken.getScope();
-		if ((!scopes.contains(PERMISSIONS_EGA)) && (!scopes.contains(PERMISSIONS_REMS))) return;
+		if ((!scopes.contains(PERMISSIONS_EGA)) && (!scopes.contains(PERMISSIONS_REMS)) && (!scopes.contains(GA4GH))) return;
 
 		//load file
 		Properties properties = new Properties();
@@ -86,6 +93,16 @@ public class DatasetPermissionsAccessTokenModifier implements PerunTokenEnhancer
 			if (perms != null) {
 				builder.claim(PERMISSIONS_REMS, perms);
 			}
+		}
+
+		//GA4GH
+		if(scopes.contains(GA4GH)) {
+			log.debug("adding claims required by GA4GH to access token");
+			builder.claim("ga4gh.userinfo_claims", Arrays.asList("AffiliationAndRole", "ControlledAccessGrants", "AcceptedTermsAndPolicies", "ResearcherStatus"));
+			builder.audience(Collections.singletonList(authentication.getOAuth2Request().getClientId()));
+			ArrayList<String> scopesList = new ArrayList<>(accessToken.getScope());
+			scopesList.sort(String::compareTo);
+			builder.claim("scope", scopesList);
 		}
 	}
 
