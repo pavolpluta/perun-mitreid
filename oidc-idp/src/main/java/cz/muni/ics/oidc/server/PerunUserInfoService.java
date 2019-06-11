@@ -21,24 +21,25 @@ public class PerunUserInfoService implements UserInfoService {
 	@Autowired
 	private UserInfoRepository userInfoRepository;
 
+	@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
 	@Autowired
 	private ClientDetailsEntityService clientService;
 
 	@Override
 	public UserInfo getByUsername(String username) {
-		log.debug("getByUsername(username={})", username);
+		log.trace("getByUsername(username={})", username);
 		return userInfoRepository.getByUsername(username);
 	}
 
 	@Override
 	public UserInfo getByUsernameAndClientId(String username, String clientId) {
-		log.debug("getByUsernameAndClientId(username={},clientId={})", username, clientId);
+		log.trace("getByUsernameAndClientId(username={},clientId={})", username, clientId);
 		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
 		UserInfo userInfo = userInfoRepository.getByUsername(username);
 		if (client == null || userInfo == null) {
 			return null;
 		}
-		log.debug("getByUsernameAndClientId(user={},client={}) returns userInfo", userInfo.getName(), client.getClientName());
+		log.trace("getByUsernameAndClientId(user={},client={}) returns userInfo", userInfo.getName(), client.getClientName());
 		return userInfo;
 	}
 
