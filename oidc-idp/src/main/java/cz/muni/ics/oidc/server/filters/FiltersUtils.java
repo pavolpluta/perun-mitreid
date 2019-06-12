@@ -49,9 +49,10 @@ public class FiltersUtils {
 	 * @param clientService service fetching client details
 	 * @return extracted client, null if some error occurs
 	 */
+	@SuppressWarnings("unchecked")
 	static ClientDetailsEntity extractClient(RequestMatcher requestMatcher, HttpServletRequest request,
-											 OAuth2RequestFactory authRequestFactory,
-											 ClientDetailsEntityService clientService) {
+	                                         OAuth2RequestFactory authRequestFactory,
+	                                         ClientDetailsEntityService clientService) {
 		if (!requestMatcher.matches(request) || request.getParameter("response_type") == null) {
 			return null;
 		}
