@@ -191,7 +191,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		n.put("by", by);
 		n.put("asserted", asserted);
 		n.put("expires", expires);
-		if (condition != null && !condition.isNull()) {
+		if (condition != null && !condition.isNull() && !condition.isMissingNode()) {
 			n.set("condition", condition);
 		}
 		return n;
@@ -222,7 +222,7 @@ public class GA4GHClaimSource extends ClaimSource {
 					String by = grant.path("by").asText();
 					long asserted = grant.path("asserted").asLong();
 					long expires = grant.path("expires").asLong();
-					JsonNode condition = grant.path("condition");
+					JsonNode condition = grant.get("condition");
 					sb.append(",").append(value).append(" valid ").append(isoDate(asserted)).append(" - ").append(isoDate(expires));
 					controlledAccessGrants.add(createRIClaim(value, source, by, asserted, expires, condition));
 				}

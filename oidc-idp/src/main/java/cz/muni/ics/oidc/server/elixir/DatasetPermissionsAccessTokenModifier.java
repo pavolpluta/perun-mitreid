@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
-import cz.muni.ics.oidc.server.PerunTokenEnhancer;
+import cz.muni.ics.oidc.server.PerunAccessTokenEnhancer;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.slf4j.Logger;
@@ -20,7 +20,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
@@ -32,14 +31,17 @@ import java.util.Set;
  * @author Martin Kuba makub@ics.muni.cz
  */
 @SuppressWarnings("unused")
-public class DatasetPermissionsAccessTokenModifier implements PerunTokenEnhancer.AccessTokenClaimsModifier {
+public class DatasetPermissionsAccessTokenModifier implements PerunAccessTokenEnhancer.AccessTokenClaimsModifier {
 
 	private final static Logger log = LoggerFactory.getLogger(DatasetPermissionsAccessTokenModifier.class);
 
+	//TODO remove after Juha's demo
 	private static final String DATASETS_PROPERTIES = "/etc/perun/datasets.properties";
 	private static final String PERMISSIONS_EGA = "permissions_ega";
 	private static final String PERMISSIONS_REMS = "permissions_rems";
+
 	private static final String GA4GH = "ga4gh"; //Global Alliance for Genomics and Health
+	private static final String GA4GH_USERINFO_CLAIMS = "ga4gh_userinfo_claims";
 
 	public DatasetPermissionsAccessTokenModifier() {
 	}
@@ -47,9 +49,10 @@ public class DatasetPermissionsAccessTokenModifier implements PerunTokenEnhancer
 	@Override
 	public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
 		log.trace("modifyClaims(sub={})",sub);
+
+		//TODO remove after Juha's demo
 		Set<String> scopes = accessToken.getScope();
 		if ((!scopes.contains(PERMISSIONS_EGA)) && (!scopes.contains(PERMISSIONS_REMS)) && (!scopes.contains(GA4GH))) return;
-
 		//load file
 		Properties properties = new Properties();
 		try {
@@ -88,18 +91,17 @@ public class DatasetPermissionsAccessTokenModifier implements PerunTokenEnhancer
 				builder.claim(PERMISSIONS_REMS, perms);
 			}
 		}
+		//TODO end of removal
 
 		//GA4GH
 		if(scopes.contains(GA4GH)) {
 			log.debug("adding claims required by GA4GH to access token");
-			builder.claim("ga4gh_userinfo_claims", Arrays.asList("AffiliationAndRole", "ControlledAccessGrants", "AcceptedTermsAndPolicies", "ResearcherStatus"));
+			builder.claim(GA4GH_USERINFO_CLAIMS, Arrays.asList("ga4gh.AffiliationAndRole", "ga4gh.ControlledAccessGrants", "ga4gh.AcceptedTermsAndPolicies", "ga4gh.ResearcherStatus"));
 			builder.audience(Collections.singletonList(authentication.getOAuth2Request().getClientId()));
-			ArrayList<String> scopesList = new ArrayList<>(accessToken.getScope());
-			scopesList.sort(String::compareTo);
-			builder.claim("scope", scopesList);
 		}
 	}
 
+	//TODO remove after Juha's demo
 	private Object getPermissions(String actionUrl, ClientHttpRequestInterceptor authInterceptor) {
 		//get permissions data
 		try {

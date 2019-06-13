@@ -1,5 +1,6 @@
 package cz.muni.ics.oidc.server;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -30,14 +31,17 @@ import java.net.URI;
 import java.util.Date;
 import java.util.UUID;
 
+import static org.mitre.oauth2.service.IntrospectionResultAssembler.SCOPE;
+import static org.mitre.oauth2.service.IntrospectionResultAssembler.SCOPE_SEPARATOR;
+
 /**
  * Copy of ConnectTokenEnhancer.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */
-public class PerunTokenEnhancer implements TokenEnhancer {
+public class PerunAccessTokenEnhancer implements TokenEnhancer {
 
-    private final static Logger log = LoggerFactory.getLogger(PerunTokenEnhancer.class);
+    private final static Logger log = LoggerFactory.getLogger(PerunAccessTokenEnhancer.class);
 
 
     @Autowired
@@ -46,12 +50,14 @@ public class PerunTokenEnhancer implements TokenEnhancer {
     @Autowired
     private JWTSigningAndValidationService jwtService;
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private ClientDetailsEntityService clientService;
 
     @Autowired
     private UserInfoService userInfoService;
 
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private OIDCTokenService connectTokenService;
 
@@ -81,6 +87,7 @@ public class PerunTokenEnhancer implements TokenEnhancer {
                 .issueTime(iat)
                 .expirationTime(token.getExpiration())
                 .subject(sub)
+                .claim(SCOPE, Joiner.on(SCOPE_SEPARATOR).join(accessToken.getScope()))
                 .jwtID(UUID.randomUUID().toString()); // set a random NONCE in the middle of it
         accessTokenClaimsHook(sub, builder, accessToken, authentication);
 

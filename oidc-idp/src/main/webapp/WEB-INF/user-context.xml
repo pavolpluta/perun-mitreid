@@ -47,7 +47,7 @@
 				<prop key="stats.idp.entityID.attribute">sourceIdPEntityID</prop>
 				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
 				<prop key="admins">3197,59835</prop>
-				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
+				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunAccessTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
 				<prop key="web.theme">default</prop>
 				<prop key="idpFilters.askPerun.enabled">false</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
@@ -186,7 +186,7 @@
     <bean id="accessTokenClaimsModifier" class="${accessTokenClaimsModifier}">
 
     </bean>
-	<bean id="tokenEnhancer" class="cz.muni.ics.oidc.server.PerunTokenEnhancer" primary="true">
+	<bean id="tokenEnhancer" class="cz.muni.ics.oidc.server.PerunAccessTokenEnhancer" primary="true">
         <property name="accessTokenClaimsModifier" ref="accessTokenClaimsModifier"/>
 	</bean>
 
