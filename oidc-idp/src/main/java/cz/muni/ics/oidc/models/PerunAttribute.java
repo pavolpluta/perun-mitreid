@@ -119,6 +119,7 @@ public class PerunAttribute extends PerunAttributeDefinition {
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<String> valueAsList() {
 		if ((ARRAY_TYPE.equals(super.getType()) || LARGE_ARRAY_LIST_TYPE.equals(super.getType()))
 			&& value instanceof List) {
@@ -128,6 +129,7 @@ public class PerunAttribute extends PerunAttributeDefinition {
 		return null;
 	}
 
+	@SuppressWarnings("unchecked")
 	public Map<String, String> valueAsMap() {
 		if (MAP_TYPE.equals(super.getType()) && value instanceof List) {
 			return (Map<String, String>) value;

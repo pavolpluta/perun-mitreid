@@ -108,8 +108,8 @@
 		<property name="ignoreResourceNotFound" value="false"/>
 	</bean>
 
-	<!-- defines our own user data source -->
-	<bean id="userInfoRepository" primary="true" class="cz.muni.ics.oidc.server.PerunUserInfoRepository">
+	<!-- defines our own user info service -->
+	<bean id="userInfoService" primary="true" class="cz.muni.ics.oidc.server.PerunUserInfoService">
 		<property name="perunConnector" ref="perunConnector"/>
 		<property name="subAttribute" value="${attribute.openid.sub}"/>
 		<property name="preferredUsernameAttribute" value="${attribute.profile.preferred_username}"/>
@@ -126,13 +126,9 @@
 		<property name="customClaimNames" value="#{'${custom.claims}'.split('\s*,\s*')}"/>
 	</bean>
 
-	<!-- defines our own user info service which is called from UserInfoEndpoint -->
-	<bean id="userInfoService" primary="true" class="cz.muni.ics.oidc.server.PerunUserInfoService">
-	</bean>
-
 	<!-- replaces default translation service with our own for custom scope with custom claims. -->
 	<bean id="scopeClaimTranslator" primary="true" class="cz.muni.ics.oidc.server.PerunScopeClaimTranslationService">
-		<property name="perunUserInfoRepository" ref="userInfoRepository"/>
+		<property name="perunUserInfoService" ref="userInfoService"/>
 	</bean>
 
 	<bean id="introspectionResultAssembler" class="cz.muni.ics.oidc.server.PerunIntrospectionResultAssembler" primary="true">

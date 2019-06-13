@@ -39,7 +39,6 @@ public class GA4GHClaimSource extends ClaimSource {
 
 	private static final String BONA_FIDE_URL = "https://doi.org/10.1038/s41431-018-0219-y";
 	private static final String NO_ORG_URL = "https://ga4gh.org/duri/no_org";
-	private static final String DATASETS_PROPERTIES = "/etc/mitreid/elixir/datasets.properties";
 
 	private RestTemplate remsRestTemplate;
 	private String remsUrl;
@@ -81,30 +80,41 @@ public class GA4GHClaimSource extends ClaimSource {
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
 		log.trace("produceValue(user={})", pctx.getPerunUserId());
+
+		if (pctx.getClient() == null) {
+			log.debug("client is not set");
+			return JsonNodeFactory.instance.textNode("Global Alliance For Genomic Health structured claim");
+		}
+		if (!pctx.getClient().getScope().contains("ga4gh")) {
+			log.debug("Client '{}' does not have scope ga4gh", pctx.getClient().getClientName());
+			return null;
+		}
+
 		ObjectNode ga4gh = JsonNodeFactory.instance.objectNode();
 
 		List<Affiliation> affiliations = pctx.getPerunConnector().getUserExtSourcesAffiliations(pctx.getPerunUserId());
 
 		ArrayNode affiliationAndRole = ga4gh.arrayNode();
 		JsonNode affDesc = addAffiliationAndRoles(pctx, affiliationAndRole, affiliations);
-		ga4gh.set("AffiliationAndRole.description", affDesc);
+//		ga4gh.set("AffiliationAndRole.description", affDesc);
 		ga4gh.set("AffiliationAndRole", affiliationAndRole);
 
 		ArrayNode acceptedTermsAndPolicies = ga4gh.arrayNode();
 		TextNode termsDesc = addAcceptedTermsAndPolicies(pctx, acceptedTermsAndPolicies);
-		ga4gh.set("AcceptedTermsAndPolicies.description", termsDesc);
+//		ga4gh.set("AcceptedTermsAndPolicies.description", termsDesc);
 		ga4gh.set("AcceptedTermsAndPolicies", acceptedTermsAndPolicies);
 
 		ArrayNode researcherStatus = ga4gh.arrayNode();
 		TextNode resDesc = addResearcherStatuses(pctx, researcherStatus, affiliations);
-		ga4gh.set("ResearcherStatus.description", resDesc);
+//		ga4gh.set("ResearcherStatus.description", resDesc);
 		ga4gh.set("ResearcherStatus", researcherStatus);
 
 		ArrayNode controlledAccessGrants = ga4gh.arrayNode();
 		TextNode ctrlDesc = addControlledAccessGrants(pctx, controlledAccessGrants);
-		ga4gh.set("ControlledAccessGrants.description", ctrlDesc);
+//		ga4gh.set("ControlledAccessGrants.description", ctrlDesc);
 		ga4gh.set("ControlledAccessGrants", controlledAccessGrants);
 
+//		ga4gh.set("timestamp", ga4gh.textNode(ZonedDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)));
 		return ga4gh;
 	}
 
@@ -189,65 +199,37 @@ public class GA4GHClaimSource extends ClaimSource {
 
 	private TextNode addControlledAccessGrants(ClaimSourceProduceContext pctx, ArrayNode controlledAccessGrants) {
 		StringBuilder sb = new StringBuilder();
-		String sep = "";
 		if (remsRestTemplate != null) {
-			JsonNode remsPerms = getPermissions(remsRestTemplate, remsUrl + pctx.getSub());
-			if (remsPerms != null) {
-				JsonNode remsGrants = remsPerms.path("ga4gh").path("ControlledAccessGrants");
-				if (remsGrants.isArray()) {
-					for (JsonNode grant : remsGrants) {
-						String value = grant.path("value").asText();
-						String source = grant.path("source").asText();
-						String by = grant.path("by").asText();
-						long asserted = grant.path("asserted").asLong();
-						long expires = grant.path("expires").asLong();
-						JsonNode condition = grant.path("condition");
-						sb.append(sep).append(value).append(" valid ").append(isoDate(asserted)).append(" - ").append(isoDate(expires));
-						sep = ", ";
-						controlledAccessGrants.add(createRIClaim(value, source, by, asserted, expires, condition));
-					}
-				} else {
-					log.warn("ga4gh.ControlledAccessGrants is not an array in {}", remsPerms);
-				}
-			}
+			callPermissionsAPI(remsRestTemplate, remsUrl + pctx.getSub(), pctx, controlledAccessGrants, sb);
 		}
 		if (egaRestTemplate != null) {
-			JsonNode egaPerms = getPermissions(egaRestTemplate, egaUrl + pctx.getSub() + "/");
-			if (egaPerms != null) {
-				JsonNode egaGrants = egaPerms.path("permissions");
-				if (egaGrants.isArray()) {
-					for (JsonNode grant : egaGrants) {
-						String urlPrefix = grant.path("url_prefix").asText();
-						for (JsonNode dataset : grant.path("datasets")) {
-							String value = urlPrefix + dataset.asText();
-							String source = "https://ega-archive.org/dacs/unknown";
-							String by = "dac";
-							long asserted = grant.path("source_timestamp").asLong() / 1000L;
-							long expires = ZonedDateTime.now().plusYears(1L).toEpochSecond();
-							ObjectNode condition = JsonNodeFactory.instance.objectNode();
-							JsonNode affiliation = grant.path("affiliation");
-							if (!affiliation.isMissingNode() && !affiliation.isNull()) {
-								ObjectNode aff = JsonNodeFactory.instance.objectNode();
-								condition.set("AffiliationAndRole", aff);
-								ArrayNode values = JsonNodeFactory.instance.arrayNode();
-								values.add(affiliation);
-								aff.set("value", values);
-								ArrayNode signers = JsonNodeFactory.instance.arrayNode();
-								signers.add("so");
-								signers.add("system");
-								aff.set("by", signers);
-							}
-							sb.append(sep).append(value).append(" valid ").append(isoDate(asserted)).append(" - ").append(isoDate(expires));
-							sep = ", ";
-							controlledAccessGrants.add(createRIClaim(value, source, by, asserted, expires, condition));
-						}
-					}
-				} else {
-					log.warn("permissions is not an array in {}", egaPerms);
-				}
-			}
+			callPermissionsAPI(egaRestTemplate, egaUrl + pctx.getSub() + "/", pctx, controlledAccessGrants, sb);
+		}
+		if(sb.length()>1) {
+			sb.deleteCharAt(0);
 		}
 		return controlledAccessGrants.textNode(sb.toString());
+	}
+
+	private void callPermissionsAPI(RestTemplate restTemplate, String actionURL, ClaimSourceProduceContext pctx, ArrayNode controlledAccessGrants, StringBuilder sb) {
+		JsonNode permissions = getPermissions(restTemplate, actionURL);
+		if (permissions != null) {
+			JsonNode grants = permissions.path("ga4gh").path("ControlledAccessGrants");
+			if (grants.isArray()) {
+				for (JsonNode grant : grants) {
+					String value = grant.path("value").asText();
+					String source = grant.path("source").asText();
+					String by = grant.path("by").asText();
+					long asserted = grant.path("asserted").asLong();
+					long expires = grant.path("expires").asLong();
+					JsonNode condition = grant.path("condition");
+					sb.append(",").append(value).append(" valid ").append(isoDate(asserted)).append(" - ").append(isoDate(expires));
+					controlledAccessGrants.add(createRIClaim(value, source, by, asserted, expires, condition));
+				}
+			} else {
+				log.warn("permissions is not an array in {}", permissions);
+			}
+		}
 	}
 
 	@SuppressWarnings("Duplicates")
