@@ -96,7 +96,7 @@ public class PerunOAuthConfirmationController{
         String result = oAuthConfirmationController.confimAccess(model, authRequest, p);
 
         //prepare scopes in our way
-        PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsername(p.getName());
+        PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsernameAndClientId(p.getName(),client.getClientId());
         ControllerUtils.setLanguageForPage(model, req, perunOidcConfig.getTheme());
         setScopesAndClaims(model, authRequest, user);
 
