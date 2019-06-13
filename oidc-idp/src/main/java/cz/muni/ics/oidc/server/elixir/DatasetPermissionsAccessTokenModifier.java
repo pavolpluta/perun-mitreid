@@ -7,6 +7,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import cz.muni.ics.oidc.server.PerunAccessTokenEnhancer;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
+import org.mitre.openid.connect.model.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -47,7 +48,7 @@ public class DatasetPermissionsAccessTokenModifier implements PerunAccessTokenEn
 	}
 
 	@Override
-	public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+	public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo) {
 		log.trace("modifyClaims(sub={})",sub);
 
 		//TODO remove after Juha's demo

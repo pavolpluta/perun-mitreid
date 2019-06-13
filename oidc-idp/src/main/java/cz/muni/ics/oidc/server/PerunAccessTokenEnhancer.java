@@ -89,7 +89,7 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
                 .subject(sub)
                 .claim(SCOPE, Joiner.on(SCOPE_SEPARATOR).join(accessToken.getScope()))
                 .jwtID(UUID.randomUUID().toString()); // set a random NONCE in the middle of it
-        accessTokenClaimsHook(sub, builder, accessToken, authentication);
+        accessTokenClaimsHook(sub, builder, accessToken, authentication, userInfo);
 
         String audience = (String) authentication.getOAuth2Request().getExtensions().get("aud");
         if (!Strings.isNullOrEmpty(audience)) {
@@ -141,22 +141,22 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
         this.accessTokenClaimsModifier = accessTokenClaimsModifier;
     }
 
-    private void accessTokenClaimsHook(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+    private void accessTokenClaimsHook(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo) {
         if (accessTokenClaimsModifier != null) {
             log.trace("calling accessTokenClaimsHook() on {}",accessTokenClaimsModifier.getClass().getName());
-            accessTokenClaimsModifier.modifyClaims(sub, builder, accessToken, authentication);
+            accessTokenClaimsModifier.modifyClaims(sub, builder, accessToken, authentication, userInfo);
         }
     }
 
     @FunctionalInterface
     public interface AccessTokenClaimsModifier {
-        void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication);
+        void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo);
     }
 
     public static class NoOpAccessTokenClaimsModifier implements AccessTokenClaimsModifier {
 
         @Override
-        public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+        public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo) {
             log.debug("no modification");
         }
     }
