@@ -183,11 +183,13 @@
 	<bean id="perunTimeStamper" class="cz.muni.ics.oidc.server.PerunAuthenticationSuccessHandler">
 	</bean>
 
-    <bean id="accessTokenClaimsModifier" class="${accessTokenClaimsModifier}">
+	<bean id="accessTokenClaimsModifier" class="${accessTokenClaimsModifier}">
+	</bean>
 
-    </bean>
 	<bean id="tokenEnhancer" class="cz.muni.ics.oidc.server.PerunAccessTokenEnhancer" primary="true">
-        <property name="accessTokenClaimsModifier" ref="accessTokenClaimsModifier"/>
+		<property name="accessTokenClaimsModifier" ref="accessTokenClaimsModifier"/>
+	</bean>
+	<bean id="oidcTokenService" class="cz.muni.ics.oidc.server.PerunOIDCTokenService" primary="true">
 	</bean>
 
 	<!-- extracts user from HTTP request and looks it up in Perun-->
