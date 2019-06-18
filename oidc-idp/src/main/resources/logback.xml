@@ -54,5 +54,6 @@
 	<logger name="cz.muni.ics.oidc.server.PerunAccessTokenEnhancer" level="warn"/>
 	<logger name="cz.muni.ics.oidc.server.PerunAuthenticationUserDetailsService" level="info"/>
 <!--	<logger name="cz.muni.ics.oidc.server.elixir.GA4GHClaimSource" level="trace"/>-->
+	<logger name="org.mitre.openid.connect.web.EndSessionEndpoint" level="trace"/>
 
 </configuration>

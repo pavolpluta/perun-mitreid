@@ -9,7 +9,6 @@ import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 
 import javax.servlet.FilterChain;
@@ -210,7 +209,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		returnURL = URLEncoder.encode(returnURL, String.valueOf(StandardCharsets.UTF_8));
 
 		StringBuilder builder = new StringBuilder();
-		builder.append(config.getLoginUrl());
+		builder.append(config.getSamlLoginURL());
 		builder.append("?target=").append(returnURL);
 
 		if (idpEntityId != null) {
