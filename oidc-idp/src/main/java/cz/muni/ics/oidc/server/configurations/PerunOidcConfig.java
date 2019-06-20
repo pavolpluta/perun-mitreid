@@ -116,7 +116,6 @@ public class PerunOidcConfig {
 		return samlLogoutURL;
 	}
 
-
 	public boolean isAskPerunForIdpFiltersEnabled() {
 		return askPerunForIdpFiltersEnabled;
 	}

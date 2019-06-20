@@ -49,6 +49,7 @@ import java.text.ParseException;
  * End Session Endpoint from OIDC session management.
  * <p>
  * This is a copy of the original file with modification at the end of processLogout().
+ * </p>
  */
 @Controller
 public class EndSessionEndpoint {
