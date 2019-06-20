@@ -13,19 +13,19 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Implements adding EGA dataset permissions into signed JWT access tokens.
+ * Implements changes required by GA4GH specification followed by the ELIXIR AAI.
  *
  * @author Martin Kuba makub@ics.muni.cz
  */
 @SuppressWarnings("unused")
-public class DatasetPermissionsAccessTokenModifier implements PerunAccessTokenEnhancer.AccessTokenClaimsModifier {
+public class ElixirAccessTokenModifier implements PerunAccessTokenEnhancer.AccessTokenClaimsModifier {
 
-	private final static Logger log = LoggerFactory.getLogger(DatasetPermissionsAccessTokenModifier.class);
+	private final static Logger log = LoggerFactory.getLogger(ElixirAccessTokenModifier.class);
 
 	private static final String GA4GH = "ga4gh"; //Global Alliance for Genomics and Health
 	private static final String GA4GH_USERINFO_CLAIMS = "ga4gh_userinfo_claims";
 
-	public DatasetPermissionsAccessTokenModifier() {
+	public ElixirAccessTokenModifier() {
 	}
 
 	@Override

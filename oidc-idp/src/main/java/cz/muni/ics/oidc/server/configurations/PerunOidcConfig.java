@@ -4,6 +4,9 @@ import org.mitre.openid.connect.config.ConfigurationPropertiesBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
@@ -27,7 +30,8 @@ public class PerunOidcConfig {
 	private String jdbcUrl;
 	private String theme;
 	private String registrarUrl;
-	private String loginUrl;
+	private String samlLoginURL;
+	private String samlLogoutURL;
 	private boolean askPerunForIdpFiltersEnabled;
 	private String perunOIDCVersion;
 	private String mitreidVersion;
@@ -96,12 +100,20 @@ public class PerunOidcConfig {
 		}
 	}
 
-	public void setLoginUrl(String loginUrl) {
-		this.loginUrl = loginUrl;
+	public void setSamlLoginURL(String samlLoginURL) {
+		this.samlLoginURL = samlLoginURL;
 	}
 
-	public String getLoginUrl() {
-		return loginUrl;
+	public String getSamlLoginURL() {
+		return samlLoginURL;
+	}
+
+	public void setSamlLogoutURL(String samlLogoutURL) {
+		this.samlLogoutURL = samlLogoutURL;
+	}
+
+	public String getSamlLogoutURL() {
+		return samlLogoutURL;
 	}
 
 	public boolean isAskPerunForIdpFiltersEnabled() {
@@ -126,18 +138,40 @@ public class PerunOidcConfig {
 
 	@PostConstruct
 	public void postInit() {
-		log.info("Perun OIDC initialized");
-		log.info("Mitreid config URL: {}", configBean.getIssuer());
-		log.info("RPC URL: {}", rpcUrl);
-		log.info("JSON Web Keys: {}", jwk);
-		log.info("JDBC URL: {}", jdbcUrl);
-		log.info("LDAP: ldaps://{}/{}", coreProperties.getProperty("ldap.host"), coreProperties.getProperty("ldap.baseDN"));
-		log.info("THEME: {}", theme);
-		log.info("Registrar URL: {}", registrarUrl);
-		log.info("LOGIN URL: {}", loginUrl);
-		log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
-		log.info("Proxy EXT_SOURCE name: {}", proxyExtSourceName);
-		log.info("MitreID version: {}", getMitreidVersion());
-		log.info("Perun OIDC version: {}", getPerunOIDCVersion());
+		//load URLs from properties if available or construct them from issuer URL
+		String loginURL = coreProperties.getProperty("proxy.login.url");
+		if (loginURL != null && !loginURL.trim().isEmpty()) {
+			samlLoginURL = loginURL.trim();
+		} else {
+			samlLoginURL = UriComponentsBuilder.fromHttpUrl(configBean.getIssuer()).replacePath("/Shibboleth.sso/Login").build().toString();
+		}
+		String logoutURL = coreProperties.getProperty("proxy.logout.url");
+		if (logoutURL != null && !logoutURL.trim().isEmpty()) {
+			samlLogoutURL = logoutURL.trim();
+		} else {
+			samlLogoutURL = UriComponentsBuilder.fromHttpUrl(configBean.getIssuer()).replacePath("/Shibboleth.sso/Logout").build().toString();
+		}
+	}
+
+	//called when all beans are initialized, but twice, once for root context and once for spring-servlet
+	@EventListener
+	public void handleContextRefresh(ContextRefreshedEvent event) {
+		if (event.getApplicationContext().getParent() == null) {
+			//log info
+			log.info("Perun OIDC initialized");
+			log.info("Mitreid config URL: {}", configBean.getIssuer());
+			log.info("RPC URL: {}", rpcUrl);
+			log.info("JSON Web Keys: {}", jwk);
+			log.info("JDBC URL: {}", jdbcUrl);
+			log.info("LDAP: ldaps://{}/{}", coreProperties.getProperty("ldap.host"), coreProperties.getProperty("ldap.baseDN"));
+			log.info("THEME: {}", theme);
+			log.info("Registrar URL: {}", registrarUrl);
+			log.info("LOGIN  URL: {}", samlLoginURL);
+			log.info("LOGOUT URL: {}", samlLogoutURL);
+			log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
+			log.info("Proxy EXT_SOURCE name: {}", proxyExtSourceName);
+			log.info("MitreID version: {}", getMitreidVersion());
+			log.info("Perun OIDC version: {}", getPerunOIDCVersion());
+		}
 	}
 }
