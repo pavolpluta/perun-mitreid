@@ -47,7 +47,7 @@
 	<logger name="com.zaxxer.hikari" level="warn"/>
 	<logger name="org.mitre" level="info"/>
 	<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
-	<logger name="cz.muni.ics.oidc" level="${log.level}"/>
+	<logger name="cz.muni.ics.oidc" level="debug"/>
 	<logger name="cz.muni.ics.oidc.server.filters" level="error"/>
 	<logger name="cz.muni.ics.oidc.server.PerunUserInfo" level="info"/>
 <!--	<logger name="cz.muni.ics.oidc.server.PerunUserInfoService" level="trace"/>-->
