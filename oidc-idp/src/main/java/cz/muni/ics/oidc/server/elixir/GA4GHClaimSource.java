@@ -122,7 +122,8 @@ public class GA4GHClaimSource extends ClaimSource {
 		//by=system for users with affiliation asserted by their IdP (set in UserExtSource attribute "affiliation")
 		StringBuilder sb = new StringBuilder("Affiliations: ");
 		for (Affiliation affiliation : affiliations) {
-			long expires = ZonedDateTime.now().plusYears(1L).toEpochSecond();//values are not updated, setting one year in the future
+			//expires 1 year after the last login from the IdP asserting the affiliation
+			long expires = Instant.ofEpochSecond(affiliation.getAsserted()).atZone(ZoneId.systemDefault()).plusYears(1L).toEpochSecond();
 			sb.append(affiliation.getValue()).append(",");
 			affiliationAndRole.add(createRIClaim(affiliation.getValue(), affiliation.getSource(), "system", affiliation.getAsserted(), expires, null));
 		}
@@ -142,7 +143,7 @@ public class GA4GHClaimSource extends ClaimSource {
 			} else {
 				asserted = System.currentTimeMillis() / 1000L;
 			}
-			long expires = ZonedDateTime.ofInstant(Instant.ofEpochSecond(asserted), ZoneId.systemDefault()).plusYears(100L).toEpochSecond();
+			long expires = Instant.ofEpochSecond(asserted).atZone(ZoneId.systemDefault()).plusYears(100L).toEpochSecond();
 			acceptedTermsAndPolicies.add(createRIClaim(BONA_FIDE_URL, NO_ORG_URL, "self", asserted, expires, null));
 			return acceptedTermsAndPolicies.textNode("terms accepted on " + isoDate(asserted));
 		} else {
@@ -164,7 +165,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		//by=system for users with faculty affiliation asserted by their IdP (set in UserExtSource attribute "affiliation")
 		for (Affiliation affiliation : affiliations) {
 			if (affiliation.getValue().startsWith("faculty@")) {
-				long expires = ZonedDateTime.now().plusYears(1L).toEpochSecond();
+				long expires = Instant.ofEpochSecond(affiliation.getAsserted()).atZone(ZoneId.systemDefault()).plusYears(1L).toEpochSecond();
 				researcherStatus.add(createRIClaim(BONA_FIDE_URL, affiliation.getValue() + " " + affiliation.getSource(), "system", affiliation.getAsserted(), expires, null));
 				sb.append("system as affiliation ").append(affiliation.getValue()).append(" on ").append(isoDate(affiliation.getAsserted()));
 			}
