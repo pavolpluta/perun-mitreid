@@ -40,9 +40,9 @@
           href="${baseUrl}proxy/module.php/${theme}/res/css/${theme}.css" />
     <c:if test="${page eq 'consent'}">
         <link rel="stylesheet" media="screen" type="text/css"
-              href="${baseUrl}proxy/module.php/consent/style.css" />
+              href="${baseUrl}proxy/module.php/consent/assets/css/consent.css" />
         <link rel="stylesheet" media="screen" type="text/css"
-              href="${baseUrl}proxy/module.php/${theme}/res/css/consent.css" />
+              href="${baseUrl}proxy/module.php/perun/res/css/consent.css" />
     </c:if>
     <c:if test="${page eq 'regForm'}">
         <link rel="stylesheet" media="screen" type="text/css"
