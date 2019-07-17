@@ -296,14 +296,14 @@ public class PerunConnectorRpc implements PerunConnector {
 			if (extSource.path("type").asText().equals("cz.metacentrum.perun.core.impl.ExtSourceIdp")) {
 				long id = ues.path("id").asLong();
 				String login = ues.path("login").asText();
+				long asserted = Timestamp.valueOf(ues.path("lastAccess").asText()).getTime() / 1000L;
 				String name = extSource.path("name").asText();
 				log.trace("ues id={},name={},login={}", id, name, login);
 				PerunAttribute perunAttribute = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("userExtSource", id, "attributeName", attributeName)));
 				String value = perunAttribute.valueAsString();
 				if (value != null) {
-					long linuxTime = Timestamp.valueOf(perunAttribute.getValueModifiedAt()).getTime() / 1000L;
 					for (String v : value.split(";")) {
-						Affiliation affiliation = new Affiliation(name, v, linuxTime);
+						Affiliation affiliation = new Affiliation(name, v, asserted);
 						log.debug("found {} from IdP {} with modif time {}", v, name, perunAttribute.getValueModifiedAt());
 						affiliations.add(affiliation);
 					}
