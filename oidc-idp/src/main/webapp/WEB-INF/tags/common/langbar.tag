@@ -1,28 +1,26 @@
 <%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ attribute name="lang" required="true" %>
+<%@ attribute name="langsMap" required="true" type="java.util.Map" %>
+<%@ attribute name="reqURL" required="true" %>
+
+<c:set var="i" value="0"/>
 <div id="languagebar_line">
-    <c:choose>
-        <c:when test="${empty param.lang}">
-            <%-- Lang was empty, continue with EN, change to CS --%>
-            <c:set var="link" value="${reqURL}&lang=cs" />
-            <div id="languagebar">
-                English | <a href="${link}">Čeština</a>
-            </div>
-        </c:when>
-        <c:when test="${ param.lang eq 'en'}">
-            <%-- Lang was EN, change to CS --%>
-            <c:set var="link" value="${fn:replace(reqURL, '&lang=en', '&lang=cs')}" />
-            <div id="languagebar">
-                English | <a href="${link}">Čeština</a>
-            </div>
-        </c:when>
-        <c:otherwise>
-            <%-- Lang was CS, change to EN --%>
-            <c:set var="link" value="${fn:replace(reqURL, '&lang=cs', '&lang=en')}" />
-            <div id="languagebar">
-                <a href="${link}">English</a> | Čeština
-            </div>
-        </c:otherwise>
-    </c:choose>
+    <div id="languagebar">
+        <c:forEach var="langEntry" items="${langsMap}">
+            <c:choose>
+                <c:when test="${ langEntry.key.equalsIgnoreCase(lang)}">
+                    <c:out value="${langEntry.value}" />
+                </c:when>
+                <c:otherwise>
+                    <a href="${reqURL}&lang=${langEntry.key}">${langEntry.value}</a>
+                </c:otherwise>
+            </c:choose>
+            <c:if test="${ i < (langsMap.size() - 1) }">
+                <c:out value=" | "/>
+            </c:if>
+            <c:set var="i" value="${ i + 1 }"/>
+        </c:forEach>
+    </div>
 </div>

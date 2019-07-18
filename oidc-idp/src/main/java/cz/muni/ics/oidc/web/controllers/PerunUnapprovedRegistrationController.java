@@ -7,6 +7,7 @@ import cz.muni.ics.oidc.models.Vo;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.web.langs.Localization;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.mitre.openid.connect.view.HttpCodeView;
@@ -48,6 +49,9 @@ public class PerunUnapprovedRegistrationController {
 
     @Autowired
     private PerunOidcConfig perunOidcConfig;
+
+    @Autowired
+    private Localization localization;
 
     @GetMapping(value = REGISTRATION_FORM_MAPPING)
     public String showRegistrationForm(Map<String, Object> model, ServletRequest req, ServletResponse res,
@@ -105,7 +109,7 @@ public class PerunUnapprovedRegistrationController {
             }
         }
 
-        ControllerUtils.setLanguageForPage(model, request, perunOidcConfig.getTheme());
+        ControllerUtils.setLanguageForPage(model, request, localization);
         model.put("client", client);
         model.put("theme", perunOidcConfig.getTheme().toLowerCase());
         model.put("facilityId", facilityId);
@@ -143,7 +147,7 @@ public class PerunUnapprovedRegistrationController {
         model.put("user_id", userId);
         model.put("action", request.getRequestURL().toString()
                 .replace(REGISTRATION_CONTINUE_MAPPING, REGISTRATION_FORM_MAPPING));
-        ControllerUtils.setLanguageForPage(model, request, perunOidcConfig.getTheme());
+        ControllerUtils.setLanguageForPage(model, request, localization);
 
         return "registrationFormContinue";
     }
