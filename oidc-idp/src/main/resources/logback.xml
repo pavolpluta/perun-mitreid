@@ -25,7 +25,7 @@
 		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 		<facility>${log.facility}</facility>
 		<throwableExcluded>true</throwableExcluded>
-		<suffixPattern>%cn : %-5level %logger{40} - %m%n%xException</suffixPattern>
+		<suffixPattern>[%thread] %cn : %-5level %logger{40} - %m%n%xException</suffixPattern>
 	</appender>
 
 	<root level="info">
