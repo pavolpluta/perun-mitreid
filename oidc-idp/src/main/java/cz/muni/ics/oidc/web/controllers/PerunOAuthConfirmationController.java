@@ -5,7 +5,7 @@ import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import cz.muni.ics.oidc.server.PerunScopeClaimTranslationService;
-import cz.muni.ics.oidc.server.PerunUserInfo;
+import cz.muni.ics.oidc.server.userInfo.PerunUserInfo;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.mitre.oauth2.model.ClientDetailsEntity;

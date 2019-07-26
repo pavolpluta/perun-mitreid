@@ -1,4 +1,4 @@
-package cz.muni.ics.oidc.server;
+package cz.muni.ics.oidc.server.userInfo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

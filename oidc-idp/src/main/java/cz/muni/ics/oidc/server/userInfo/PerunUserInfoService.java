@@ -1,4 +1,4 @@
-package cz.muni.ics.oidc.server;
+package cz.muni.ics.oidc.server.userInfo;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
