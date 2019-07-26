@@ -231,4 +231,14 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 		//TODO: implement
 		return fallbackConnector.getGroupAffiliations(userId);
 	}
+
+	@Override
+	public List<String> getGroupsAssignedToResourcesWithUniqueNames(Facility facility) {
+		//TODO: cannot be read from LDAP yet, implement after changing LDAP
+		log.trace("getGroupsAssignedToResourcesWithUniqueNames({})", facility);
+		List<String> res = fallbackConnector.getGroupsAssignedToResourcesWithUniqueNames(facility);
+
+		log.trace("getGroupsAssignedToResourcesWithUniqueNames({}) returns {}", facility, res);
+		return res;
+	}
 }

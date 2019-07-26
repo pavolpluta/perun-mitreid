@@ -96,6 +96,7 @@
 				<prop key="custom.claim.organization.attribute">urn:perun:user:attribute-def:def:organization</prop>
 				<prop key="custom.claim.eppns.scope">eppns</prop>
 				<prop key="custom.claim.eppns.attribute">urn:perun:user:attribute-def:virt:eduPersonPrincipalNames</prop>
+				<prop key="userInfo.modifiers"/>
 			</props>
 		</property>
 	</bean>

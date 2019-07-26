@@ -24,7 +24,7 @@ public class PerunUserInfo extends DefaultUserInfo {
 
 	private Map<String, JsonNode> customClaims = new LinkedHashMap<>();
 
-	Map<String, JsonNode> getCustomClaims() {
+	public Map<String, JsonNode> getCustomClaims() {
 		return customClaims;
 	}
 
