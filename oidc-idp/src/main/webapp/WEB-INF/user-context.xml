@@ -49,6 +49,7 @@
 				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunAccessTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
 				<prop key="web.theme">default</prop>
 				<prop key="web.langs">EN</prop> <!-- EN,CS,SK -->
+				<prop key="web.langs.customfiles.path">/etc/perun</prop>
 				<prop key="idpFilters.askPerun.enabled">false</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
 				<prop key="id_token.scopes">openid,profile,email,phone,address</prop>
@@ -148,6 +149,7 @@
 		<property name="proxyExtSourceName" value="${proxy.extSource.name}"/>
 		<property name="idTokenScopes" value="#{'${id_token.scopes}'.split('\s*,\s*')}"/>
 		<property name="availableLangs" value="#{'${web.langs}'.split('\s*,\s*')}"/>
+		<property name="localizationFilesPath" value="${web.langs.customfiles.path}"/>
 	</bean>
 
 	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig">
@@ -218,7 +220,7 @@
 	</bean>
 
 	<bean id="localization" class="cz.muni.ics.oidc.web.langs.Localization">
-		<constructor-arg name="enabledLanguages" value="#{'${web.langs}'.split('\s*,\s*')}"/>
+		<constructor-arg name="perunOidcConfig" ref="perunOidcConfig"/>
 	</bean>
 
 	<!-- communicates with Perun -->

@@ -1,8 +1,11 @@
 package cz.muni.ics.oidc.web.langs;
 
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -23,10 +26,12 @@ public class Localization {
 
 	private Map<String, String> localizationEntries;
 	private Map<String, Properties> localizationFiles;
+	private String localizationFilesPath;
 	private List<String> enabledLanguages;
 
-	public Localization(List<String> enabledLanguages) {
-		this.enabledLanguages = enabledLanguages;
+	public Localization(PerunOidcConfig perunOidcConfig) {
+		this.enabledLanguages = perunOidcConfig.getAvailableLangs();
+		this.localizationFilesPath = perunOidcConfig.getLocalizationFilesPath();
 		initEntriesAndFiles();
 	}
 
@@ -73,16 +78,28 @@ public class Localization {
 			}
 
 			Properties langProps = new Properties();
-			String fileName = "localization/" + lang + ".properties";
-			try (InputStream is = getClass().getClassLoader().getResourceAsStream(fileName)) {
-				if (is == null) {
-					log.warn("could not load {}", fileName);
+			String resourceFileName = "localization/" + lang + ".properties";
+			try (InputStream resourceIs = getClass().getClassLoader().getResourceAsStream(resourceFileName)) {
+				if (resourceIs == null) {
+					log.warn("could not load {}", resourceFileName);
 					continue;
 				}
-				langProps.load(is);
+				langProps.load(resourceIs);
+				log.trace("Loaded localization file: {}", resourceFileName);
 				localizationFiles.put(lang, langProps);
 			} catch (IOException e) {
-				log.warn("Exception caught when reading {}", langProps, e);
+				log.warn("Exception caught when reading {}", resourceFileName, e);
+			}
+
+			String customFileName = localizationFilesPath + '/' +lang + ".properties";
+			try (InputStream customIs = new FileInputStream(customFileName)) {
+				langProps.load(customIs);
+				log.trace("Loaded localization file: {}", customFileName);
+			} catch (FileNotFoundException e) {
+				log.warn("File: {} not found", customFileName);
+				e.printStackTrace();
+			} catch (IOException e) {
+				log.warn("Exception caught when reading {}", customFileName, e);
 			}
 		}
 	}

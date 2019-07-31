@@ -46,6 +46,7 @@ public class PerunOidcConfig {
 
 	@Autowired
 	private Properties coreProperties;
+	private String localizationFilesPath;
 
 	public void setRpcUrl(String rpcUrl) {
 		this.rpcUrl = rpcUrl;
@@ -156,8 +157,20 @@ public class PerunOidcConfig {
 		}
 	}
 
+	public List<String> getAvailableLangs() {
+		return availableLangs;
+	}
+
 	public void setAvailableLangs(List<String> availableLangs) {
 		this.availableLangs = availableLangs;
+	}
+
+	public String getLocalizationFilesPath() {
+		return localizationFilesPath;
+	}
+
+	public void setLocalizationFilesPath(String localizationFilesPath) {
+		this.localizationFilesPath = localizationFilesPath;
 	}
 
 	@PostConstruct
@@ -195,6 +208,7 @@ public class PerunOidcConfig {
 			log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 			log.info("Proxy EXT_SOURCE name: {}", proxyExtSourceName);
 			log.info("Available languages: {}", availableLangs);
+			log.info("Localization files path: {}", localizationFilesPath);
 			log.info("MitreID version: {}", getMitreidVersion());
 			log.info("Perun OIDC version: {}", getPerunOIDCVersion());
 		}
