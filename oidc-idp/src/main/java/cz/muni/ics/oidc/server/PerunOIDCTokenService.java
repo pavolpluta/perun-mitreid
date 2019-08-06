@@ -6,6 +6,7 @@ import com.google.gson.JsonPrimitive;
 import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import org.mitre.openid.connect.models.Acr;
 import net.minidev.json.JSONArray;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.model.OAuth2AccessTokenEntity;
@@ -37,15 +38,20 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 	@Autowired
 	private PerunOidcConfig perunOidcConfig;
 
+	@Autowired
+	private PerunAcrRepository acrRepository;
+
 	@Override
 	protected void addCustomIdTokenClaims(JWTClaimsSet.Builder idClaims, ClientDetailsEntity client, OAuth2Request request, String sub, OAuth2AccessTokenEntity accessToken) {
 		log.debug("modifying ID token");
 		String userId = accessToken.getAuthenticationHolder().getAuthentication().getName();
 		String clientId = request.getClientId();
 		log.trace("userId={},clientId={}", userId, clientId);
+
 		Set<String> scopes = accessToken.getScope();
 		Set<String> authorizedClaims = translator.getClaimsForScopeSet(scopes);
 		Set<String> idTokenClaims = translator.getClaimsForScopeSet(perunOidcConfig.getIdTokenScopes());
+
 		for (Map.Entry<String, JsonElement> claim : userInfoService.getByUsernameAndClientId(userId, clientId).toJson().entrySet()) {
 			String claimKey = claim.getKey();
 			JsonElement claimValue = claim.getValue();
@@ -54,6 +60,30 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 				idClaims.claim(claimKey, gson2jsonsmart(claimValue));
 			}
 		}
+
+		if (request.getRequestParameters() != null && request.getRequestParameters().containsKey("acr_values")) {
+			String acr = getAuthnContextClass(client.getClientId(), sub, request.getRequestParameters());
+			if (acr != null) {
+				log.trace("adding to ID token claim acr with value {}", acr);
+				idClaims.claim("acr", acr);
+			}
+		}
+	}
+
+	private String getAuthnContextClass(String clientId, String sub, Map<String, String> params) {
+		log.trace("getAuthnContextClass(clientId: {}, sub: {}, params: {})", clientId, sub, params);
+
+		String state = params.get(Acr.PARAM_STATE);
+		String acrValues = params.get(Acr.PARAM_ACR);
+		Acr acr = acrRepository.get(sub, clientId, acrValues, state);
+
+		String authnContextClass = null;
+		if (acr != null) {
+			authnContextClass = acr.getShibAuthnContextClass();
+		}
+
+		log.trace("getAuthnContextClass() returns: {}", authnContextClass);
+		return authnContextClass;
 	}
 
 	private Gson gson = new Gson();
