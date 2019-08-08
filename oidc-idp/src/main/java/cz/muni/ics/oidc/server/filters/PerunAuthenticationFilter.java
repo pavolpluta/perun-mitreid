@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -49,15 +50,19 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	private static final String SHIB_IDENTITY_PROVIDER = "Shib-Identity-Provider";
 	private static final String SHIB_AUTHN_CONTEXT_CLASS = "Shib-AuthnContext-Class";
 	private static final String SHIB_AUTHN_CONTEXT_METHOD = "Shib-Authentication-Method";
+
 	private static final String WAYF_IDP = "wayf_idpentityid";
 	private static final String WAYF_FILTER = "wayf_filter";
 	private static final String WAYF_EFILTER = "wayf_efilter";
 	private static final String CLIENT_ID = "client_id";
-	private static final String ACR_VALUES = "acr_values";
-	private static final String AUTHN_CONTEXT_CLASS_REF = "authnContextClassRef";
 	private static final String IDP_ENTITY_ID_PREFIX = "urn:cesnet:proxyidp:idpentityid:";
 	private static final String FILTER_PREFIX = "urn:cesnet:proxyidp:filter:";
 	private static final String EFILTER_PREFIX = "urn:cesnet:proxyidp:efilter:";
+
+	private static final String AUTHN_CONTEXT_CLASS_REF = "authnContextClassRef";
+	private static final String REFEDS_MFA = "https://refeds.org/profile/mfa";
+	private static final String LOGOUT_PARAM = "loggedOut";
+
 	private static final long ONE_MINUTE_IN_MILLIS = 60000;
 
 	@Autowired
@@ -83,48 +88,30 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		PerunPrincipal principal = extractPerunPrincipal(req);
 		String clientId = null;
 
-		if (req.getParameter(CLIENT_ID) != null) {
-			clientId = req.getParameter(CLIENT_ID);
+		if (req.getParameter(Acr.PARAM_CLIENT_ID) != null) {
+			clientId = req.getParameter(Acr.PARAM_CLIENT_ID);
 		}
 
 		if (principal == null || principal.getExtLogin() == null || principal.getExtSourceName() == null) {
 			log.debug("User not logged in, redirecting to login page");
 
-			String redirectURL = constructLoginRedirectUrl(req, clientId);
+			String redirectURL = buildLoginUrl(req, clientId);
 
 			log.debug("Redirecting to URL: {}", redirectURL);
 			res.sendRedirect(redirectURL);
 		} else {
 			log.debug("User is logged in");
 			if (req.getParameter(Acr.PARAM_ACR) != null) {
-				log.debug("storing acr");
-				storeAcr(principal, req);
+				boolean end = handleACR(req, res, principal, clientId);
+				if (end) {
+					return;
+				}
 			}
 
 			logUserLogin(req, principal);
 
 			super.doFilter(request, response, chain);
 		}
-	}
-
-	private void storeAcr(PerunPrincipal principal, HttpServletRequest req) {
-		String sub = principal.getExtLogin();
-		String clientId = req.getParameter(Acr.PARAM_CLIENT_ID);
-		String state = req.getParameter(Acr.PARAM_STATE);
-		String acrValues = req.getParameter(Acr.PARAM_ACR);
-		String shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_CLASS);
-		if (shibAuthnContextClass == null) {
-			shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_METHOD);
-		}
-
-		Acr acr = new Acr(sub, clientId, acrValues, state, shibAuthnContextClass);
-
-		long t = Calendar.getInstance().getTimeInMillis();
-		Date afterAddingTenMins = new Date(t + (10 * ONE_MINUTE_IN_MILLIS));
-		acr.setExpiration(afterAddingTenMins);
-
-		log.debug("storing acr: {}", acr);
-		acrRepository.store(acr);
 	}
 
 	/**
@@ -183,46 +170,89 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return new PerunPrincipal(extLogin, extSourceName);
 	}
 
-	private String constructLoginRedirectUrl(HttpServletRequest req, String clientId)
-			throws UnsupportedEncodingException {
+	private boolean handleACR(HttpServletRequest req, HttpServletResponse res, PerunPrincipal principal, String clientId)
+			throws IOException
+	{
+		log.trace("handleACR(req, res, principal: {}, clientId: {}", principal, clientId);
+		boolean end;
+
+		String acr = getAcrValues(req);
+		if ((acr.contains(REFEDS_MFA) || acr.contains(urlEncode(REFEDS_MFA)))
+				&& req.getParameter(LOGOUT_PARAM) == null) {
+			String loginUrl = buildLoginUrl(req, clientId);
+			String base = config.getSamlLogoutURL();
+			Map<String, String> params = Collections.singletonMap("return", loginUrl);
+			String redirect = buildStringURL(base, params);
+
+			res.sendRedirect(redirect);
+			end = true;
+		} else {
+			log.debug("storing acr");
+			storeAcr(principal, req);
+			end = false;
+		}
+
+		log.trace("handleACR() return: {}", end);
+		return end;
+	}
+
+	private void storeAcr(PerunPrincipal principal, HttpServletRequest req) {
+		String sub = principal.getExtLogin();
+		String clientId = req.getParameter(Acr.PARAM_CLIENT_ID);
+		String state = req.getParameter(Acr.PARAM_STATE);
+		String acrValues = req.getParameter(Acr.PARAM_ACR);
+		String shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_CLASS);
+		if (shibAuthnContextClass == null) {
+			shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_METHOD);
+		}
+
+		Acr acr = new Acr(sub, clientId, acrValues, state, shibAuthnContextClass);
+
+		long t = Calendar.getInstance().getTimeInMillis();
+		Date afterAddingTenMins = new Date(t + (10 * ONE_MINUTE_IN_MILLIS));
+		acr.setExpiration(afterAddingTenMins);
+
+		log.debug("storing acr: {}", acr);
+		acrRepository.store(acr);
+	}
+
+	private String buildLoginUrl(HttpServletRequest req, String clientId)
+			throws UnsupportedEncodingException
+	{
 		log.debug("constructLoginRedirectUrl(req: {}, clientId: {})", req, clientId);
 
 		String returnURL = buildReturnUrl(req);
 		String authnContextClassRef = buildAuthnContextClassRef(clientId, req);
 
-		StringBuilder builder = new StringBuilder();
-		builder.append(config.getSamlLoginURL());
-		builder.append("?target=").append(returnURL);
+		String base = config.getSamlLoginURL();
+		Map<String, String> params = new HashMap<>();
+		params.put("target", returnURL);
 		if (authnContextClassRef != null && !authnContextClassRef.trim().isEmpty()) {
-			builder.append("&").append(AUTHN_CONTEXT_CLASS_REF).append("=").append(authnContextClassRef);
+			params.put(AUTHN_CONTEXT_CLASS_REF, authnContextClassRef);
 		}
 
-		log.debug("constructLoginRedirectUrl returns: '{}'", builder.toString());
-		return builder.toString();
+		String loginURL = buildStringURL(base, params);
+
+		log.debug("constructLoginRedirectUrl returns: '{}'", loginURL);
+		return loginURL;
 	}
 
-	private String urlEncode(String str) throws UnsupportedEncodingException {
-		return URLEncoder.encode(str, String.valueOf(StandardCharsets.UTF_8));
-	}
-
-	private String buildReturnUrl(HttpServletRequest req) throws UnsupportedEncodingException {
+	private String buildReturnUrl(HttpServletRequest req) {
 		log.trace("buildReturnUrl({})", req);
 
 		String returnURL;
 
 		if (req.getQueryString() == null) {
-			returnURL = req.getRequestURL().toString();
+			returnURL = req.getRequestURL().toString() + '?' + LOGOUT_PARAM + '=' + true;
 		} else {
-			returnURL = req.getRequestURL().toString() + '?' + req.getQueryString();
+			returnURL = req.getRequestURL().toString() + '?' + req.getQueryString() + '&' + LOGOUT_PARAM + '=' + true;
 		}
-
-		returnURL = urlEncode(returnURL);
 
 		log.trace("buildReturnUrl() returns: {}", returnURL);
 		return returnURL;
 	}
 
-	private String buildAuthnContextClassRef(String clientId, HttpServletRequest req) throws UnsupportedEncodingException {
+	private String buildAuthnContextClassRef(String clientId, HttpServletRequest req) {
 		log.trace("buildAuthnContextClassRef(clientId: {}, req: {})", clientId, req);
 
 		String filterParam = getFilterParam(clientId, req);
@@ -230,14 +260,14 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		StringJoiner joiner = new StringJoiner(" ");
 		if (filterParam != null) {
-			joiner.add(urlEncode(filterParam));
+			joiner.add(filterParam);
 		}
 
 		if (acrValues != null) {
 			String[] parts = acrValues.split(" ");
 			if (parts.length > 0) {
 				for (String part: parts) {
-					joiner.add(urlEncode(part));
+					joiner.add(part);
 				}
 			}
 		}
@@ -245,6 +275,28 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		String authnContextClassRef = joiner.toString().trim().isEmpty() ? null : joiner.toString();
 		log.trace("buildAuthnContextClassRef() returns: {}", authnContextClassRef);
 		return authnContextClassRef;
+	}
+
+	private String buildStringURL(String base, Map<String, String> params) throws UnsupportedEncodingException {
+		log.trace("buildStringURL(base: {}, params: {})", base, params);
+		if (params == null || params.isEmpty()) {
+			return base;
+		}
+
+		StringJoiner paramsJoiner = new StringJoiner("&");
+		for (Map.Entry<String, String> param: params.entrySet()) {
+			String paramName = param.getKey();
+			String paramValue = urlEncode(param.getValue());
+			paramsJoiner.add(paramName + '=' + paramValue);
+		}
+
+		String stringURL = base + '?' + paramsJoiner.toString();
+		log.trace("buildStringURL returns: {}", stringURL);
+		return stringURL;
+	}
+
+	private String urlEncode(String str) throws UnsupportedEncodingException {
+		return URLEncoder.encode(str, String.valueOf(StandardCharsets.UTF_8));
 	}
 
 	private String getFilterParam(String clientId, HttpServletRequest req) {
@@ -287,8 +339,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	private String getAcrValues(HttpServletRequest req) {
 		log.trace("getAcrValues({})", req);
 		String acrValues = null;
-		if (req.getParameter(ACR_VALUES) != null) {
-			acrValues = req.getParameter(ACR_VALUES);
+		if (req.getParameter(Acr.PARAM_ACR) != null) {
+			acrValues = req.getParameter(Acr.PARAM_ACR);
 		}
 
 		log.trace("getAcrValues() returns: {}", acrValues);
