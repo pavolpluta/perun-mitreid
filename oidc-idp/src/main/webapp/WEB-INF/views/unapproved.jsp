@@ -8,6 +8,7 @@
 <%@ taglib prefix="cesnet" tagdir="/WEB-INF/tags/cesnet" %>
 <%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
+<%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
 
 <c:choose>
     <c:when test="${theme eq 'default'}">
@@ -35,6 +36,9 @@
                 </c:when>
                 <c:when test="${theme eq 'bbmri-eric'}">
                     <c:set var="contact" value="aai@helpdesk.bbmri-eric.eu"/>
+                </c:when>
+                <c:when test="${theme eq 'europdx'}">
+                    <c:set var="contact" value="contact@europdx.eu"/>
                 </c:when>
             </c:choose>
         </c:if>
@@ -69,6 +73,9 @@
     </c:when>
     <c:when test="${theme eq 'ceitec'}">
         <ceitec:footer />
+    </c:when>
+    <c:when test="${theme eq 'europdx'}">
+        <europdx:footer />
     </c:when>
     <c:otherwise>
         <o:footer />

@@ -7,6 +7,7 @@
 <%@ taglib prefix="cesnet" tagdir="/WEB-INF/tags/cesnet" %>
 <%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
+<%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
 
 <c:set var="title" value="${langProps['registration_title']}" />
 <c:choose>
@@ -100,6 +101,9 @@
     </c:when>
     <c:when test="${theme eq 'ceitec'}">
         <ceitec:footer />
+    </c:when>
+    <c:when test="${theme eq 'europdx'}">
+        <europdx:footer />
     </c:when>
     <c:otherwise>
         <o:footer />
