@@ -49,6 +49,7 @@
 	<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 	<logger name="cz.muni.ics.oidc" level="${log.level}"/>
 	<logger name="cz.muni.ics.oidc.server.filters" level="error"/>
+	<logger name="cz.muni.ics.oidc.server.filters.PerunAuthenticationFilter" level="info"/>
 	<logger name="cz.muni.ics.oidc.server.PerunUserInfo" level="info"/>
 <!--	<logger name="cz.muni.ics.oidc.server.PerunUserInfoService" level="trace"/>-->
 	<logger name="cz.muni.ics.oidc.server.PerunAccessTokenEnhancer" level="warn"/>
