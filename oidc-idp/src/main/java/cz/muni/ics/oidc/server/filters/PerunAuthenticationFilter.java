@@ -2,10 +2,13 @@ package cz.muni.ics.oidc.server.filters;
 
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import org.mitre.oauth2.model.ClientDetailsEntity;
+import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +20,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -58,9 +60,11 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	@Autowired
 	private PerunOidcConfig config;
 
+	@Autowired
+	private ClientDetailsEntityService clientService;
+
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-		log.debug("doFilter({}, {}, {})", request, response, chain);
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 
@@ -101,6 +105,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			res.sendRedirect(redirectURL);
 		} else {
 			log.debug("User is logged in");
+			logUserLogin(req, principal);
+
 			super.doFilter(request, response, chain);
 		}
 	}
@@ -237,5 +243,27 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		Map<String, PerunAttribute> result = perunConnector.getFacilityAttributes(facility, attrsToFetch);
 		log.debug("getFacilityFilterAttributes returns: {}", result);
 		return result;
+	}
+
+	private void logUserLogin(HttpServletRequest req, PerunPrincipal principal) {
+		String clientId = req.getParameter(CLIENT_ID);
+
+		if (clientId == null || clientId.isEmpty()) {
+			return;
+		}
+
+		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
+		if (client == null) {
+			return;
+		}
+
+		PerunUser user = perunConnector.getPreauthenticatedUserId(principal);
+		Long userId = null;
+		if (user != null) {
+			userId = user.getId();
+		}
+
+		log.info("UserId: {}, identity: {}, service: {}, serviceName: {}, via IdP: {}", userId,
+				principal.getExtLogin(), client.getClientId(), client.getClientName(), principal.getExtSourceName() );
 	}
 }
