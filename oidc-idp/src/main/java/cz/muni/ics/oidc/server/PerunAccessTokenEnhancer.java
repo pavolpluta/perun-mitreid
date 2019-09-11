@@ -99,8 +99,8 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
         JWTClaimsSet claims = builder.build();
 
         JWSAlgorithm signingAlg = jwtService.getDefaultSigningAlgorithm();
-        URI jku = URI.create(configBean.getIssuer() + JWKSetPublishingEndpoint.URL);
-        JWSHeader header = new JWSHeader(signingAlg, null, null, null, jku, null, null, null, null, null,
+//        URI jku = URI.create(configBean.getIssuer() + JWKSetPublishingEndpoint.URL);
+        JWSHeader header = new JWSHeader(signingAlg, null, null, null, null, null, null, null, null, null,
                 jwtService.getDefaultSignerKeyId(),
                 null, null);
         SignedJWT signed = new SignedJWT(header, claims);
