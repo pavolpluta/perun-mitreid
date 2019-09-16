@@ -50,6 +50,7 @@
 				<prop key="web.theme">default</prop>
 				<prop key="idpFilters.askPerun.enabled">false</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
+				<prop key="id_token.scopes">openid,profile,email,phone,address</prop>
 				<prop key="facility.attrs.checkGroupMembership">urn:perun:facility:attribute-def:def:OIDCCheckGroupMembership</prop>
 				<prop key="facility.attrs.allowRegistration">urn:perun:facility:attribute-def:def:allowRegistration</prop>
 				<prop key="facility.attrs.registrationURL">urn:perun:facility:attribute-def:def:registrationURL</prop>
@@ -144,6 +145,7 @@
 		<property name="registrarUrl" value="${registrar.url}"/>
 		<property name="askPerunForIdpFiltersEnabled" value="${idpFilters.askPerun.enabled}"/>
 		<property name="proxyExtSourceName" value="${proxy.extSource.name}"/>
+		<property name="idTokenScopes" value="#{'${id_token.scopes}'.split('\s*,\s*')}"/>
 	</bean>
 
 	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig">

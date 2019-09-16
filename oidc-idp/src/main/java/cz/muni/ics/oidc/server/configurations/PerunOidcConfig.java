@@ -12,6 +12,7 @@ import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * Configuration of OIDC server in context of Perun.
@@ -36,6 +37,7 @@ public class PerunOidcConfig {
 	private String perunOIDCVersion;
 	private String mitreidVersion;
 	private String proxyExtSourceName;
+	private Set<String> idTokenScopes;
 
 	@Autowired
 	private ServletContext servletContext;
@@ -73,6 +75,18 @@ public class PerunOidcConfig {
 
 	public void setRegistrarUrl(String registrarUrl) {
 		this.registrarUrl = registrarUrl;
+	}
+
+
+
+
+	public void setIdTokenScopes(Set<String> idTokenScopes) {
+		this.idTokenScopes = idTokenScopes;
+	}
+
+
+	public Set<String> getIdTokenScopes() {
+		return idTokenScopes;
 	}
 
 	public String getPerunOIDCVersion() {
@@ -174,4 +188,5 @@ public class PerunOidcConfig {
 			log.info("Perun OIDC version: {}", getPerunOIDCVersion());
 		}
 	}
+
 }
