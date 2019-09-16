@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.nimbusds.jose.util.JSONObjectUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import net.minidev.json.JSONArray;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.model.OAuth2AccessTokenEntity;
@@ -33,6 +34,9 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 	@Autowired
 	private ScopeClaimTranslationService translator;
 
+	@Autowired
+	private PerunOidcConfig perunOidcConfig;
+
 	@Override
 	protected void addCustomIdTokenClaims(JWTClaimsSet.Builder idClaims, ClientDetailsEntity client, OAuth2Request request, String sub, OAuth2AccessTokenEntity accessToken) {
 		log.debug("modifying ID token");
@@ -41,10 +45,11 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 		log.trace("userId={},clientId={}", userId, clientId);
 		Set<String> scopes = accessToken.getScope();
 		Set<String> authorizedClaims = translator.getClaimsForScopeSet(scopes);
+		Set<String> idTokenClaims = translator.getClaimsForScopeSet(perunOidcConfig.getIdTokenScopes());
 		for (Map.Entry<String, JsonElement> claim : userInfoService.getByUsernameAndClientId(userId, clientId).toJson().entrySet()) {
 			String claimKey = claim.getKey();
 			JsonElement claimValue = claim.getValue();
-			if (authorizedClaims.contains(claimKey) && claimValue != null && !claimValue.isJsonNull()) {
+			if (claimValue != null && !claimValue.isJsonNull() && authorizedClaims.contains(claimKey) && idTokenClaims.contains(claimKey)) {
 				log.trace("adding to ID token claim {} with value {}", claimKey, claimValue);
 				idClaims.claim(claimKey, gson2jsonsmart(claimValue));
 			}
