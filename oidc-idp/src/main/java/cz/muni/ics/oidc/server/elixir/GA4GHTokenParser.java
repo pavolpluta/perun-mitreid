@@ -58,9 +58,6 @@ public class GA4GHTokenParser {
 	private static Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
 
 	private static boolean verifyJWT(String jwtString) throws ParseException, MalformedURLException, JOSEException {
-//		System.out.println();
-//		System.out.println("verifying a JWT ...");
-
 		JWT parsedJWT = JWTParser.parse(jwtString);
 		if (!(parsedJWT instanceof SignedJWT)) {
 			throw new RuntimeException("JWT is not SignedJWT");
@@ -94,7 +91,7 @@ public class GA4GHTokenParser {
 	private static void prettyPrintPayload(String payload) {
 		try {
 			JsonNode doc = jsonMapper.readValue(payload, JsonNode.class);
-//			System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(doc));
+
 			long iat = doc.get("iat").asLong();
 			long exp = doc.get("exp").asLong();
 			JsonNode visa = doc.get("ga4gh_visa_v1");
@@ -104,6 +101,8 @@ public class GA4GHTokenParser {
 			String source = visa.get("source").asText();
 			String by = visa.get("by").asText();
 			System.out.println("type: "+type+", value: "+value+", by: "+by+", source: "+source+", asserted: "+isoDateTime(asserted));
+//			System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(doc));
+			System.out.println(",");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
