@@ -130,6 +130,10 @@ public class PerunOidcConfig {
 		return samlLogoutURL;
 	}
 
+	public ConfigurationPropertiesBean getConfigBean() {
+		return configBean;
+	}
+
 	public boolean isAskPerunForIdpFiltersEnabled() {
 		return askPerunForIdpFiltersEnabled;
 	}

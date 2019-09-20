@@ -22,9 +22,6 @@ public class ElixirAccessTokenModifier implements PerunAccessTokenEnhancer.Acces
 
 	private final static Logger log = LoggerFactory.getLogger(ElixirAccessTokenModifier.class);
 
-	private static final String GA4GH = "ga4gh"; //Global Alliance for Genomics and Health
-	private static final String GA4GH_USERINFO_CLAIMS = "ga4gh_userinfo_claims";
-
 	public ElixirAccessTokenModifier() {
 	}
 
@@ -33,9 +30,8 @@ public class ElixirAccessTokenModifier implements PerunAccessTokenEnhancer.Acces
 		log.trace("modifyClaims(sub={})", sub);
 		Set<String> scopes = accessToken.getScope();
 		//GA4GH
-		if (scopes.contains(GA4GH)) {
+		if (scopes.contains(GA4GHClaimSource.GA4GH_SCOPE)) {
 			log.debug("adding claims required by GA4GH to access token");
-			builder.claim(GA4GH_USERINFO_CLAIMS, Arrays.asList("ga4gh.AffiliationAndRole", "ga4gh.ControlledAccessGrants", "ga4gh.AcceptedTermsAndPolicies", "ga4gh.ResearcherStatus"));
 			builder.audience(Collections.singletonList(authentication.getOAuth2Request().getClientId()));
 		}
 	}

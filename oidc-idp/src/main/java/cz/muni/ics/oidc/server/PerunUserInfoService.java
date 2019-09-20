@@ -15,7 +15,9 @@ import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import cz.muni.ics.oidc.server.claims.PerunCustomClaimDefinition;
 import cz.muni.ics.oidc.server.claims.sources.PerunAttributeClaimSource;
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import org.mitre.jwt.signer.service.JWTSigningAndValidationService;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.mitre.openid.connect.model.Address;
@@ -49,6 +51,11 @@ public class PerunUserInfoService implements UserInfoService {
 	@Autowired
 	private ClientDetailsEntityService clientService;
 
+	@Autowired
+	private JWTSigningAndValidationService jwtService;
+
+	@Autowired
+	private PerunOidcConfig perunOidcConfig;
 
 	private static final String SOURCE_CLASS = ".sourceClass";
 	private static final String MODIFIER_CLASS = ".modifierClass";
@@ -193,7 +200,7 @@ public class PerunUserInfoService implements UserInfoService {
 			}
 			@SuppressWarnings("unchecked") Class<ClaimSource> clazz = (Class<ClaimSource>) rawClazz;
 			Constructor<ClaimSource> constructor = clazz.getConstructor(ClaimSourceInitContext.class);
-			ClaimSourceInitContext ctx = new ClaimSourceInitContext(propertyPrefix, properties);
+			ClaimSourceInitContext ctx = new ClaimSourceInitContext(perunOidcConfig, jwtService, propertyPrefix, properties);
 			ClaimSource claimSource = constructor.newInstance(ctx);
 			log.info("loaded claim source '{}' for {}", claimSource, propertyPrefix);
 			return claimSource;
