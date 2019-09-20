@@ -25,6 +25,7 @@ import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import org.mitre.jwt.assertion.impl.SelfAssertionValidator;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
+import org.mitre.openid.connect.config.ConfigurationPropertiesBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.text.ParseException;
 
 /**
@@ -59,6 +61,8 @@ public class EndSessionEndpoint {
 	private static final String CLIENT_KEY = "client";
 	private static final String STATE_KEY = "state";
 	private static final String REDIRECT_URI_KEY = "redirectUri";
+	private static final String DENY_REDIRECT_URL = "oldReferer";
+	private static final String REFERER_HEADER = "Referer" ;
 
 	private static Logger logger = LoggerFactory.getLogger(EndSessionEndpoint.class);
 
@@ -67,6 +71,9 @@ public class EndSessionEndpoint {
 
 	@Autowired
 	private PerunOidcConfig perunOidcConfig;
+
+	@Autowired
+	private ConfigurationPropertiesBean configBean;
 
 	@Autowired
 	private ClientDetailsEntityService clientService;
@@ -78,7 +85,10 @@ public class EndSessionEndpoint {
 	                         HttpServletRequest request,
 	                         HttpServletResponse response,
 	                         HttpSession session,
-	                         Authentication auth, Model m) {
+	                         Authentication auth, Model m) throws IOException {
+
+		String referer = request.getHeader(REFERER_HEADER);
+		session.setAttribute(DENY_REDIRECT_URL, referer);
 
 		// conditionally filled variables
 		JWTClaimsSet idTokenClaims = null; // pulled from the parsed and validated ID token
@@ -120,7 +130,7 @@ public class EndSessionEndpoint {
 		// are we logged in or not?
 		if (auth == null || !request.isUserInRole("ROLE_USER")) {
 			// we're not logged in anyway, process the final redirect bits if needed
-			return processLogout(null, request, response, session, auth, m);
+			return processLogout(null, null, request, response, session, auth);
 		} else {
 			logger.info("Logout confirmating for user {} from client {}", auth.getName(), client != null ? client.getClientName() : "unknown");
 			// we are logged in, need to prompt the user before we log out
@@ -134,10 +144,26 @@ public class EndSessionEndpoint {
 
 	@RequestMapping(value = "/" + URL, method = RequestMethod.POST)
 	public String processLogout(@RequestParam(value = "approve", required = false) String approved,
+	                            @RequestParam(value = "deny", required = false) String deny,
 	                            HttpServletRequest request,
 	                            HttpServletResponse response,
 	                            HttpSession session,
-	                            Authentication auth, Model m) {
+	                            Authentication auth) throws IOException {
+
+		if (! Strings.isNullOrEmpty(deny)) {
+			String referer = request.getHeader(REFERER_HEADER);
+			String denyRedirectUrl = (String) session.getAttribute(DENY_REDIRECT_URL);
+			session.removeAttribute(DENY_REDIRECT_URL);
+
+
+			if (Strings.isNullOrEmpty(denyRedirectUrl) || !referer.contains(configBean.getIssuer())) {
+				denyRedirectUrl = referer;
+			}
+
+			logger.trace("User denied logout - redirecting to: {}", denyRedirectUrl);
+			response.sendRedirect(denyRedirectUrl);
+			return null;
+		}
 
 		String redirectUri = (String) session.getAttribute(REDIRECT_URI_KEY);
 		String state = (String) session.getAttribute(STATE_KEY);
