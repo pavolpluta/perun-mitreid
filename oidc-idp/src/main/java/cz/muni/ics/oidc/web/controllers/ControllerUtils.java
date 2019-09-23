@@ -1,13 +1,17 @@
 package cz.muni.ics.oidc.web.controllers;
 
-import cz.muni.ics.oidc.server.exceptions.LanguageFileException;
+import cz.muni.ics.oidc.web.langs.Localization;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Utility class with common methods used for Controllers
@@ -18,37 +22,35 @@ public class ControllerUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(ControllerUtils.class);
 
-	private static final String CESNET = "CESNET";
-	private static final String CS = "CS";
-	private static final String EN_KEY = "en";
-	private static final String CS_KEY = "cs";
 	private static final String LANG_KEY = "lang";
 	private static final String REQ_URL_KEY = "reqURL";
-	private static final String EN_PROPERTIES = "en.properties";
-	private static final String CS_PROPERTIES = "cs.properties";
+	private static final String LANGS_MAP_KEY = "langsMap";
 
-	public static void setLanguageForPage(Map<String, Object> model, HttpServletRequest req, String theme) {
-		String langFile = EN_PROPERTIES;
-		model.put(LANG_KEY, EN_KEY);
-		log.trace("Resolving URL for possible language bar");
-		model.put(REQ_URL_KEY, req.getRequestURL().toString() + '?' + req.getQueryString());
-		if (CESNET.equalsIgnoreCase(theme)) {
-			log.trace("Resolving Language for CESNET");
-			if (req.getParameter(LANG_KEY) != null && req.getParameter(LANG_KEY).equalsIgnoreCase(CS)) {
-				langFile = CS_PROPERTIES;
-				model.put(LANG_KEY, CS_KEY);
-			}
+	public static void setLanguageForPage(Map<String, Object> model, HttpServletRequest req, Localization localization) {
+		String langFromParam = req.getParameter(LANG_KEY);
+		String browserLang = req.getLocale().getLanguage();
+
+		List<String> enabledLangs = localization.getEnabledLanguages();
+		String langKey = "en";
+
+		if (langFromParam != null && enabledLangs.stream().anyMatch(x -> x.equalsIgnoreCase(langFromParam))) {
+			langKey = langFromParam;
+		} else if (enabledLangs.stream().anyMatch(x -> x.equalsIgnoreCase(browserLang))) {
+			langKey = browserLang;
 		}
 
-		Properties langProperties = new Properties();
+		String reqUrl = req.getRequestURL().toString() + '?' + req.getQueryString();
 		try {
-			log.trace("Loading properties file containing messages - filename: {}", langFile);
-			langProperties.load(PerunOAuthConfirmationController.class.getResourceAsStream(langFile));
-		} catch (IOException e) {
-			log.error("Cannot load properties file '{}' with messages", langFile);
-			throw new LanguageFileException("Cannot load file: " + langFile);
+			reqUrl = removeQueryParameter(reqUrl, LANG_KEY);
+		} catch (URISyntaxException e) {
+			log.warn("Could not remove lang param");
 		}
 
+		Properties langProperties = localization.getLocalizationFiles().get(langKey);
+
+		model.put(LANG_KEY, langKey);
+		model.put(REQ_URL_KEY, reqUrl);
+		model.put(LANGS_MAP_KEY, localization.getEntriesAvailable());
 		model.put("langProps", langProperties);
 	}
 
@@ -74,5 +76,19 @@ public class ControllerUtils {
 
 		log.trace("createRedirectUrl returns: {}", builder.toString());
 		return builder.toString();
+	}
+
+	private static String removeQueryParameter(String url, String parameterName) throws URISyntaxException {
+		URIBuilder uriBuilder = new URIBuilder(url);
+		List<NameValuePair> queryParameters = uriBuilder.getQueryParams()
+				.stream()
+				.filter(p -> !p.getName().equals(parameterName))
+				.collect(Collectors.toList());
+		if (queryParameters.isEmpty()) {
+			uriBuilder.removeQuery();
+		} else {
+			uriBuilder.setParameters(queryParameters);
+		}
+		return uriBuilder.build().toString();
 	}
 }

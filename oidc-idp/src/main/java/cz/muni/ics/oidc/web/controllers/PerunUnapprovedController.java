@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc.web.controllers;
 
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.web.langs.Localization;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.mitre.openid.connect.view.HttpCodeView;
@@ -30,6 +31,9 @@ public class PerunUnapprovedController {
     @Autowired
     private PerunOidcConfig perunOidcConfig;
 
+    @Autowired
+    private Localization localization;
+
     @GetMapping(value = UNAPPROVED_MAPPING)
     public String showUnapproved(ServletRequest req, Map<String, Object> model,
                                  @RequestParam("client_id") String clientId) {
@@ -54,7 +58,7 @@ public class PerunUnapprovedController {
             return HttpCodeView.VIEWNAME;
         }
 
-        ControllerUtils.setLanguageForPage(model, request, perunOidcConfig.getTheme());
+        ControllerUtils.setLanguageForPage(model, request, localization);
 
         model.put("client", client);
         model.put("theme", perunOidcConfig.getTheme().toLowerCase());

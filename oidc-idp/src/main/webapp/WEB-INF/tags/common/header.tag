@@ -1,9 +1,10 @@
 <%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
-<%@ attribute name="title" required="false" %>
-<%@ attribute name="reqURL" required="false" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags/common" %>
+<%@ attribute name="title" required="false" %>
+<%@ attribute name="reqURL" required="false" %>
+
 <c:choose>
     <c:when test="${theme eq 'cesnet'}">
         <c:set var="logo" value="cesnet_RGB.png"/>
@@ -58,8 +59,8 @@
 </head>
 <body>
 <div id="wrap">
-    <c:if test="${theme eq 'cesnet'}">
-        <o:langbar />
+    <c:if test="${ langsMap.size() > 1 }">
+        <o:langbar lang="${lang}" langsMap="${langsMap}" reqURL="${reqURL}"/>
     </c:if>
     <div id="header">
         <img src="${baseUrl}proxy/module.php/${theme}/res/img/${logo}" alt="${theme} logo">
