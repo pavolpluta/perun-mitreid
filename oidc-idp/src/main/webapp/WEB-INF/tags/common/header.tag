@@ -6,6 +6,7 @@
 <%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
 <%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
+<%@ taglib prefix="muni" tagdir="/WEB-INF/tags/muni" %>
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
@@ -27,6 +28,9 @@
     </c:when>
     <c:when test="${theme eq 'europdx'}">
         <europdx:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+    </c:when>
+    <c:when test="${theme eq 'muni'}">
+        <muni:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
     </c:when>
     <c:otherwise>
         <o:header title="${title}"/>

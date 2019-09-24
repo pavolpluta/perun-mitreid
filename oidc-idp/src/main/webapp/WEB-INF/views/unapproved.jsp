@@ -5,13 +5,7 @@
 <%@ taglib prefix="authz" uri="http://www.springframework.org/security/tags"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="o" tagdir="/WEB-INF/tags"%>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common"%>
-<%@ taglib prefix="elixir" tagdir="/WEB-INF/tags/elixir" %>
-<%@ taglib prefix="cesnet" tagdir="/WEB-INF/tags/cesnet" %>
-<%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
-<%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
-<%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
 
 <c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
 

@@ -15,6 +15,7 @@
 <link rel="stylesheet" type="text/css" href="${baseURL}proxy/module.php/cesnet/res/css/cesnet.css" />
 
 <o:headerCssLinks cssLinks="${cssLinks}"/>
-<o:headerBody logoURL="${logoURL}" baseURL="${baseURL}"/>
 
 </head>
+
+<o:headerBody logoURL="${logoURL}" baseURL="${baseURL}"/>

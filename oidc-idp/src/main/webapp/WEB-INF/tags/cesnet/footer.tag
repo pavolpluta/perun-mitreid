@@ -15,10 +15,10 @@
             <div class="row">
                 <div class="col-md-4 logo">
                     <a href="http://www.cesnet.cz/">
-                        <img src="${baseUrl}proxy/module.php/cesnet/res/img/logo-cesnet.png" alt="CESNET logo" style="width: 250px;">
+                        <img src="${baseURL}proxy/module.php/cesnet/res/img/logo-cesnet.png" alt="CESNET logo" style="width: 250px;">
                     </a>
                     <a href="https://www.cerit-sc.cz">
-                        <img src="${baseUrl}proxy/module.php/cesnet/res/img/logo-cerit.png" alt="CERIT-SC Logo">
+                        <img src="${baseURL}proxy/module.php/cesnet/res/img/logo-cerit.png" alt="CERIT-SC Logo">
                     </a>
                 </div>
                 <div class="col-md-8">
