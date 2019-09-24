@@ -11,6 +11,7 @@
 <%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
 <%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
+<%@ taglib prefix="muni" tagdir="/WEB-INF/tags/muni" %>
 
 <c:set var="title" value="${langProps['registration_title']}" />
 <c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />

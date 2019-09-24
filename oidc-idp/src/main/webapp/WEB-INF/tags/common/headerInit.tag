@@ -13,9 +13,21 @@
     <base href="${config.issuer}">
     <title>${config.topbarTitle} - ${title}</title>
 
-    <!-- meta -->
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0" />
     <meta name="robots" content="noindex, nofollow" />
 
     <link rel="stylesheet" type="text/css" href="${baseURL}proxy/resources/default.css" />
+
+    <style type="text/css">
+        .mt-0 {
+            margin-top: 0 !important;
+        }
+        .checkbox-wrapper {
+            float: left;
+        }
+        .attrname-formatter {
+            display: block;
+            margin-left: 2em !important;
+        }
+    </style>
