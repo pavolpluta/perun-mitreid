@@ -49,10 +49,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -64,7 +62,7 @@ import java.util.UUID;
 public class GA4GHClaimSource extends ClaimSource {
 
 	static final String GA4GH_SCOPE = "ga4gh_passport_v1";
-	static final String GA4GH_CLAIM = "ga4gh_passport_v1";
+	private static final String GA4GH_CLAIM = "ga4gh_passport_v1";
 
 	private static final Logger log = LoggerFactory.getLogger(GA4GHClaimSource.class);
 
@@ -237,7 +235,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		if (egaRestTemplate != null) {
 			callPermissionsAPI(egaRestTemplate, egaUrl + pctx.getSub() + "/", pctx, passport);
 		}
-		if(!linkedIdentities.isEmpty()) {
+		if (!linkedIdentities.isEmpty()) {
 			long now = Instant.now().getEpochSecond();
 			passport.add(createPassportVisa("LinkedIdentities", pctx, String.join(";", linkedIdentities), issuer, "system", now, now + 3600L * 24 * 365, null));
 		}
@@ -249,17 +247,17 @@ public class GA4GHClaimSource extends ClaimSource {
 			JsonNode visas = response.path(GA4GH_CLAIM);
 			if (visas.isArray()) {
 				for (JsonNode visaNode : visas) {
-					if(visaNode.isTextual()) {
+					if (visaNode.isTextual()) {
 						PassportVisa visa = parseAndVerifyVisa(visaNode.asText());
-						if(visa.isVerified()) {
-							log.debug("adding a visa to passport: {}",visa);
+						if (visa.isVerified()) {
+							log.debug("adding a visa to passport: {}", visa);
 							passport.add(passport.textNode(visa.getJwt()));
 							linkedIdentities.add(visa.getLinkedIdentity());
 						} else {
 							log.warn("skipping visa: {}", visa);
 						}
 					} else {
-						log.warn("element of ga4gh_passport_v1 is not a String: {}",visaNode);
+						log.warn("element of ga4gh_passport_v1 is not a String: {}", visaNode);
 					}
 				}
 			} else {
@@ -269,6 +267,7 @@ public class GA4GHClaimSource extends ClaimSource {
 	}
 
 	private final Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
+
 	{
 		//only trusted key sets should be here
 		try {
@@ -278,6 +277,7 @@ public class GA4GHClaimSource extends ClaimSource {
 			log.error("cannot initialize RemoteJWKSet map");
 		}
 	}
+
 	private PassportVisa parseAndVerifyVisa(String jwtString) {
 		PassportVisa visa = new PassportVisa(jwtString);
 		try {
@@ -296,23 +296,23 @@ public class GA4GHClaimSource extends ClaimSource {
 			String url = jwkURL.toURL().toString();
 			jku = url.startsWith("http:") ? new URL("https:" + url.substring(5)) : jwkURL.toURL();
 			RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.get(jku);
-			if(remoteJWKSet == null) {
+			if (remoteJWKSet == null) {
 				log.error("JKU {} is not among trusted key sets, skipping JWT", jku);
 				return visa;
 			}
 			List<JWK> keys = remoteJWKSet.get(new JWKSelector(new JWKMatcher.Builder().keyID(signedJWT.getHeader().getKeyID()).build()), null);
 			RSASSAVerifier verifier = new RSASSAVerifier(((RSAKey) keys.get(0)).toRSAPublicKey());
 			visa.setVerified(signedJWT.verify(verifier));
-			if(visa.isVerified()) {
+			if (visa.isVerified()) {
 				processPayload(visa, signedJWT.getPayload());
 			}
 		} catch (Exception ex) {
-			log.error("visa "+jwtString+" cannot be parsed and verified", ex);
+			log.error("visa " + jwtString + " cannot be parsed and verified", ex);
 		}
 		return visa;
 	}
 
-	static private  final ObjectMapper jsonMapper = new ObjectMapper();
+	static private final ObjectMapper jsonMapper = new ObjectMapper();
 
 	private void processPayload(PassportVisa visa, Payload payload) throws IOException {
 		JsonNode doc = jsonMapper.readValue(payload.toString(), JsonNode.class);
@@ -325,19 +325,19 @@ public class GA4GHClaimSource extends ClaimSource {
 		checkVisaKey(visa, visa_v1, "value");
 		checkVisaKey(visa, visa_v1, "source");
 		checkVisaKey(visa, visa_v1, "by");
-		if(!visa.isVerified()) return;
+		if (!visa.isVerified()) return;
 		long exp = doc.get("exp").asLong();
-		if(exp < Instant.now().getEpochSecond()) {
-			log.warn("visa expired on "+isoDateTime(exp));
+		if (exp < Instant.now().getEpochSecond()) {
+			log.warn("visa expired on " + isoDateTime(exp));
 			visa.setVerified(false);
 			return;
 		}
-		visa.setLinkedIdentity(doc.get("sub").asText() +","+ URLEncoder.encode(doc.get("iss").asText(),"utf-8"));
+		visa.setLinkedIdentity(doc.get("sub").asText() + "," + URLEncoder.encode(doc.get("iss").asText(), "utf-8"));
 	}
 
 	private void checkVisaKey(PassportVisa visa, JsonNode jsonNode, String key) {
 		if (jsonNode.get(key).isMissingNode()) {
-			log.warn(key+" is missing");
+			log.warn(key + " is missing");
 		}
 	}
 
@@ -418,11 +418,11 @@ public class GA4GHClaimSource extends ClaimSource {
 			this.verified = verified;
 		}
 
-		public String getLinkedIdentity() {
+		String getLinkedIdentity() {
 			return linkedIdentity;
 		}
 
-		public void setLinkedIdentity(String linkedIdentity) {
+		void setLinkedIdentity(String linkedIdentity) {
 			this.linkedIdentity = linkedIdentity;
 		}
 
@@ -435,7 +435,6 @@ public class GA4GHClaimSource extends ClaimSource {
 					'}';
 		}
 	}
-
 
 
 }
