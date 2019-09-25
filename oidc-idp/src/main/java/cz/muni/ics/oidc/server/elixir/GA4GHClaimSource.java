@@ -7,7 +7,17 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKMatcher;
+import com.nimbusds.jose.jwk.JWKSelector;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.source.RemoteJWKSet;
+import com.nimbusds.jose.proc.SecurityContext;
+import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.SignedJWT;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
@@ -25,8 +35,11 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -35,8 +48,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -46,7 +63,8 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class GA4GHClaimSource extends ClaimSource {
 
-	public static final String GA4GH_SCOPE = "ga4gh_passport_v1";
+	static final String GA4GH_SCOPE = "ga4gh_passport_v1";
+	static final String GA4GH_CLAIM = "ga4gh_passport_v1";
 
 	private static final Logger log = LoggerFactory.getLogger(GA4GHClaimSource.class);
 
@@ -117,7 +135,6 @@ public class GA4GHClaimSource extends ClaimSource {
 		addAcceptedTermsAndPolicies(pctx, ga4gh_passport_v1);
 		addResearcherStatuses(pctx, ga4gh_passport_v1, affiliations);
 		addControlledAccessGrants(pctx, ga4gh_passport_v1);
-		addLinkedIdentities(pctx, ga4gh_passport_v1);
 		return ga4gh_passport_v1;
 	}
 
@@ -173,13 +190,12 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 	}
 
-	private void addLinkedIdentities(ClaimSourceProduceContext pctx, ArrayNode passport) {
-		long now = Instant.now().getEpochSecond();
-		passport.add(createPassportVisa("LinkedIdentities", pctx, pctx.getSub() + "|" + issuer, issuer, "system", now, now + 3600L, null));
-	}
-
 	private String isoDate(long linuxTime) {
 		return DateTimeFormatter.ISO_LOCAL_DATE.format(ZonedDateTime.ofInstant(Instant.ofEpochSecond(linuxTime), ZoneId.systemDefault()));
+	}
+
+	private static String isoDateTime(long linuxTime) {
+		return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(ZonedDateTime.ofInstant(Instant.ofEpochSecond(linuxTime), ZoneId.systemDefault()));
 	}
 
 	private JsonNode createPassportVisa(String type, ClaimSourceProduceContext pctx, String value, String source, String by, long asserted, long expires, JsonNode condition) {
@@ -212,16 +228,121 @@ public class GA4GHClaimSource extends ClaimSource {
 	}
 
 	private void addControlledAccessGrants(ClaimSourceProduceContext pctx, ArrayNode passport) {
+		Set<String> linkedIdentities = new HashSet<>();
+		//call Resource Entitlement Management System
 		if (remsRestTemplate != null) {
-			callPermissionsAPI(remsRestTemplate, remsUrl + pctx.getSub(), pctx, passport);
+			callPermissionsJwtAPI(remsRestTemplate, remsUrl + pctx.getSub(), pctx, passport, linkedIdentities);
 		}
+		//call European Genome Archive
 		if (egaRestTemplate != null) {
 			callPermissionsAPI(egaRestTemplate, egaUrl + pctx.getSub() + "/", pctx, passport);
+		}
+		if(!linkedIdentities.isEmpty()) {
+			long now = Instant.now().getEpochSecond();
+			passport.add(createPassportVisa("LinkedIdentities", pctx, String.join(";", linkedIdentities), issuer, "system", now, now + 3600L * 24 * 365, null));
+		}
+	}
+
+	private void callPermissionsJwtAPI(RestTemplate restTemplate, String actionURL, ClaimSourceProduceContext pctx, ArrayNode passport, Set<String> linkedIdentities) {
+		JsonNode response = callHttpJsonAPI(restTemplate, actionURL);
+		if (response != null) {
+			JsonNode visas = response.path(GA4GH_CLAIM);
+			if (visas.isArray()) {
+				for (JsonNode visaNode : visas) {
+					if(visaNode.isTextual()) {
+						PassportVisa visa = parseAndVerifyVisa(visaNode.asText());
+						if(visa.isVerified()) {
+							log.debug("adding a visa to passport: {}",visa);
+							passport.add(passport.textNode(visa.getJwt()));
+							linkedIdentities.add(visa.getLinkedIdentity());
+						} else {
+							log.warn("skipping visa: {}", visa);
+						}
+					} else {
+						log.warn("element of ga4gh_passport_v1 is not a String: {}",visaNode);
+					}
+				}
+			} else {
+				log.warn("ga4gh_passport_v1 is not an array in {}", response);
+			}
+		}
+	}
+
+	private final Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
+	{
+		//only trusted key sets should be here
+		try {
+			URL remsJKU = new URL("https://jwt-elixir-rems-proxy.rahtiapp.fi/jwks.json");
+			remoteJwkSets.put(remsJKU, new RemoteJWKSet<>(remsJKU));
+		} catch (MalformedURLException e) {
+			log.error("cannot initialize RemoteJWKSet map");
+		}
+	}
+	private PassportVisa parseAndVerifyVisa(String jwtString) {
+		PassportVisa visa = new PassportVisa(jwtString);
+		try {
+			JWT parsedJWT = JWTParser.parse(jwtString);
+			if (!(parsedJWT instanceof SignedJWT)) {
+				log.error("JWT is not SignedJWT");
+				return visa;
+			}
+			SignedJWT signedJWT = (SignedJWT) parsedJWT;
+			URL jku;
+			URI jwkURL = signedJWT.getHeader().getJWKURL();
+			if (jwkURL == null) {
+				log.error("JKU is missing in JWT header");
+				return visa;
+			}
+			String url = jwkURL.toURL().toString();
+			jku = url.startsWith("http:") ? new URL("https:" + url.substring(5)) : jwkURL.toURL();
+			RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.get(jku);
+			if(remoteJWKSet == null) {
+				log.error("JKU {} is not among trusted key sets, skipping JWT", jku);
+				return visa;
+			}
+			List<JWK> keys = remoteJWKSet.get(new JWKSelector(new JWKMatcher.Builder().keyID(signedJWT.getHeader().getKeyID()).build()), null);
+			RSASSAVerifier verifier = new RSASSAVerifier(((RSAKey) keys.get(0)).toRSAPublicKey());
+			visa.setVerified(signedJWT.verify(verifier));
+			if(visa.isVerified()) {
+				processPayload(visa, signedJWT.getPayload());
+			}
+		} catch (Exception ex) {
+			log.error("visa "+jwtString+" cannot be parsed and verified", ex);
+		}
+		return visa;
+	}
+
+	static private  final ObjectMapper jsonMapper = new ObjectMapper();
+
+	private void processPayload(PassportVisa visa, Payload payload) throws IOException {
+		JsonNode doc = jsonMapper.readValue(payload.toString(), JsonNode.class);
+		checkVisaKey(visa, doc, "sub");
+		checkVisaKey(visa, doc, "exp");
+		checkVisaKey(visa, doc, "iss");
+		JsonNode visa_v1 = doc.get("ga4gh_visa_v1");
+		checkVisaKey(visa, visa_v1, "type");
+		checkVisaKey(visa, visa_v1, "asserted");
+		checkVisaKey(visa, visa_v1, "value");
+		checkVisaKey(visa, visa_v1, "source");
+		checkVisaKey(visa, visa_v1, "by");
+		if(!visa.isVerified()) return;
+		long exp = doc.get("exp").asLong();
+		if(exp < Instant.now().getEpochSecond()) {
+			log.warn("visa expired on "+isoDateTime(exp));
+			visa.setVerified(false);
+			return;
+		}
+		visa.setLinkedIdentity(doc.get("sub").asText() +","+ URLEncoder.encode(doc.get("iss").asText(),"utf-8"));
+	}
+
+	private void checkVisaKey(PassportVisa visa, JsonNode jsonNode, String key) {
+		if (jsonNode.get(key).isMissingNode()) {
+			log.warn(key+" is missing");
 		}
 	}
 
 	private void callPermissionsAPI(RestTemplate restTemplate, String actionURL, ClaimSourceProduceContext pctx, ArrayNode passport) {
-		JsonNode permissions = getPermissions(restTemplate, actionURL);
+		JsonNode permissions = callHttpJsonAPI(restTemplate, actionURL);
 		if (permissions != null) {
 			JsonNode grants = permissions.path("ga4gh").path("ControlledAccessGrants");
 			if (grants.isArray()) {
@@ -241,7 +362,7 @@ public class GA4GHClaimSource extends ClaimSource {
 	}
 
 	@SuppressWarnings("Duplicates")
-	private static JsonNode getPermissions(RestTemplate rt, String actionUrl) {
+	private static JsonNode callHttpJsonAPI(RestTemplate rt, String actionUrl) {
 		//get permissions data
 		try {
 			JsonNode result;
@@ -275,6 +396,46 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 		return null;
 	}
+
+	public static class PassportVisa {
+		String jwt;
+		boolean verified = false;
+		String linkedIdentity;
+
+		PassportVisa(String jwt) {
+			this.jwt = jwt;
+		}
+
+		public String getJwt() {
+			return jwt;
+		}
+
+		public boolean isVerified() {
+			return verified;
+		}
+
+		public void setVerified(boolean verified) {
+			this.verified = verified;
+		}
+
+		public String getLinkedIdentity() {
+			return linkedIdentity;
+		}
+
+		public void setLinkedIdentity(String linkedIdentity) {
+			this.linkedIdentity = linkedIdentity;
+		}
+
+		@Override
+		public String toString() {
+			return "PassportVisa{" +
+					"jwt='" + jwt + '\'' +
+					", verified=" + verified +
+					", linkedIdentity=" + linkedIdentity +
+					'}';
+		}
+	}
+
 
 
 }
