@@ -332,7 +332,7 @@ public class GA4GHClaimSource extends ClaimSource {
 			visa.setVerified(false);
 			return;
 		}
-		visa.setLinkedIdentity(doc.get("sub").asText() + "," + URLEncoder.encode(doc.get("iss").asText(), "utf-8"));
+		visa.setLinkedIdentity(URLEncoder.encode(doc.get("sub").asText(), "utf-8") + "," + URLEncoder.encode(doc.get("iss").asText(), "utf-8"));
 		visa.setPrettyPayload(
 				visa_v1.get("type").asText() +":  \"" + visa_v1.get("value").asText() + "\" asserted " + isoDate(visa_v1.get("asserted").asLong())
 		);
