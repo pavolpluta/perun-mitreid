@@ -15,7 +15,6 @@ import com.nimbusds.jose.jwk.JWKSelector;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.RemoteJWKSet;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.SignedJWT;
@@ -237,7 +236,9 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 		if (!linkedIdentities.isEmpty()) {
 			long now = Instant.now().getEpochSecond();
-			passport.add(createPassportVisa("LinkedIdentities", pctx, String.join(";", linkedIdentities), issuer, "system", now, now + 3600L * 24 * 365, null));
+			for (String linkedIdentity : linkedIdentities) {
+				passport.add(createPassportVisa("LinkedIdentities", pctx, linkedIdentity, issuer, "system", now, now + 3600L * 24 * 365, null));
+			}
 		}
 	}
 
@@ -281,23 +282,15 @@ public class GA4GHClaimSource extends ClaimSource {
 	private PassportVisa parseAndVerifyVisa(String jwtString) {
 		PassportVisa visa = new PassportVisa(jwtString);
 		try {
-			JWT parsedJWT = JWTParser.parse(jwtString);
-			if (!(parsedJWT instanceof SignedJWT)) {
-				log.error("JWT is not SignedJWT");
-				return visa;
-			}
-			SignedJWT signedJWT = (SignedJWT) parsedJWT;
-			URL jku;
-			URI jwkURL = signedJWT.getHeader().getJWKURL();
-			if (jwkURL == null) {
+			SignedJWT signedJWT = (SignedJWT) JWTParser.parse(jwtString);
+			URI jku = signedJWT.getHeader().getJWKURL();
+			if (jku == null) {
 				log.error("JKU is missing in JWT header");
 				return visa;
 			}
-			String url = jwkURL.toURL().toString();
-			jku = url.startsWith("http:") ? new URL("https:" + url.substring(5)) : jwkURL.toURL();
-			RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.get(jku);
+			RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.get(jku.toURL());
 			if (remoteJWKSet == null) {
-				log.error("JKU {} is not among trusted key sets, skipping JWT", jku);
+				log.error("JKU {} is not among trusted key sets", jku);
 				return visa;
 			}
 			List<JWK> keys = remoteJWKSet.get(new JWKSelector(new JWKMatcher.Builder().keyID(signedJWT.getHeader().getKeyID()).build()), null);
@@ -312,10 +305,10 @@ public class GA4GHClaimSource extends ClaimSource {
 		return visa;
 	}
 
-	static private final ObjectMapper jsonMapper = new ObjectMapper();
+	static private final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
 	private void processPayload(PassportVisa visa, Payload payload) throws IOException {
-		JsonNode doc = jsonMapper.readValue(payload.toString(), JsonNode.class);
+		JsonNode doc = JSON_MAPPER.readValue(payload.toString(), JsonNode.class);
 		checkVisaKey(visa, doc, "sub");
 		checkVisaKey(visa, doc, "exp");
 		checkVisaKey(visa, doc, "iss");
