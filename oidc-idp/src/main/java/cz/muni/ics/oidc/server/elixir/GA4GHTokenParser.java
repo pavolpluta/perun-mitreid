@@ -33,6 +33,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class is a command-line debugging tool. It parses JSON in GA4GH Passport format,
+ * verifies signatures on Passport Visas (JWT tokens), and prints them in human-readable format.
+ */
 public class GA4GHTokenParser {
 
 	static ObjectMapper jsonMapper = new ObjectMapper();

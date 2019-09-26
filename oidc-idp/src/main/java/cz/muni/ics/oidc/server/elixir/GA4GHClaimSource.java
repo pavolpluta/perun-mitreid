@@ -187,7 +187,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 	}
 
-	private String isoDate(long linuxTime) {
+	private static String isoDate(long linuxTime) {
 		return DateTimeFormatter.ISO_LOCAL_DATE.format(ZonedDateTime.ofInstant(Instant.ofEpochSecond(linuxTime), ZoneId.systemDefault()));
 	}
 
@@ -267,19 +267,25 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 	}
 
-	private final Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
+	private static final Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
+	private static final Map<URI, String> signers = new HashMap<>();
 
-	{
-		//only trusted key sets should be here
+	private static void createTrustedJwksUrl(String url, String signer) {
 		try {
-			URL remsJKU = new URL("https://jwt-elixir-rems-proxy.rahtiapp.fi/jwks.json");
-			remoteJwkSets.put(remsJKU, new RemoteJWKSet<>(remsJKU));
-		} catch (MalformedURLException e) {
+			URL jku = new URL(url);
+			remoteJwkSets.put(jku, new RemoteJWKSet<>(jku));
+			signers.put(jku.toURI(), signer);
+		} catch (MalformedURLException | URISyntaxException e) {
 			log.error("cannot initialize RemoteJWKSet map");
 		}
 	}
 
-	private PassportVisa parseAndVerifyVisa(String jwtString) {
+	static {
+		createTrustedJwksUrl("https://jwt-elixir-rems-proxy.rahtiapp.fi/jwks.json", "REMS");
+		createTrustedJwksUrl("https://login.elixir-czech.org/oidc/jwk", "ELIXIR");
+	}
+
+	public static PassportVisa parseAndVerifyVisa(String jwtString) {
 		PassportVisa visa = new PassportVisa(jwtString);
 		try {
 			SignedJWT signedJWT = (SignedJWT) JWTParser.parse(jwtString);
@@ -288,6 +294,7 @@ public class GA4GHClaimSource extends ClaimSource {
 				log.error("JKU is missing in JWT header");
 				return visa;
 			}
+			visa.setSigner(signers.get(jku));
 			RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.get(jku.toURL());
 			if (remoteJWKSet == null) {
 				log.error("JKU {} is not among trusted key sets", jku);
@@ -307,7 +314,7 @@ public class GA4GHClaimSource extends ClaimSource {
 
 	static private final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
-	private void processPayload(PassportVisa visa, Payload payload) throws IOException {
+	static private void processPayload(PassportVisa visa, Payload payload) throws IOException {
 		JsonNode doc = JSON_MAPPER.readValue(payload.toString(), JsonNode.class);
 		checkVisaKey(visa, doc, "sub");
 		checkVisaKey(visa, doc, "exp");
@@ -326,11 +333,15 @@ public class GA4GHClaimSource extends ClaimSource {
 			return;
 		}
 		visa.setLinkedIdentity(doc.get("sub").asText() + "," + URLEncoder.encode(doc.get("iss").asText(), "utf-8"));
+		visa.setPrettyPayload(
+				visa_v1.get("type").asText() +":  \"" + visa_v1.get("value").asText() + "\" asserted " + isoDate(visa_v1.get("asserted").asLong())
+		);
 	}
 
-	private void checkVisaKey(PassportVisa visa, JsonNode jsonNode, String key) {
+	static private void checkVisaKey(PassportVisa visa, JsonNode jsonNode, String key) {
 		if (jsonNode.get(key).isMissingNode()) {
 			log.warn(key + " is missing");
+			visa.setVerified(false);
 		}
 	}
 
@@ -394,6 +405,8 @@ public class GA4GHClaimSource extends ClaimSource {
 		String jwt;
 		boolean verified = false;
 		String linkedIdentity;
+		String signer;
+		String prettyPayload;
 
 		PassportVisa(String jwt) {
 			this.jwt = jwt;
@@ -407,7 +420,7 @@ public class GA4GHClaimSource extends ClaimSource {
 			return verified;
 		}
 
-		public void setVerified(boolean verified) {
+		void setVerified(boolean verified) {
 			this.verified = verified;
 		}
 
@@ -419,6 +432,18 @@ public class GA4GHClaimSource extends ClaimSource {
 			this.linkedIdentity = linkedIdentity;
 		}
 
+		void setSigner(String signer) {
+			this.signer = signer;
+		}
+
+		void setPrettyPayload(String prettyPayload) {
+			this.prettyPayload = prettyPayload;
+		}
+
+		public String getPrettyString() {
+			return prettyPayload + ", signed by " + signer;
+		}
+
 		@Override
 		public String toString() {
 			return "PassportVisa{" +
@@ -427,6 +452,7 @@ public class GA4GHClaimSource extends ClaimSource {
 					", linkedIdentity=" + linkedIdentity +
 					'}';
 		}
+
 	}
 
 

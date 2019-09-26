@@ -1,3 +1,4 @@
+<%@ page import="cz.muni.ics.oidc.server.elixir.GA4GHClaimSource" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" trimDirectiveWhitespaces="true"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -76,7 +77,14 @@
 											</c:when>
 											<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
 												<c:forEach var="subValue" items="${claim.value}">
-													<li>${subValue}</li>
+													<c:choose>
+														<c:when test="${claim.key=='ga4gh_passport_v1'}">
+															<li><%= GA4GHClaimSource.parseAndVerifyVisa((String)pageContext.findAttribute("subValue")).getPrettyString() %></li>
+														</c:when>
+														<c:otherwise>
+															<li>${subValue}</li>
+														</c:otherwise>
+													</c:choose>
 												</c:forEach>
 											</c:when>
 											<c:otherwise>
