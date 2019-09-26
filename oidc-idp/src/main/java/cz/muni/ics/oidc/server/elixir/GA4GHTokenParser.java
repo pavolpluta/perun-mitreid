@@ -38,7 +38,7 @@ public class GA4GHTokenParser {
 	static ObjectMapper jsonMapper = new ObjectMapper();
 
 	public static void main(String[] args) throws IOException, ParseException, JOSEException {
-		String userinfo = "/tmp/ga4gh_userinfo.json";
+		String userinfo = "/tmp/ga4gh.json";
 		JsonNode doc = jsonMapper.readValue(new File(userinfo), JsonNode.class);
 		JsonNode ga4gh = doc.get("ga4gh_passport_v1");
 		long startx = System.currentTimeMillis();
@@ -71,7 +71,14 @@ public class GA4GHTokenParser {
 		URL jwks;
 		URI jwkURL = header.getJWKURL();
 		if(jwkURL!=null) {
-			jwks = jwkURL.toURL();
+			String url = jwkURL.toURL().toString();
+			if(url.startsWith("http:")) {
+				url = "https:"+url.substring(5);
+				jwks = new URL(url);
+				System.out.println("modified jwks = " + jwks);
+			} else {
+				jwks = jwkURL.toURL();
+			}
 		} else {
 			String iss = jwtClaimsSet.getIssuer();
 			RestTemplate restTemplate = new RestTemplate();
@@ -100,9 +107,10 @@ public class GA4GHTokenParser {
 			String value = visa.get("value").asText();
 			String source = visa.get("source").asText();
 			String by = visa.get("by").asText();
-			System.out.println("type: "+type+", value: "+value+", by: "+by+", source: "+source+", asserted: "+isoDateTime(asserted));
-//			System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(doc));
-			System.out.println(",");
+			JsonNode conditions = visa.get("conditions");
+			System.out.println("type: "+type+", by: "+by+", value: "+value+", source: "+source+", asserted: "+isoDateTime(asserted)+", conditions: "+conditions);
+			System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(doc));
+//			System.out.println(",");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
