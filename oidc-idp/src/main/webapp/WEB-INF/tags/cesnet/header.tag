@@ -1,0 +1,1 @@
+    <link rel="icon" type="image/icon" href="${baseUrl}proxy/module.php/cesnet/res/img/icons/favicon.ico" />
