@@ -1,4 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" pageEncoding="utf-8" trimDirectiveWhitespaces="true" %>
+<%@ page import="java.lang.String" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="authz" uri="http://www.springframework.org/security/tags"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -10,14 +13,25 @@
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
 <%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
 
-<c:choose>
-    <c:when test="${theme eq 'default'}">
-        <o:header title="${title}"/>
-    </c:when>
-    <c:otherwise>
-        <t:header title="${title}" reqURL="${reqURL}"/>
-    </c:otherwise>
-</c:choose>
+<c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
+
+<%
+
+String baseURL = (String) pageContext.getAttribute("baseURL");
+List<String> cssLinks = new ArrayList<>();
+
+pageContext.setAttribute("cssLinks", cssLinks);
+
+%>
+
+<t:header title="${title}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
+
+    <h1>
+        <a class="header-link" href="/proxy/">Proxy IdP</a>
+    </h1>
+
+</div> <%-- header --%>
+
 <div id="content">
     <div class="error_message" style="word-wrap: break-word;">
         <c:forEach var="contactIter" items="${client.contacts}" end="0">
@@ -34,7 +48,7 @@
                 <c:when test="${theme eq 'ceitec'}">
                     <c:set var="contact" value="idm@ics.muni.cz"/>
                 </c:when>
-                <c:when test="${theme eq 'bbmri-eric'}">
+                <c:when test="${theme eq 'bbmri'}">
                     <c:set var="contact" value="aai@helpdesk.bbmri-eric.eu"/>
                 </c:when>
                 <c:when test="${theme eq 'europdx'}">
@@ -61,23 +75,5 @@
     </div>
 </div>
 </div><!-- ENDWRAP -->
-<c:choose>
-    <c:when test="${theme eq 'elixir'}">
-        <elixir:footer />
-    </c:when>
-    <c:when test="${theme eq 'cesnet'}">
-        <cesnet:footer />
-    </c:when>
-    <c:when test="${theme eq 'bbmri-eric'}">
-        <bbmri:footer />
-    </c:when>
-    <c:when test="${theme eq 'ceitec'}">
-        <ceitec:footer />
-    </c:when>
-    <c:when test="${theme eq 'europdx'}">
-        <europdx:footer />
-    </c:when>
-    <c:otherwise>
-        <o:footer />
-    </c:otherwise>
-</c:choose>
+
+<t:footer baseURL="${baseURL}" theme="${theme}"/>

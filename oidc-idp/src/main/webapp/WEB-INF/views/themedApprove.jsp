@@ -1,4 +1,7 @@
 <%@ page import="cz.muni.ics.oidc.server.elixir.GA4GHClaimSource" %>
+<%@ page import="java.lang.String" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" trimDirectiveWhitespaces="true"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -10,17 +13,26 @@
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
 <%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
 
-<c:if test="${empty title}">
-	<c:set var="title" value="${langProps['consent_header']}"/>
-</c:if>
-<c:choose>
-	<c:when test="${theme eq 'default'}">
-		<o:header title="${title}"/>
-	</c:when>
-	<c:otherwise>
-		<t:header title="${title}" reqURL="${reqURL}"/>
-	</c:otherwise>
-</c:choose>
+<c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
+
+<%
+
+String baseURL = (String) pageContext.getAttribute("baseURL");
+List<String> cssLinks = new ArrayList<>();
+
+cssLinks.add(baseURL + "proxy/module.php/consent/assets/css/consent.css");
+cssLinks.add(baseURL + "proxy/module.php/perun/res/css/consent.css");
+
+pageContext.setAttribute("cssLinks", cssLinks);
+
+%>
+
+<t:header title="${langProps['consent_header']}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
+
+<h1 style="color: #222;">${langProps['consent_header']}</h1>
+
+</div> <%-- header --%>
+
 <div id="content">
 	<c:remove scope="session" var="SPRING_SECURITY_LAST_EXCEPTION" />
 	<div class="row">
@@ -123,23 +135,5 @@
 	</div>
 </div>
 </div><!-- wrap -->
-<c:choose>
-	<c:when test="${theme eq 'elixir'}">
-		<elixir:footer />
-	</c:when>
-	<c:when test="${theme eq 'cesnet'}">
-		<cesnet:footer />
-	</c:when>
-	<c:when test="${theme eq 'bbmri'}">
-		<bbmri:footer />
-	</c:when>
-	<c:when test="${theme eq 'ceitec'}">
-		<ceitec:footer />
-	</c:when>
-	<c:when test="${theme eq 'europdx'}">
-		<europdx:footer />
-	</c:when>
-	<c:otherwise>
-		<o:footer />
-	</c:otherwise>
-</c:choose>
+
+<t:footer baseURL="${baseURL}" theme="${theme}"/>

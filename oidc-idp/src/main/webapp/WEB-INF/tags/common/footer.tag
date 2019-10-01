@@ -1,4 +1,4 @@
-<%@ tag pageEncoding="UTF-8" %>
+<%@tag pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags" %>
 <%@ taglib prefix="elixir" tagdir="/WEB-INF/tags/elixir" %>
@@ -6,29 +6,28 @@
 <%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
 <%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
-<%@ attribute name="title" required="true" %>
-<%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
 <%@ attribute name="theme" required="true" %>
-<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<String>" %>
 
 <c:choose>
     <c:when test="${theme eq 'elixir'}">
-        <elixir:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <elixir:footer baseURL="${baseURL}"/>
     </c:when>
     <c:when test="${theme eq 'cesnet'}">
-        <cesnet:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <cesnet:footer baseURL="${baseURL}"/>
     </c:when>
     <c:when test="${theme eq 'bbmri'}">
-        <bbmri:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <bbmri:footer baseURL="${baseURL}"/>
     </c:when>
     <c:when test="${theme eq 'ceitec'}">
-        <ceitec:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <ceitec:footer baseURL="${baseURL}"/>
     </c:when>
     <c:when test="${theme eq 'europdx'}">
-        <europdx:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <europdx:footer baseURL="${baseURL}"/>
     </c:when>
     <c:otherwise>
-        <o:header title="${title}"/>
+        <o:footer />
     </c:otherwise>
 </c:choose>
+
+<t:scripts />

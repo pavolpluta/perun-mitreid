@@ -1,16 +1,18 @@
-<%@tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
+<%@tag pageEncoding="UTF-8" %>
 <%@ attribute name="js" required="false"%>
+<%@ attribute name="baseURL" required="true"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common" %>
 <jsp:useBean id="date" class="java.util.Date" />
+
 <c:set var="issuer" value="${config.issuer}" />
-<c:set var="baseUrl" value="${fn:substringBefore(issuer, 'oidc')}" />
+
 <div id="footer">
     <div style="margin: 0px auto; max-width: 1000px;">
         <div style="float: left;">
-            <img src="${baseUrl}proxy/module.php/bbmri/res/img/BBMRI-ERIC-gateway-for-health_216.png" alt="BBMRI-ERIC Logo">
+            <img src="${baseURL}proxy/module.php/bbmri/res/img/BBMRI-ERIC-gateway-for-health_216.png" alt="BBMRI-ERIC Logo">
         </div>
 
         <div style="float: left;">
@@ -22,4 +24,3 @@
         </div>
     </div>
 </div><!-- #footer -->
-<t:scripts />
