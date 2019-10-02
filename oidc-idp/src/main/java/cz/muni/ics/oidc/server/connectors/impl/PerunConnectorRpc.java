@@ -10,6 +10,7 @@ import cz.muni.ics.oidc.models.Mapper;
 import cz.muni.ics.oidc.models.Member;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.models.Resource;
 import cz.muni.ics.oidc.models.RichUser;
 import cz.muni.ics.oidc.models.Vo;
 import cz.muni.ics.oidc.server.PerunPrincipal;
@@ -335,6 +336,31 @@ public class PerunConnectorRpc implements PerunConnector {
 		return affiliations;
 	}
 
+	@Override
+	public List<String> getGroupsAssignedToResourcesWithUniqueNames(Facility facility) {
+		log.trace("getGroupsAssignedToResourcesWithUniqueNames({})", facility);
+		List<Resource> resources = getAssignedResources(facility);
+		List<String> result = new ArrayList<>();
+
+		String voShortName = "urn:perun:group:attribute-def:virt:voShortName";
+
+		for (Resource res : resources) {
+			List<Group> groups = getRichGroupsAssignedToResourceWithAttributesByNames(res, Collections.singletonList(voShortName));
+
+			for (Group group : groups) {
+				if (group.getAttributeByUrnName(voShortName) != null &&
+						group.getAttributeByUrnName(voShortName).hasNonNull("value")) {
+					String value = group.getAttributeByUrnName(voShortName).get("value").textValue();
+					group.setUniqueGroupName(value + ":" + group.getName());
+					result.add(group.getUniqueGroupName());
+				}
+			}
+		}
+
+		log.trace("getGroupsAssignedToResourcesWithUniqueNames({}) returns: {}", facility, result);
+		return result;
+	}
+
 	public PerunAttribute getFacilityAttribute(Facility facility, String attributeName) {
 		log.trace("getFacilityAttribute({}, {})", facility, attributeName);
 		Map<String, Object> map = new LinkedHashMap<>();
@@ -479,4 +505,49 @@ public class PerunConnectorRpc implements PerunConnector {
 		}
 	}
 
+	private List<Resource> getAssignedResources(Facility facility) {
+		log.trace("getAssignedResources({})", facility);
+
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facility.getId());
+
+		JsonNode res = makeRpcCall("/facilitiesManager/getAssignedResources", map);
+		List<Resource> resources = Mapper.mapResources(res);
+
+		log.trace("getAssignedResources({}) returns: {}", facility, resources);
+		return resources;
+	}
+
+	private List<Group> getRichGroupsAssignedToResourceWithAttributesByNames(Resource resource, List<String> attrNames) {
+		log.trace("getRichGroupsAssignedToResourceWithAttributesByNames({}, {})", resource, attrNames);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("resource", resource.getId());
+		map.put("attrNames", attrNames);
+
+		JsonNode res = makeRpcCall("/groupsManager/getRichGroupsAssignedToResourceWithAttributesByNames", map);
+		List<Group> groups = new ArrayList<>();
+
+		for (int i = 0; i < res.size(); i++) {
+			JsonNode jsonNode = res.get(i);
+			Group group = Mapper.mapGroup(jsonNode);
+
+			JsonNode groupAttrs = jsonNode.get("attributes");
+			Map<String, JsonNode> attrsMap = new HashMap<>();
+
+			for (int j = 0; j < groupAttrs.size(); j++) {
+				JsonNode attr = groupAttrs.get(j);
+
+				String namespace = attr.get("namespace").textValue();
+				String friendlyName = attr.get("friendlyName").textValue();
+
+				attrsMap.put(namespace + ":" + friendlyName, attr);
+			}
+
+			group.setAttributes(attrsMap);
+			groups.add(group);
+		}
+
+		log.trace("getRichGroupsAssignedToResourceWithAttributesByNames({}) returns: {}", resource, groups);
+		return groups;
+	}
 }

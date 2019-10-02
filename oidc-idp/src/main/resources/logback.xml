@@ -50,8 +50,8 @@
 	<logger name="cz.muni.ics.oidc" level="${log.level}"/>
 	<logger name="cz.muni.ics.oidc.server.filters" level="error"/>
 	<logger name="cz.muni.ics.oidc.server.filters.PerunAuthenticationFilter" level="info"/>
-	<logger name="cz.muni.ics.oidc.server.PerunUserInfo" level="info"/>
-<!--	<logger name="cz.muni.ics.oidc.server.PerunUserInfoService" level="trace"/>-->
+	<logger name="cz.muni.ics.oidc.server.userInfo.PerunUserInfo" level="info"/>
+<!--	<logger name="cz.muni.ics.oidc.server.userInfo.PerunUserInfoService" level="trace"/>-->
 	<logger name="cz.muni.ics.oidc.server.PerunAccessTokenEnhancer" level="warn"/>
 	<logger name="cz.muni.ics.oidc.server.PerunAuthenticationUserDetailsService" level="info"/>
 <!--	<logger name="cz.muni.ics.oidc.server.elixir.GA4GHClaimSource" level="trace"/>-->

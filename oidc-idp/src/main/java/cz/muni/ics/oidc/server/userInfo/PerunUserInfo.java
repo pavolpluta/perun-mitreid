@@ -1,4 +1,4 @@
-package cz.muni.ics.oidc.server;
+package cz.muni.ics.oidc.server.userInfo;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,7 +24,7 @@ public class PerunUserInfo extends DefaultUserInfo {
 
 	private Map<String, JsonNode> customClaims = new LinkedHashMap<>();
 
-	Map<String, JsonNode> getCustomClaims() {
+	public Map<String, JsonNode> getCustomClaims() {
 		return customClaims;
 	}
 

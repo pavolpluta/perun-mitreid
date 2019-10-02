@@ -118,4 +118,12 @@ public interface PerunConnector {
 	 * @return list of values of attribute affiliation
 	 */
 	List<Affiliation> getGroupAffiliations(Long userId);
+
+	/**
+	 * For the given facility, gets all allowed groups
+	 *
+	 * @param facility facility
+	 * @return list of unique names of groups
+	 */
+	List<String> getGroupsAssignedToResourcesWithUniqueNames(Facility facility);
 }

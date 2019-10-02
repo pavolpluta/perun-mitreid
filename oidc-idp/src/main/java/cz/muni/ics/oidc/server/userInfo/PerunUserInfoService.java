@@ -1,4 +1,4 @@
-package cz.muni.ics.oidc.server;
+package cz.muni.ics.oidc.server.userInfo;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -217,7 +217,7 @@ public class PerunUserInfoService implements UserInfoService {
 		}
 	}
 
-	List<PerunCustomClaimDefinition> getCustomClaims() {
+	public List<PerunCustomClaimDefinition> getCustomClaims() {
 		return customClaims;
 	}
 
@@ -233,6 +233,9 @@ public class PerunUserInfoService implements UserInfoService {
 		try {
 			userInfo = cache.get(new UserClientPair(username, clientId, client));
 			log.trace("loaded UserInfo from cache for '{}'/'{}'", userInfo.getName(), client.getClientName());
+			UserInfoModifierContext ctx = new UserInfoModifierContext(properties, perunConnector);
+			ctx.modify((PerunUserInfo) userInfo, clientId);
+			log.trace("Modified userInfo {}", userInfo);
 		} catch (ExecutionException e) {
 			log.error("cannot get user from cache", e);
 			return null;
@@ -243,7 +246,15 @@ public class PerunUserInfoService implements UserInfoService {
 	@Override
 	public UserInfo getByUsername(String username) {
 		log.trace("getByUsername({})", username);
+		UserInfo userInfo;
 		try {
+			userInfo = cache.get(new UserClientPair(username));
+			log.trace("loaded UserInfo from cache for '{}'", userInfo.getName());
+
+			UserInfoModifierContext ctx = new UserInfoModifierContext(properties, perunConnector);
+			ctx.modify((PerunUserInfo) userInfo, null);
+			log.trace("Modified userInfo {}", userInfo);
+
 			return cache.get(new UserClientPair(username));
 		} catch (UncheckedExecutionException | ExecutionException e) {
 			log.error("cannot get user from cache", e);

@@ -96,6 +96,7 @@
 				<prop key="custom.claim.organization.attribute">urn:perun:user:attribute-def:def:organization</prop>
 				<prop key="custom.claim.eppns.scope">eppns</prop>
 				<prop key="custom.claim.eppns.attribute">urn:perun:user:attribute-def:virt:eduPersonPrincipalNames</prop>
+				<prop key="userInfo.modifiers"/>
 			</props>
 		</property>
 	</bean>
@@ -111,7 +112,7 @@
 	</bean>
 
 	<!-- defines our own user info service -->
-	<bean id="userInfoService" primary="true" class="cz.muni.ics.oidc.server.PerunUserInfoService">
+	<bean id="userInfoService" primary="true" class="cz.muni.ics.oidc.server.userInfo.PerunUserInfoService">
 		<property name="perunConnector" ref="perunConnector"/>
 		<property name="subAttribute" value="${attribute.openid.sub}"/>
 		<property name="preferredUsernameAttribute" value="${attribute.profile.preferred_username}"/>

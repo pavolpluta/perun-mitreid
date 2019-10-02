@@ -3,6 +3,7 @@ package cz.muni.ics.oidc.server;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import cz.muni.ics.oidc.server.claims.PerunCustomClaimDefinition;
+import cz.muni.ics.oidc.server.userInfo.PerunUserInfoService;
 import org.mitre.openid.connect.service.ScopeClaimTranslationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -193,5 +193,19 @@ public class Mapper {
 		return vo;
 	}
 
+	/**
+	 * Map JsonNode to list of resources
+	 * @param jsonNode resource in JSON format
+	 * @return List of mapped resources
+	 */
+	public static List<Resource> mapResources(JsonNode jsonNode) {
+		List<Resource> res = new ArrayList<>();
+		for (int i = 0; i < jsonNode.size(); i++) {
+			JsonNode resource = jsonNode.get(i);
+			Resource mappedResource = mapResource(resource);
+			res.add(mappedResource);
+		}
 
+		return res;
+	}
 }
