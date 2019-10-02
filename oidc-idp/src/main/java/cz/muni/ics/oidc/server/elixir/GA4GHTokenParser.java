@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKMatcher;
@@ -33,6 +34,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static cz.muni.ics.oidc.server.elixir.GA4GHClaimSource.parseAndVerifyVisa;
+
 /**
  * This class is a command-line debugging tool. It parses JSON in GA4GH Passport format,
  * verifies signatures on Passport Visas (JWT tokens), and prints them in human-readable format.
@@ -49,74 +52,24 @@ public class GA4GHTokenParser {
 		System.out.println();
 		for (JsonNode jwtString : ga4gh) {
 			String s = jwtString.asText();
-			if(!verifyJWT(s)) {
-				System.out.println("signature broken in "+s);
-				System.exit(1);
+			GA4GHClaimSource.PassportVisa visa = parseAndVerifyVisa(s);
+			if(!visa.isVerified()) {
+				System.out.println("visa not verified: "+s);
+				System.out.println("visa = " + visa.getPrettyString());
+
+//				System.exit(1);
+			} else {
+				System.out.println("OK: "+visa.getPrettyString());
 			}
+			JsonNode visadoc = jsonMapper.readValue(((SignedJWT) JWTParser.parse(visa.getJwt())).getPayload().toString(), JsonNode.class);
+			System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(visadoc));
 		}
 		long endx = System.currentTimeMillis();
 		System.out.println("signature verification time: " + (endx - startx));
 
 	}
 
-	private static Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
-
-	private static boolean verifyJWT(String jwtString) throws ParseException, MalformedURLException, JOSEException {
-		JWT parsedJWT = JWTParser.parse(jwtString);
-		if (!(parsedJWT instanceof SignedJWT)) {
-			throw new RuntimeException("JWT is not SignedJWT");
-		}
-		SignedJWT signedJWT = (SignedJWT) parsedJWT;
-		JWSHeader header = signedJWT.getHeader();
-		String keyID = header.getKeyID();
-		JWTClaimsSet jwtClaimsSet = signedJWT.getJWTClaimsSet();
-		String payload = signedJWT.getPayload().toString();
-		prettyPrintPayload(payload);
-		URL jwks;
-		URI jwkURL = header.getJWKURL();
-		if(jwkURL!=null) {
-			String url = jwkURL.toURL().toString();
-			if(url.startsWith("http:")) {
-				url = "https:"+url.substring(5);
-				jwks = new URL(url);
-				System.out.println("modified jwks = " + jwks);
-			} else {
-				jwks = jwkURL.toURL();
-			}
-		} else {
-			String iss = jwtClaimsSet.getIssuer();
-			RestTemplate restTemplate = new RestTemplate();
-			JsonNode metadata = restTemplate.getForObject(iss + ".well-known/openid-configuration", JsonNode.class);
-			jwks = new URL(metadata.path("jwks_uri").asText());
-		}
-		RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.computeIfAbsent(jwks, s -> new RemoteJWKSet<>(jwks));
-		List<JWK> keys = remoteJWKSet.get(new JWKSelector(new JWKMatcher.Builder().keyID(keyID).build()), null);
-		RSAPublicKey key = ((RSAKey) keys.get(0)).toRSAPublicKey();
-		RSASSAVerifier verifier = new RSASSAVerifier(key);
-		return signedJWT.verify(verifier);
-	}
-
 	private static String isoDateTime(long linuxTime) {
 		return DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(ZonedDateTime.ofInstant(Instant.ofEpochSecond(linuxTime), ZoneId.systemDefault()));
-	}
-	private static void prettyPrintPayload(String payload) {
-		try {
-			JsonNode doc = jsonMapper.readValue(payload, JsonNode.class);
-
-			long iat = doc.get("iat").asLong();
-			long exp = doc.get("exp").asLong();
-			JsonNode visa = doc.get("ga4gh_visa_v1");
-			long asserted = visa.get("asserted").asLong();
-            String type = visa.get("type").asText();
-			String value = visa.get("value").asText();
-			String source = visa.get("source").asText();
-			String by = visa.get("by").asText();
-			JsonNode conditions = visa.get("conditions");
-			System.out.println("type: "+type+", by: "+by+", value: "+value+", source: "+source+", asserted: "+isoDateTime(asserted)+", conditions: "+conditions);
-			System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(doc));
-//			System.out.println(",");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 	}
 }

@@ -54,8 +54,8 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Class producing GA4GH claims. The claim is specified in
- * https://docs.google.com/document/d/11Wg-uL75ypU5eNu2p_xh9gspmbGtmLzmdq5VfPHBirE/edi
+ * Class producing GA4GH Passport claim. The claim is specified in
+ * https://bit.ly/ga4gh-passport-v1
  */
 @SuppressWarnings("unused")
 public class GA4GHClaimSource extends ClaimSource {
