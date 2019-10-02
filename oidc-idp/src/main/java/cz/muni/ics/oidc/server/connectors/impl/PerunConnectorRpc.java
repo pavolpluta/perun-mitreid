@@ -288,7 +288,8 @@ public class PerunConnectorRpc implements PerunConnector {
 	@Override
 	public List<Affiliation> getUserExtSourcesAffiliations(Long userId) {
 		log.trace("getUserExtSourcesAffiliations(user={})", userId);
-		String attributeName = "urn:perun:ues:attribute-def:def:affiliation";
+		final String AFFILIATION_UES_ATTR = "urn:perun:ues:attribute-def:def:affiliation";
+		final String ORG_URL_UES_ATTR = "urn:perun:ues:attribute-def:def:organizationURL";
 		ArrayNode listOfUes = (ArrayNode) makeRpcCall("/usersManager/getUserExtSources", ImmutableMap.of("user", userId));
 		List<Affiliation> affiliations = new ArrayList<>();
 		for (JsonNode ues : listOfUes) {
@@ -299,12 +300,13 @@ public class PerunConnectorRpc implements PerunConnector {
 				long asserted = Timestamp.valueOf(ues.path("lastAccess").asText()).getTime() / 1000L;
 				String name = extSource.path("name").asText();
 				log.trace("ues id={},name={},login={}", id, name, login);
-				PerunAttribute perunAttribute = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("userExtSource", id, "attributeName", attributeName)));
-				String value = perunAttribute.valueAsString();
-				if (value != null) {
-					for (String v : value.split(";")) {
-						Affiliation affiliation = new Affiliation(name, v, asserted);
-						log.debug("found {} from IdP {} with modif time {}", v, name, perunAttribute.getValueModifiedAt());
+				String orgUrl = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("userExtSource", id, "attributeName", ORG_URL_UES_ATTR))).valueAsString();
+				String affs = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", ImmutableMap.of("userExtSource", id, "attributeName", AFFILIATION_UES_ATTR))).valueAsString();
+				if (affs != null) {
+					for (String aff : affs.split(";")) {
+						String source = ( (orgUrl != null) ? orgUrl : name );
+						Affiliation affiliation = new Affiliation(source, aff, asserted);
+						log.debug("found {} from IdP {} with orgURL {} asserted at {}", aff, name, orgUrl, asserted);
 						affiliations.add(affiliation);
 					}
 				}

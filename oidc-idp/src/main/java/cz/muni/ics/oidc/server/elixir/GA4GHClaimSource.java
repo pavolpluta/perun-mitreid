@@ -237,7 +237,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		if (!linkedIdentities.isEmpty()) {
 			long now = Instant.now().getEpochSecond();
 			for (String linkedIdentity : linkedIdentities) {
-				passport.add(createPassportVisa("LinkedIdentities", pctx, linkedIdentity, issuer, "system", now, now + 3600L * 24 * 365, null));
+				passport.add(createPassportVisa("LinkedIdentities", pctx, linkedIdentity, ELIXIR_ORG_URL, "system", now, now + 3600L * 24 * 365, null));
 			}
 		}
 	}
