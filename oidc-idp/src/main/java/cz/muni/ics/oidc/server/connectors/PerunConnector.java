@@ -106,6 +106,13 @@ public interface PerunConnector {
 	PerunAttribute getUserAttribute(Long userId, String attributeName);
 
 	/**
+	 * Sets the attribute of the user.
+	 * @param userId id of user
+	 * @param attribute attribute
+	 */
+	boolean setUserAttribute(Long userId, PerunAttribute attribute);
+
+	/**
 	 * For the given user, gets all string values of the affiliation attribute of all UserExtSources of type ExtSourceIdp
 	 * @param userId id of user
 	 * @return list of values of attribute affiliation
@@ -126,4 +133,26 @@ public interface PerunConnector {
 	 * @return list of unique names of groups
 	 */
 	List<String> getGroupsAssignedToResourcesWithUniqueNames(Facility facility);
+
+	/**
+	 * Gets the map of entityless attributes.
+	 * @param attributeName full name of attribute
+	 * @return map of attributes
+	 */
+	Map<String, PerunAttribute> getEntitylessAttributes(String attributeName);
+
+	/**
+	 * Gets the VO attribute
+	 * @param voId Id of VO
+	 * @param attributeName fullname of attribute
+	 * @return Attribute
+	 */
+	PerunAttribute getVoAttribute(Long voId, String attributeName);
+
+	/**
+	 * Returns the VO with shortName
+	 * @param shortName shortname of VO
+	 * @return Vo
+	 */
+	Vo getVoByShortName(String shortName);
 }

@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Member;
@@ -161,6 +162,16 @@ public class Mapper {
 		JsonNode valueModifiedAt = jsonNode.get("valueModifiedAt");
 		attribute.setValueModifiedAt(valueModifiedAt.isNull() ? null : valueModifiedAt.asText());
 		return attribute;
+	}
+
+	/**
+	 * Perun attribute to JsonNode
+	 * @param attribute PerunAttribute
+	 * @return PerunAttribute as JsonNode
+	 */
+	public static JsonNode mapAttribute(PerunAttribute attribute) {
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.valueToTree(attribute);
 	}
 
 	/**

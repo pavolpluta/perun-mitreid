@@ -287,6 +287,21 @@ public class PerunConnectorRpc implements PerunConnector {
 	}
 
 	@Override
+	public boolean setUserAttribute(Long userId, PerunAttribute attribute) {
+		log.trace("setUserAttribute(user={}, attribute={})", userId, attribute);
+		JsonNode attributeJson = Mapper.mapAttribute(attribute);
+
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("user", userId);
+		map.put("attribute", attributeJson);
+
+		Object result = makeRpcCall("/attributesManager/setAttribute", map);
+		log.trace("setUserAttribute({}, {}) returns {}", userId, attribute, result == null);
+
+		return result == null;
+	}
+
+	@Override
 	public List<Affiliation> getUserExtSourcesAffiliations(Long userId) {
 		log.trace("getUserExtSourcesAffiliations(user={})", userId);
 		final String AFFILIATION_UES_ATTR = "urn:perun:ues:attribute-def:def:affiliation";
@@ -363,6 +378,49 @@ public class PerunConnectorRpc implements PerunConnector {
 		return result;
 	}
 
+	@Override
+	public Map<String, PerunAttribute> getEntitylessAttributes(String attributeName) {
+		log.trace("getEntitylessAttributes({})", attributeName);
+
+		Map<String, Object> attrNameMap = new LinkedHashMap<>();
+		attrNameMap.put("attrName", attributeName);
+		JsonNode entitylessAttributesJson = makeRpcCall("/attributesManager/getEntitylessAttributes", attrNameMap);
+
+		Long attributeDefinitionId = Mapper.mapAttribute(entitylessAttributesJson.get(0)).getId();
+
+		Map<String, Object> attributeDefinitionIdMap = new LinkedHashMap<>();
+		attributeDefinitionIdMap.put("attributeDefinition", attributeDefinitionId);
+		JsonNode entitylessKeysJson = makeRpcCall("/attributesManager/getEntitylessKeys", attributeDefinitionIdMap);
+
+		Map<String, PerunAttribute> result = new LinkedHashMap<>();
+
+		for(int i = 0; i < entitylessKeysJson.size(); i++) {
+			result.put(entitylessKeysJson.get(i).asText(), Mapper.mapAttribute(entitylessAttributesJson.get(i)));
+		}
+
+		if (result.size() == 0) {
+			return null;
+		}
+
+		log.trace("getEntitylessAttributes({}) returns {}", attributeName, result);
+
+		return result;
+	}
+
+	@Override
+	public PerunAttribute getVoAttribute(Long voId, String attributeName) {
+		log.trace("getVoAttribute(voId:{}, attributeName:{})",voId, attributeName);
+
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("vo", voId);
+		map.put("attributeName", attributeName);
+
+		PerunAttribute result = Mapper.mapAttribute(makeRpcCall("/attributesManager/getAttribute", map));
+		log.trace("getVoAttribute(voId={}, attributeName={}) returns {}", voId, attributeName, result);
+
+		return result;
+	}
+
 	public PerunAttribute getFacilityAttribute(Facility facility, String attributeName) {
 		log.trace("getFacilityAttribute({}, {})", facility, attributeName);
 		Map<String, Object> map = new LinkedHashMap<>();
@@ -398,7 +456,8 @@ public class PerunConnectorRpc implements PerunConnector {
 		return vos;
 	}
 
-	private Vo getVoByShortName(String shortName) {
+	@Override
+	public Vo getVoByShortName(String shortName) {
 		log.trace("getVoByShortName({})", shortName);
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("shortName", shortName);

@@ -145,6 +145,15 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	}
 
 	@Override
+	public boolean setUserAttribute(Long userId, PerunAttribute attribute) {
+		log.trace("setUserAttribute({}, {})", userId, attribute.toString());
+		boolean result = fallbackConnector.setUserAttribute(userId, attribute);
+		log.trace("setUserAttribute({}, {}) returns {}", userId, attribute.toString(), result);
+
+		return result;
+	}
+
+	@Override
 	public Facility getFacilityByClientId(String clientId) {
 		log.trace("getFacilityByClientId({})", clientId);
 		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_RESOURCE), equal(OIDC_CLIENT_ID, clientId));
@@ -240,5 +249,35 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 
 		log.trace("getGroupsAssignedToResourcesWithUniqueNames({}) returns {}", facility, res);
 		return res;
+	}
+
+	@Override
+	public Map<String, PerunAttribute> getEntitylessAttributes(String attributeName) {
+		//TODO: implement
+		log.trace("getEntitylessAttributes({})", attributeName);
+		Map<String, PerunAttribute> returnValue = fallbackConnector.getEntitylessAttributes(attributeName);
+
+		log.trace("getEntitylessAttributes({}) returns {}", attributeName, returnValue);
+		return returnValue;
+	}
+
+	@Override
+	public PerunAttribute getVoAttribute(Long voId, String attributeName) {
+		//TODO: implement
+		log.trace("getVoAttribute({}, {})", voId, attributeName);
+		PerunAttribute returnValue = fallbackConnector.getVoAttribute(voId, attributeName);
+
+		log.trace("getVoAttribute({}, {}) returns {}", voId, attributeName, returnValue);
+		return returnValue;
+	}
+
+	@Override
+	public Vo getVoByShortName(String shortName) {
+		//TODO: implement
+		log.trace("getVoByShortName({})", shortName);
+		Vo vo = fallbackConnector.getVoByShortName(shortName);
+
+		log.trace("getVoByShortName({}) returns: {}", shortName, vo);
+		return vo;
 	}
 }
