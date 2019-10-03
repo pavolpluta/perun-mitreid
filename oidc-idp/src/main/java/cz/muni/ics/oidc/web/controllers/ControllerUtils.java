@@ -1,5 +1,6 @@
 package cz.muni.ics.oidc.web.controllers;
 
+import com.google.common.base.Strings;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -39,7 +40,12 @@ public class ControllerUtils {
 			langKey = browserLang;
 		}
 
-		String reqUrl = req.getRequestURL().toString() + '?' + req.getQueryString();
+		String reqUrl = req.getRequestURL().toString();
+
+		if (!Strings.isNullOrEmpty(req.getQueryString())) {
+			reqUrl += ('?' + req.getQueryString());
+		}
+
 		try {
 			reqUrl = removeQueryParameter(reqUrl, LANG_KEY);
 		} catch (URISyntaxException e) {
