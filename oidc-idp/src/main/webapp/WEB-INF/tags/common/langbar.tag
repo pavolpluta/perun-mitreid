@@ -8,13 +8,21 @@
 <c:set var="i" value="0"/>
 <div id="languagebar_line">
     <div id="languagebar">
+    <c:choose>
+        <c:when test="${fn:contains(reqURL, '?')}">
+            <c:set var="requestURL" value="${reqURL}${'&lang='}"/>
+        </c:when>
+        <c:otherwise>
+            <c:set var="requestURL" value="${reqURL}${'?lang='}"/>
+        </c:otherwise>
+    </c:choose>
         <c:forEach var="langEntry" items="${langsMap}">
             <c:choose>
                 <c:when test="${ langEntry.key.equalsIgnoreCase(lang)}">
                     <c:out value="${langEntry.value}" />
                 </c:when>
                 <c:otherwise>
-                    <a href="${reqURL}&lang=${langEntry.key}">${langEntry.value}</a>
+                    <a href="${requestURL}${langEntry.key}">${langEntry.value}</a>
                 </c:otherwise>
             </c:choose>
             <c:if test="${ i < (langsMap.size() - 1) }">
