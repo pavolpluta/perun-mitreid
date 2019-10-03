@@ -1,5 +1,6 @@
 package cz.muni.ics.oidc.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
@@ -131,11 +132,17 @@ public class PerunAttribute extends PerunAttributeDefinition {
 
 	@SuppressWarnings("unchecked")
 	public Map<String, String> valueAsMap() {
-		if (MAP_TYPE.equals(super.getType()) && value instanceof List) {
+		if (MAP_TYPE.equals(super.getType()) && value instanceof Map) {
 			return (Map<String, String>) value;
 		}
 
 		return null;
+	}
+
+	@Override
+	@JsonIgnore
+	public String getUrn() {
+		return super.getUrn();
 	}
 
 	@Override

@@ -1,5 +1,6 @@
 package cz.muni.ics.oidc.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Objects;
 
 /**
@@ -123,6 +124,7 @@ public class PerunAttributeDefinition extends Model {
 		this.friendlyNameParameter = friendlyNameParameter;
 	}
 
+	@JsonIgnore
 	public String getUrn() {
 		return this.namespace + ':' + this.friendlyName;
 	}
