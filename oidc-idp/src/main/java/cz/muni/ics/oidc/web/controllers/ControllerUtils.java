@@ -61,7 +61,7 @@ public class ControllerUtils {
 	}
 
 	public static String createRedirectUrl(HttpServletRequest request, String removedPart,
-									 String pathPart, Map<String, String> params) {
+										   String pathPart, Map<String, String> params) {
 		log.trace("createRedirectUrl({}, {}, {}, {})", request, removedPart, pathPart, params);
 		int endIndex = request.getRequestURL().toString().indexOf(removedPart);
 		String baseUrl = request.getRequestURL().toString().substring(0, endIndex);

@@ -18,10 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
@@ -41,7 +38,7 @@ import java.util.Map;
  *
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
-public class PerunAuthorizationFilter extends GenericFilterBean {
+public class PerunAuthorizationFilter extends PerunRequestFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthorizationFilter.class);
 	
@@ -60,22 +57,18 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 	@Autowired
 	private PerunOidcConfig perunOidcConfig;
 
-	private static final String REQ_PATTERN = "/authorize";
-	private static final String SHIB_IDENTITY_PROVIDER = "Shib-Identity-Provider";
-	private RequestMatcher requestMatcher = new AntPathRequestMatcher(REQ_PATTERN);
+	private RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
 
 
 	@Override
-	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-			throws IOException, ServletException {
+	public boolean doFilter(ServletRequest req, ServletResponse res) {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
 
 		ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
 		if (client == null) {
 			log.debug("Could not fetch client, skip to next filter");
-			chain.doFilter(req, res);
-			return;
+			return true;
 		}
 
 		String clientIdentifier = client.getClientId();
@@ -84,38 +77,35 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 		if (facility == null) {
 			log.error("Could not find facility with clientID: {}", clientIdentifier);
 			log.info("Skipping filter because not able to find facility");
-			chain.doFilter(request, response);
-			return;
+			return true;
 		}
 
 		Principal p = request.getUserPrincipal();
 		String shibIdentityProvider = perunOidcConfig.getProxyExtSourceName();
 		if (shibIdentityProvider == null) {
-			shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+			shibIdentityProvider = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
 		}
 		PerunPrincipal principal = new PerunPrincipal(p.getName(), shibIdentityProvider);
 		PerunUser user = perunConnector.getPreauthenticatedUserId(principal);
 
-		decideAccess(chain, facility, user, request, response, clientIdentifier);
+		return decideAccess(facility, user, request, response, clientIdentifier);
 	}
 
-	private void decideAccess(FilterChain chain, Facility facility, PerunUser user, HttpServletRequest request,
-							  HttpServletResponse response, String clientIdentifier) throws IOException, ServletException {
+	private boolean decideAccess(Facility facility, PerunUser user, HttpServletRequest request,
+							  HttpServletResponse response, String clientIdentifier) {
 		Map<String, PerunAttribute> facilityAttributes = perunConnector.getFacilityAttributes(
 				facility, facilityAttrsConfig.getMembershipAttrsAsList());
 
 		if (! facilityAttributes.get(facilityAttrsConfig.getCheckGroupMembershipAttr()).valueAsBoolean()) {
 			log.debug("Membership check not requested, skipping filter");
-			chain.doFilter(request, response);
-			return;
+			return true;
 		}
 		boolean canAccess = perunConnector.canUserAccessBasedOnMembership(facility, user.getId());
 
 		if (canAccess) {
 			// allow access, continue with chain
 			log.info("User allowed to access the service");
-			chain.doFilter(request, response);
-			return;
+			return true;
 		} else if (facilityAttributes.get(facilityAttrsConfig.getAllowRegistrationAttr()).valueAsBoolean()) {
 			log.info("User not allowed to access the service");
 			boolean canRegister = perunConnector.groupWhereCanRegisterExists(facility);
@@ -131,7 +121,7 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 						response.reset();
 						response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 						response.setHeader("Location", customRegUrl);
-						return;
+						return false;
 					}
 				}
 
@@ -142,23 +132,25 @@ public class PerunAuthorizationFilter extends GenericFilterBean {
 					params.put("client_id", clientIdentifier);
 					params.put("facility_id", facility.getId().toString());
 					params.put("user_id", String.valueOf(user.getId()));
-					String redirectUrl = ControllerUtils.createRedirectUrl(request, REQ_PATTERN,
+					String redirectUrl = ControllerUtils.createRedirectUrl(request, PerunFilterConstants.AUTHORIZE_REQ_PATTERN,
 							PerunUnapprovedRegistrationController.REGISTRATION_CONTINUE_MAPPING, params);
 					response.reset();
 					response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 					response.setHeader("Location", redirectUrl);
-					return;
+					return false;
 				}
 			}
 		}
 
 		// cannot register, redirect to unapproved
 		log.debug("redirect to unapproved");
-		String redirectUrl = ControllerUtils.createRedirectUrl(request, REQ_PATTERN, PerunUnapprovedController.UNAPPROVED_MAPPING,
+		String redirectUrl = ControllerUtils.createRedirectUrl(request, PerunFilterConstants.AUTHORIZE_REQ_PATTERN, PerunUnapprovedController.UNAPPROVED_MAPPING,
 				Collections.singletonMap("client_id", clientIdentifier));
 		response.reset();
 		response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 		response.setHeader("Location", redirectUrl);
+
+		return false;
 	}
 
 	private String validateUrl(String customRegUrl) {

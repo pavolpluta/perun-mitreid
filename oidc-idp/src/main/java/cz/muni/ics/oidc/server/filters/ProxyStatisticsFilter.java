@@ -9,15 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -31,7 +27,7 @@ import java.time.LocalDate;
  *
  * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
  */
-public class ProxyStatisticsFilter extends GenericFilterBean {
+public class ProxyStatisticsFilter extends PerunRequestFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(ProxyStatisticsFilter.class);
 
@@ -54,8 +50,7 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 	@Autowired
 	private DataSource mitreIdStats;
 
-	private static final String REQ_PATTERN = "/authorize";
-	private RequestMatcher requestMatcher = new AntPathRequestMatcher(REQ_PATTERN);
+	private RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
 
 	private String statisticsTableName;
 	private String identityProvidersMapTableName;
@@ -82,15 +77,13 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 	}
 
 	@Override
-	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-			throws IOException, ServletException {
+	public boolean doFilter(ServletRequest req, ServletResponse res) {
 		HttpServletRequest request = (HttpServletRequest) req;
 
 		ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
 		if (client == null) {
 			log.debug("Could not fetch client, skip to next filter");
-			chain.doFilter(req, res);
-			return;
+			return true;
 		}
 
 		String clientIdentifier = client.getClientId();
@@ -98,8 +91,7 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 
 		if (Strings.isNullOrEmpty((String) request.getAttribute(idpEntityIdAttributeName))) {
 			log.warn("Attribute '" + idpEntityIdAttributeName + "' is null or empty, skip to next filter");
-			chain.doFilter(req, res);
-			return;
+			return true;
 		}
 
 		String idpEntityIdFromRequest = (String) request.getAttribute(idpEntityIdAttributeName);
@@ -112,7 +104,7 @@ public class ProxyStatisticsFilter extends GenericFilterBean {
 
 		insertLogin(idpEntityId, idpName, clientIdentifier, clientName);
 
-		chain.doFilter(req, res);
+		return true;
 	}
 
 	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName) {

@@ -47,10 +47,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthenticationFilter.class);
 
-	private static final String SHIB_IDENTITY_PROVIDER = "Shib-Identity-Provider";
-	private static final String SHIB_AUTHN_CONTEXT_CLASS = "Shib-AuthnContext-Class";
-	private static final String SHIB_AUTHN_CONTEXT_METHOD = "Shib-Authentication-Method";
-
 	private static final String WAYF_IDP = "wayf_idpentityid";
 	private static final String WAYF_FILTER = "wayf_filter";
 	private static final String WAYF_EFILTER = "wayf_efilter";
@@ -128,7 +124,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		if (perunPrincipal == null) {
 			String shibIdentityProvider = config.getProxyExtSourceName();
 			if (shibIdentityProvider == null) {
-				shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+				shibIdentityProvider = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
 			}
 			String remoteUser = req.getRemoteUser();
 			throw new IllegalStateException("ExtSource name or userExtSourceLogin is null. " +
@@ -151,7 +147,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		String shibIdentityProvider = config.getProxyExtSourceName();
 		if (shibIdentityProvider == null) {
-			shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
+			shibIdentityProvider = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
 		}
 		String remoteUser = req.getRemoteUser();
 
@@ -201,9 +197,9 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		String clientId = req.getParameter(Acr.PARAM_CLIENT_ID);
 		String state = req.getParameter(Acr.PARAM_STATE);
 		String acrValues = req.getParameter(Acr.PARAM_ACR);
-		String shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_CLASS);
+		String shibAuthnContextClass = (String) req.getAttribute(PerunFilterConstants.SHIB_AUTHN_CONTEXT_CLASS);
 		if (shibAuthnContextClass == null) {
-			shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_METHOD);
+			shibAuthnContextClass = (String) req.getAttribute(PerunFilterConstants.SHIB_AUTHN_CONTEXT_METHOD);
 		}
 
 		Acr acr = new Acr(sub, clientId, acrValues, state, shibAuthnContextClass);
