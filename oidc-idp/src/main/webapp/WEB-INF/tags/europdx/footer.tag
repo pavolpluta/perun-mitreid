@@ -1,12 +1,14 @@
 <%@tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ attribute name="js" required="false"%>
+<%@ attribute name="baseURL" required="true"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common" %>
 <jsp:useBean id="date" class="java.util.Date" />
+
 <c:set var="issuer" value="${config.issuer}" />
-<c:set var="baseUrl" value="${fn:substringBefore(issuer, 'oidc')}" />
+
 <div id="footer">
     <div class="row" style="margin: 0 auto; max-width: 1000px;">
         <div class="col-md-6" style="float: left">
@@ -32,4 +34,3 @@
         </div>
     </div>
 </div>
-<t:scripts />
