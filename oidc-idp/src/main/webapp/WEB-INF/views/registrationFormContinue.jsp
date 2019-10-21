@@ -1,4 +1,7 @@
 <%@ page contentType="text/html; charset=utf-8" pageEncoding="utf-8" trimDirectiveWhitespaces="true" %>
+<%@ page import="java.lang.String" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags"%>
@@ -8,16 +11,25 @@
 <%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
 <%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
 <%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
+<%@ taglib prefix="muni" tagdir="/WEB-INF/tags/muni" %>
 
-<c:set var="title" value="${langProps['go_to_registration_title']}" />
-<c:choose>
-    <c:when test="${theme eq 'default'}">
-        <o:header title="${title}"/>
-    </c:when>
-    <c:otherwise>
-        <t:header title="${title}" reqURL="${reqURL}"/>
-    </c:otherwise>
-</c:choose>
+<c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
+
+<%
+
+String baseURL = (String) pageContext.getAttribute("baseURL");
+List<String> cssLinks = new ArrayList<>();
+
+cssLinks.add(baseURL + "proxy/module.php/perun/res/css/perun_identity_go_to_registration.css");
+
+pageContext.setAttribute("cssLinks", cssLinks);
+
+%>
+
+<t:header title="${langProps['go_to_registration_title']}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
+
+</div> <%-- header --%>
+
 <div id="content">
     <div id="head">
         <h1>${langProps['go_to_registration_header1']}
@@ -41,23 +53,5 @@
     </form>
 </div>
 </div><!-- ENDWRAP -->
-<c:choose>
-    <c:when test="${theme eq 'elixir'}">
-        <elixir:footer />
-    </c:when>
-    <c:when test="${theme eq 'cesnet'}">
-        <cesnet:footer />
-    </c:when>
-    <c:when test="${theme eq 'bbmri-eric'}">
-        <bbmri:footer />
-    </c:when>
-    <c:when test="${theme eq 'ceitec'}">
-        <ceitec:footer />
-    </c:when>
-    <c:when test="${theme eq 'europdx'}">
-        <europdx:footer />
-    </c:when>
-    <c:otherwise>
-        <o:footer />
-    </c:otherwise>
-</c:choose>
+
+<t:footer baseURL="${baseURL}" theme="${theme}"/>
