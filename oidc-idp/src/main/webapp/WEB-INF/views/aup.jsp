@@ -1,25 +1,28 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
+<%@ page import="java.lang.String" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<%@ taglib prefix="o" tagdir="/WEB-INF/tags" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common" %>
-<%@ taglib prefix="elixir" tagdir="/WEB-INF/tags/elixir" %>
-<%@ taglib prefix="cesnet" tagdir="/WEB-INF/tags/cesnet" %>
-<%@ taglib prefix="bbmri" tagdir="/WEB-INF/tags/bbmri" %>
-<%@ taglib prefix="ceitec" tagdir="/WEB-INF/tags/ceitec" %>
-<%@ taglib prefix="europdx" tagdir="/WEB-INF/tags/europdx" %>
 
-<c:if test="${empty title}">
-    <c:set var="title" value="${langProps['aup_header']}"/>
-</c:if>
-<c:choose>
-    <c:when test="${theme eq 'default'}">
-        <o:header title="${title}"/>
-    </c:when>
-    <c:otherwise>
-        <t:header title="${title}" reqURL="${reqURL}"/>
-    </c:otherwise>
-</c:choose>
+<c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
+
+<%
+
+String baseURL = (String) pageContext.getAttribute("baseURL");
+List<String> cssLinks = new ArrayList<>();
+
+pageContext.setAttribute("cssLinks", cssLinks);
+
+%>
+
+<t:header title="${langProps['aup_header']}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
+
+<h1>${langProps['aup_header']}</h1>
+
+</div> <%-- header --%>
+
 <div id="content">
     <h3>${langProps['must_agree_aup']}</h3>
     <form method="POST" action="">
@@ -36,23 +39,5 @@
     </form>
 </div>
 </div><!-- wrap -->
-<c:choose>
-    <c:when test="${theme eq 'elixir'}">
-        <elixir:footer/>
-    </c:when>
-    <c:when test="${theme eq 'cesnet'}">
-        <cesnet:footer/>
-    </c:when>
-    <c:when test="${theme eq 'bbmri'}">
-        <bbmri:footer/>
-    </c:when>
-    <c:when test="${theme eq 'ceitec'}">
-        <ceitec:footer/>
-    </c:when>
-    <c:when test="${theme eq 'europdx'}">
-        <europdx:footer/>
-    </c:when>
-    <c:otherwise>
-        <o:footer/>
-    </c:otherwise>
-</c:choose>
+
+<t:footer baseURL="${baseURL}" theme="${theme}"/>
