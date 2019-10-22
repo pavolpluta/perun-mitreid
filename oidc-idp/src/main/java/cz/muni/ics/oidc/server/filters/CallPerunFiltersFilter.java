@@ -1,37 +1,48 @@
 package cz.muni.ics.oidc.server.filters;
 
+import cz.muni.ics.oidc.BeanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.filter.GenericFilterBean;
+
+import javax.annotation.PostConstruct;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Properties;
 
 /**
- * This filter calls other Perun filters
+ * This filter calls other Perun filters saved in the PerunFiltersContext
  *
  * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class CallPerunFiltersFilter extends GenericFilterBean {
 
     public static final Logger log = LoggerFactory.getLogger(CallPerunFiltersFilter.class);
-    private List<PerunRequestFilter> requestFilters;
 
-    public List<PerunRequestFilter> getRequestFilters() {
-        return requestFilters;
-    }
+    @Autowired
+    private Properties coreProperties;
 
-    public void setRequestFilters(List<PerunRequestFilter> requestFilters) {
-        this.requestFilters = requestFilters;
+    @Autowired
+    private BeanUtil beanUtil;
+
+    private PerunFiltersContext perunFiltersContext;
+
+    @PostConstruct
+    public void postConstruct() {
+        this.perunFiltersContext = new PerunFiltersContext(coreProperties, beanUtil);
     }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-
-        for (PerunRequestFilter filter : this.requestFilters) {
+        List<PerunRequestFilter> filters = perunFiltersContext.getFilters();
+        for (PerunRequestFilter filter : filters) {
+            log.trace("Calling filter: {}", filter.getClass().getName());
             if(!filter.doFilter(servletRequest, servletResponse)) {
                 return;
             }

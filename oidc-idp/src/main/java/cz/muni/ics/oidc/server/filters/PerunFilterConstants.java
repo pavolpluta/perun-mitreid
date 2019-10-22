@@ -8,9 +8,11 @@ package cz.muni.ics.oidc.server.filters;
  */
 public class PerunFilterConstants {
 
-    static final String AUTHORIZE_REQ_PATTERN = "/authorize";
-    static final String SHIB_IDENTITY_PROVIDER = "Shib-Identity-Provider";
-    static final String SHIB_AUTHN_CONTEXT_CLASS = "Shib-AuthnContext-Class";
-    static final String SHIB_AUTHN_CONTEXT_METHOD = "Shib-Authentication-Method";
+    public static final String AUTHORIZE_REQ_PATTERN = "/authorize";
+    public static final String SHIB_IDENTITY_PROVIDER = "Shib-Identity-Provider";
+    public static final String SHIB_AUTHN_CONTEXT_CLASS = "Shib-AuthnContext-Class";
+    public static final String SHIB_AUTHN_CONTEXT_METHOD = "Shib-Authentication-Method";
+
+    public static final String CLIENT_ID = "client_id";
 
 }

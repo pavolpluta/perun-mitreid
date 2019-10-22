@@ -39,11 +39,6 @@
 				<prop key="stats.jdbc.url">jdbc:mariadb://localhost:3306/STATS</prop>
 				<prop key="stats.jdbc.user">user</prop>
 				<prop key="stats.jdbc.password">password</prop>
-				<prop key="stats.tableName.statistics">statistics</prop>
-				<prop key="stats.tableName.identityProvidersMap">identityProvidersMap</prop>
-				<prop key="stats.tableName.serviceProvidersMap">serviceProvidersMap</prop>
-				<prop key="stats.idp.name.attribute">sourceIdPName</prop>
-				<prop key="stats.idp.entityID.attribute">sourceIdPEntityID</prop>
 				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
 				<prop key="admins">3197,59835</prop>
 				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunAccessTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
@@ -61,11 +56,6 @@
 				<prop key="facility.attrs.clientId">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
 				<prop key="facility.attrs.wayfFilter">urn:perun:facility:attribute-def:def:wayfFilter</prop>
 				<prop key="facility.attrs.wayfEFilter">urn:perun:facility:attribute-def:def:wayfEFilter</prop>
-				<prop key="forceAup.attrs.facilityRequestedAups">urn:perun:facility:attribute-def:def:reqAups</prop>
-				<prop key="forceAup.attrs.facilityVoShortNames">urn:perun:facility:attribute-def:virt:voShortNames</prop>
-				<prop key="forceAup.attrs.orgAupsAttrName">urn:perun:entityless:attribute-def:def:orgAups</prop>
-				<prop key="forceAup.attrs.userAupsAttrName">urn:perun:user:attribute-def:def:aups</prop>
-				<prop key="forceAup.attrs.voAupAttrName">urn:perun:vo:attribute-def:def:aup</prop>
 
 				<!-- for LDAP
 				<prop key="attribute.openid.sub">login;x-ns-einfraid-persistent-shadow</prop>
@@ -102,7 +92,16 @@
 				<prop key="custom.claim.organization.attribute">urn:perun:user:attribute-def:def:organization</prop>
 				<prop key="custom.claim.eppns.scope">eppns</prop>
 				<prop key="custom.claim.eppns.attribute">urn:perun:user:attribute-def:virt:eduPersonPrincipalNames</prop>
+				<!-- USERINFO -->
 				<prop key="userInfo.modifiers"/>
+				<!-- REQUEST FILTERS -->
+				<prop key="filter.names">stats</prop>
+				<prop key="filter.stats.class">cz.muni.ics.oidc.server.filters.impl.ProxyStatisticsFilter</prop>
+				<prop key="filter.stats.idpNameAttributeName">sourceIdPName</prop>
+				<prop key="filter.stats.idpEntityIdAttributeName">sourceIdPEntityID</prop>
+				<prop key="filter.stats.statisticsTableName">statistics</prop>
+				<prop key="filter.stats.identityProvidersMapTableName">identityProvidersMap</prop>
+				<prop key="filter.stats.serviceProvidersMapTableName">serviceProvidersMap</prop>
 			</props>
 		</property>
 	</bean>
@@ -209,34 +208,7 @@
 	</bean>
 	<!-- -->
 
-	<bean id="perunForceAupFilter" class="cz.muni.ics.oidc.server.filters.PerunForceAupFilter">
-		<property name="perunFacilityRequestedAupsAttrName" value="${forceAup.attrs.facilityRequestedAups}"/>
-		<property name="perunFacilityVoShortNamesAttrName" value="${forceAup.attrs.facilityVoShortNames}"/>
-		<property name="perunOrgAupsAttrName" value="${forceAup.attrs.orgAupsAttrName}"/>
-		<property name="perunUserAupsAttrName" value="${forceAup.attrs.userAupsAttrName}"/>
-		<property name="perunVoAupAttrName" value="${forceAup.attrs.voAupAttrName}"/>
-	</bean>
-
-	<bean id="callPerunFiltersFilter" class="cz.muni.ics.oidc.server.filters.CallPerunFiltersFilter">
-		<property name="requestFilters">
-			<list value-type="cz.muni.ics.oidc.server.filters.PerunRequestFilter">
-				<ref bean="perunAuthorizationFilter" />
-				<ref bean="proxyStatisticsFilter" />
-				<ref bean="perunForceAupFilter" />
-			</list>
-		</property>
-	</bean>
-
-	<!-- Save statistics about logins -->
-	<bean id="proxyStatisticsFilter" class="cz.muni.ics.oidc.server.filters.ProxyStatisticsFilter">
-		<property name="statisticsTableName" value="${stats.tableName.statistics}"/>
-		<property name="identityProvidersMapTableName" value="${stats.tableName.identityProvidersMap}"/>
-		<property name="serviceProvidersMapTableName" value="${stats.tableName.serviceProvidersMap}"/>
-		<property name="idpNameAttributeName" value="${stats.idp.name.attribute}"/>
-		<property name="idpEntityIdAttributeName" value="${stats.idp.entityID.attribute}"/>
-	</bean>
-
-	<bean id="perunAuthorizationFilter" class="cz.muni.ics.oidc.server.filters.PerunAuthorizationFilter" />
+	<bean id="callPerunFiltersFilter" class="cz.muni.ics.oidc.server.filters.CallPerunFiltersFilter"/>
 
 	<!-- decides who is admin -->
 	<bean id="userDetailsService" class="cz.muni.ics.oidc.server.PerunAuthenticationUserDetailsService">
