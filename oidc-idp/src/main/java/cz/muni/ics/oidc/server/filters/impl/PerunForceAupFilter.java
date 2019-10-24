@@ -157,6 +157,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
             request.getSession().setAttribute(AupController.RETURN_URL, request.getRequestURI().replace(request.getContextPath(), "") + '?' + request.getQueryString());
             request.getSession().setAttribute(AupController.NEW_AUPS, newAupsString);
+            request.getSession().setAttribute(AupController.USER_ATTR, perunUserAupsAttrName);
 
             log.debug("Redirecting to AUPs approval page");
             response.sendRedirect(request.getContextPath() + '/' + AupController.URL);
