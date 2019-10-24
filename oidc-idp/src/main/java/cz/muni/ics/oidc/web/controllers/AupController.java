@@ -18,6 +18,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import org.springframework.web.bind.annotation.SessionAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class AupController {
     public static final String URL = "aup";
     public static final String NEW_AUPS = "newAups";
     public static final String RETURN_URL = "returnUrl";
+    public static final String USER_ATTR = "userAttr";
 
     private static final SimpleDateFormat formatter= new SimpleDateFormat("yyyy-MM-dd");
     private static final Logger log = LoggerFactory.getLogger(AupController.class);
@@ -53,9 +55,6 @@ public class AupController {
 
     @Autowired
     private Localization localization;
-
-    @Value("${forceAup.attrs.userAupsAttrName}")
-    private String userAupsAttrName;
 
     @GetMapping(value = "/" + URL)
     public String showAup(HttpServletRequest request, Map<String, Object> model,
@@ -83,7 +82,8 @@ public class AupController {
     @PostMapping(value = "/" + URL, consumes = "application/x-www-form-urlencoded")
     public String storeAup(HttpServletRequest request,
                            @SessionAttribute String returnUrl,
-                           @SessionAttribute(name = NEW_AUPS) String newAupsString) throws IOException
+                           @SessionAttribute(name = NEW_AUPS) String newAupsString,
+                           @SessionAttribute(name = USER_ATTR) String userAupsAttrName) throws IOException
     {
         log.trace("storeAup({})", returnUrl);
 
@@ -121,6 +121,7 @@ public class AupController {
 
         request.getSession().removeAttribute(NEW_AUPS);
         request.getSession().removeAttribute(RETURN_URL);
+        request.getSession().removeAttribute(USER_ATTR);
 
         log.trace("redirecting to {}", returnUrl);
         return "redirect:" + returnUrl;
