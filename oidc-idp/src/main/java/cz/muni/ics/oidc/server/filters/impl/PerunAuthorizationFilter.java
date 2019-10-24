@@ -1,12 +1,16 @@
-package cz.muni.ics.oidc.server.filters;
+package cz.muni.ics.oidc.server.filters.impl;
 
+import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
-import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.server.filters.FiltersUtils;
+import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
+import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
+import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
 import cz.muni.ics.oidc.web.controllers.ControllerUtils;
 import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
 import cz.muni.ics.oidc.web.controllers.PerunUnapprovedRegistrationController;
@@ -14,7 +18,6 @@ import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -26,7 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.security.Principal;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,32 +38,38 @@ import java.util.Map;
  * membership in the groups assigned to the Perun facility resources. Facility represents
  * client in this context.
  *
+ * Configuration:
+ * - based on the configuration of bean "facilityAttrsConfig"
+ * @see cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig
+ *
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class PerunAuthorizationFilter extends PerunRequestFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthorizationFilter.class);
-	
-	@Autowired
-	private OAuth2RequestFactory authRequestFactory;
 
-	@Autowired
-	private ClientDetailsEntityService clientService;
-
-	@Autowired
-	private PerunConnector perunConnector;
-
-	@Autowired
-	private FacilityAttrsConfig facilityAttrsConfig;
-
-	@Autowired
-	private PerunOidcConfig perunOidcConfig;
+	private final OAuth2RequestFactory authRequestFactory;
+	private final ClientDetailsEntityService clientService;
+	private final PerunConnector perunConnector;
+	private final FacilityAttrsConfig facilityAttrsConfig;
+	private final PerunOidcConfig perunOidcConfig;
 
 	private RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
 
+	public PerunAuthorizationFilter(PerunRequestFilterParams params) {
+		super(params);
+
+		BeanUtil beanUtil = params.getBeanUtil();
+
+		this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
+		this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
+		this.perunConnector = beanUtil.getBean(PerunConnector.class);
+		this.facilityAttrsConfig = beanUtil.getBean(FacilityAttrsConfig.class);
+		this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
+	}
 
 	@Override
-	public boolean doFilter(ServletRequest req, ServletResponse res) {
+	protected boolean process(ServletRequest req, ServletResponse res) {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
 
@@ -80,13 +88,7 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 			return true;
 		}
 
-		Principal p = request.getUserPrincipal();
-		String shibIdentityProvider = perunOidcConfig.getProxyExtSourceName();
-		if (shibIdentityProvider == null) {
-			shibIdentityProvider = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
-		}
-		PerunPrincipal principal = new PerunPrincipal(p.getName(), shibIdentityProvider);
-		PerunUser user = perunConnector.getPreauthenticatedUserId(principal);
+		PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunConnector);
 
 		return decideAccess(facility, user, request, response, clientIdentifier);
 	}

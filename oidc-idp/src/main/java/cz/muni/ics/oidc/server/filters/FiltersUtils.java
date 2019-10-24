@@ -1,6 +1,10 @@
 package cz.muni.ics.oidc.server.filters;
 
 import com.google.common.base.Strings;
+import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
@@ -10,6 +14,7 @@ import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.http.HttpServletRequest;
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +33,7 @@ public class FiltersUtils {
 	 * @param parameterMap Original map of parameters
 	 * @return Map of parameters
 	 */
-	static Map<String, String> createRequestMap(Map<String, String[]> parameterMap) {
+	public static Map<String, String> createRequestMap(Map<String, String[]> parameterMap) {
 		Map<String, String> requestMap = new HashMap<>();
 		for (String key : parameterMap.keySet()) {
 			String[] val = parameterMap.get(key);
@@ -50,7 +55,7 @@ public class FiltersUtils {
 	 * @return extracted client, null if some error occurs
 	 */
 	@SuppressWarnings("unchecked")
-	static ClientDetailsEntity extractClient(RequestMatcher requestMatcher, HttpServletRequest request,
+	public static ClientDetailsEntity extractClient(RequestMatcher requestMatcher, HttpServletRequest request,
 	                                         OAuth2RequestFactory authRequestFactory,
 	                                         ClientDetailsEntityService clientService) {
 		if (!requestMatcher.matches(request) || request.getParameter("response_type") == null) {
@@ -75,5 +80,25 @@ public class FiltersUtils {
 		}
 
 		return client;
+	}
+
+	/**
+	 * Get Perun user based on extSourceName and extLogin from request
+	 * @param request Request object
+	 * @param perunOidcConfig OIDC Configuration
+	 * @param perunConnector Connector to Perun interface
+	 * @return Found PerunUser
+	 */
+	public static PerunUser getPerunUser(HttpServletRequest request, PerunOidcConfig perunOidcConfig,
+								  PerunConnector perunConnector) {
+		Principal p = request.getUserPrincipal();
+
+		String extSourceName = perunOidcConfig.getProxyExtSourceName();
+		if (extSourceName == null) {
+			extSourceName = (String) request.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
+		}
+
+		PerunPrincipal principal = new PerunPrincipal(p.getName(), extSourceName);
+		return perunConnector.getPreauthenticatedUserId(principal);
 	}
 }

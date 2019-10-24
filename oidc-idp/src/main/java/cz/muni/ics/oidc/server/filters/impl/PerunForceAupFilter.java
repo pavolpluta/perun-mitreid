@@ -1,19 +1,22 @@
-package cz.muni.ics.oidc.server.filters;
+package cz.muni.ics.oidc.server.filters.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.models.Aup;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
-import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.server.filters.FiltersUtils;
+import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
+import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
+import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
 import cz.muni.ics.oidc.web.controllers.AupController;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -23,7 +26,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,57 +39,64 @@ import java.util.Map;
 /**
  * AUP filter checks if there are new AUPs which user hasn't accepted yet and forces him to do that.
  *
+ * Configuration (replace "name" part with name defined for filter):
+ * - filter.name.orgAupsAttrName - Mapping to Perun entityless attribute containing organization AUPs
+ * - filter.name.userAupsAttrName - Mapping to Perun user attribute containing list of AUPS approved by user
+ * - filter.name.voAupAttrName - Mapping to Perun VO attribute containing AUP specific for VO
+ * - filter.name.facilityRequestedAupsAttrName - Mapping to Perun facility attribute containing list of AUPs requested
+ * by the service. Contains only keys for those AUPs
+ * - filter.name.voShortNamesAttrName - Mapping to Perun facility attribute containing list of short names for VOs
+ * that have a resource assigned to the facility
+ *
  * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class PerunForceAupFilter extends PerunRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(PerunForceAupFilter.class);
     private static final String DATE_FORMAT = "dd-MM-yyyy";
 
+    /* CONFIGURATION PROPERTIES */
+    private static final String ORG_AUPS_ATTR_NAME = "orgAupsAttrName";
+    private static final String USER_AUPS_ATTR_NAME = "userAupsAttrName";
+    private static final String VO_AUP_ATTR_NAME = "voAupAttrName";
+    private static final String FACILITY_REQUESTED_AUPS_ATTR_NAME = "facilityRequestedAupsAttrName";
+    private static final String VO_SHORT_NAMES_ATTR_NAME = "voShortNamesAttrName";
+
+    private final String perunOrgAupsAttrName;
+    private final String perunUserAupsAttrName;
+    private final String perunVoAupAttrName;
+    private final String perunFacilityRequestedAupsAttrName;
+    private final String perunFacilityVoShortNamesAttrName;
+    /* END OF CONFIGURATION PROPERTIES */
+
+    private final RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
     private final ObjectMapper mapper = new ObjectMapper();
 
-    @Autowired
-    private OAuth2RequestFactory authRequestFactory;
+    private final OAuth2RequestFactory authRequestFactory;
+    private final ClientDetailsEntityService clientService;
+    private final PerunConnector perunConnector;
+    private final PerunOidcConfig perunOidcConfig;
 
-    @Autowired
-    private ClientDetailsEntityService clientService;
+    public PerunForceAupFilter(PerunRequestFilterParams params) {
+        super(params);
 
-    @Autowired
-    private PerunConnector perunConnector;
+        BeanUtil beanUtil = params.getBeanUtil();
 
-    @Autowired
-    private PerunOidcConfig perunOidcConfig;
+        this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
+        this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
+        this.perunConnector = beanUtil.getBean(PerunConnector.class);
+        this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
 
-    private RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
-
-    private String perunOrgAupsAttrName;
-    private String perunUserAupsAttrName;
-    private String perunVoAupAttrName;
-    private String perunFacilityRequestedAupsAttrName;
-    private String perunFacilityVoShortNamesAttrName;
-
-    public void setPerunOrgAupsAttrName(String perunOrgAupsAttrName) {
-        this.perunOrgAupsAttrName = perunOrgAupsAttrName;
-    }
-
-    public void setPerunUserAupsAttrName(String perunUserAupsAttrName) {
-        this.perunUserAupsAttrName = perunUserAupsAttrName;
-    }
-    public void setPerunVoAupAttrName(String perunVoAupAttrName) {
-        this.perunVoAupAttrName = perunVoAupAttrName;
-    }
-
-    public void setPerunFacilityRequestedAupsAttrName(String perunFacilityRequestedAupsAttrName) {
-        this.perunFacilityRequestedAupsAttrName = perunFacilityRequestedAupsAttrName;
-    }
-
-    public void setPerunFacilityVoShortNamesAttrName(String perunFacilityVoShortNamesAttrName) {
-        this.perunFacilityVoShortNamesAttrName = perunFacilityVoShortNamesAttrName;
+        this.perunOrgAupsAttrName = params.getProperty(ORG_AUPS_ATTR_NAME);
+        this.perunUserAupsAttrName = params.getProperty(USER_AUPS_ATTR_NAME);
+        this.perunVoAupAttrName = params.getProperty(VO_AUP_ATTR_NAME);
+        this.perunFacilityRequestedAupsAttrName = params.getProperty(FACILITY_REQUESTED_AUPS_ATTR_NAME);
+        this.perunFacilityVoShortNamesAttrName = params.getProperty(VO_SHORT_NAMES_ATTR_NAME);
     }
 
     @Override
-    public boolean doFilter(ServletRequest req, ServletResponse res) throws IOException {
-
+    protected boolean process(ServletRequest req, ServletResponse res) throws IOException {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
@@ -130,21 +139,13 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             return true;
         }
 
-        Principal p = request.getUserPrincipal();
-
-        String extSourceName = perunOidcConfig.getProxyExtSourceName();
-        if (extSourceName == null) {
-            extSourceName = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
-        }
-
-        PerunPrincipal principal = new PerunPrincipal(p.getName(), extSourceName);
-        PerunUser user = perunConnector.getPreauthenticatedUserId(principal);
+        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunConnector);
 
         Map<String, Aup> newAups;
 
         try {
             newAups = getAupsToApprove(user, facilityAttributes);
-        } catch (ParseException e) {
+        } catch (ParseException | IOException e) {
             log.warn("Caught ParseException", e);
             log.debug("Skipping to next filter");
             return true;

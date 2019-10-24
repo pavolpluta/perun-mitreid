@@ -1,11 +1,15 @@
-package cz.muni.ics.oidc.server.filters;
+package cz.muni.ics.oidc.server.filters.impl;
 
 import com.google.common.base.Strings;
+import cz.muni.ics.oidc.BeanUtil;
+import cz.muni.ics.oidc.server.filters.FiltersUtils;
+import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
+import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
+import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -25,59 +29,60 @@ import java.time.LocalDate;
 /**
  * Filter for collecting data about login.
  *
+ * Configuration (replace "name" part with name defined for filter):
+ * - filter.name.idpNameAttributeName - Mapping to Request attribute containing name of used Identity Provider
+ * - filter.name.idpEntityIdAttributeName - Mapping to Request attribute containing entity_id of used Identity Provider
+ * - filter.name.statisticsTableName - Name of the table where to store data (depends on DataSource bean mitreIdStats)
+ * - filter.name.identityProvidersMapTableName - Name of the with where mapping of entity_id (IDP) to idp name
+ * (depends on DataSource bean mitreIdStats)
+ * - filter.name.serviceProvidersMapTableName - Name of the with where mapping of client_id (SP) to client name
+ * (depends on DataSource bean mitreIdStats)
+ *
+ *
  * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
  */
 public class ProxyStatisticsFilter extends PerunRequestFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(ProxyStatisticsFilter.class);
 
-	/**
-	 * Name of the ServletRequest attribute which contains IdP's name.
-	 */
-	private String idpNameAttributeName;
+	/* CONFIGURATION OPTIONS */
+	private static final String IDP_NAME_ATTRIBUTE_NAME = "idpNameAttributeName";
+	private static final String IDP_ENTITY_ID_ATTRIBUTE_NAME = "idpEntityIdAttributeName";
+	private static final String STATISTICS_TABLE_NAME = "statisticsTableName";
+	private static final String IDENTITY_PROVIDERS_MAP_TABLE_NAME = "identityProvidersMapTableName";
+	private static final String SERVICE_PROVIDERS_MAP_TABLE_NAME = "serviceProvidersMapTableName";
 
-	/**
-	 * Name of the ServletRequest attribute which contains IdP's entityID.
-	 */
-	private String idpEntityIdAttributeName;
+	private final String idpNameAttributeName;
+	private final String idpEntityIdAttributeName;
+	private final String statisticsTableName;
+	private final String identityProvidersMapTableName;
+	private final String serviceProvidersMapTableName;
+	/* END OF CONFIGURATION OPTIONS */
 
-	@Autowired
-	private OAuth2RequestFactory authRequestFactory;
+	private final RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
 
-	@Autowired
-	private ClientDetailsEntityService clientService;
+	private final OAuth2RequestFactory authRequestFactory;
+	private final ClientDetailsEntityService clientService;
+	private final DataSource mitreIdStats;
 
-	@Autowired
-	private DataSource mitreIdStats;
+	public ProxyStatisticsFilter(PerunRequestFilterParams params) {
+		super(params);
 
-	private RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
+		BeanUtil beanUtil = params.getBeanUtil();
 
-	private String statisticsTableName;
-	private String identityProvidersMapTableName;
-	private String serviceProvidersMapTableName;
+		this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
+		this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
+		this.mitreIdStats = beanUtil.getBean("mitreIdStats", DataSource.class);
 
-	public void setStatisticsTableName(String statisticsTableName) {
-		this.statisticsTableName = statisticsTableName;
-	}
-
-	public void setIdentityProvidersMapTableName(String identityProvidersMapTableName) {
-		this.identityProvidersMapTableName = identityProvidersMapTableName;
-	}
-
-	public void setServiceProvidersMapTableName(String serviceProvidersMapTableName) {
-		this.serviceProvidersMapTableName = serviceProvidersMapTableName;
-	}
-
-	public void setIdpNameAttributeName(String idpNameAttributeName) {
-		this.idpNameAttributeName = idpNameAttributeName;
-	}
-
-	public void setIdpEntityIdAttributeName(String idpEntityIdAttributeName) {
-		this.idpEntityIdAttributeName = idpEntityIdAttributeName;
+		this.idpNameAttributeName = params.getProperty(IDP_NAME_ATTRIBUTE_NAME);
+		this.idpEntityIdAttributeName = params.getProperty(IDP_ENTITY_ID_ATTRIBUTE_NAME);
+		this.statisticsTableName = params.getProperty(STATISTICS_TABLE_NAME);
+		this.identityProvidersMapTableName = params.getProperty(IDENTITY_PROVIDERS_MAP_TABLE_NAME);
+		this.serviceProvidersMapTableName = params.getProperty(SERVICE_PROVIDERS_MAP_TABLE_NAME);
 	}
 
 	@Override
-	public boolean doFilter(ServletRequest req, ServletResponse res) {
+	protected boolean process(ServletRequest req, ServletResponse res) {
 		HttpServletRequest request = (HttpServletRequest) req;
 
 		ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
@@ -147,7 +152,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 			log.debug("The login log was successfully stored into database: ({},{},{},{})", idpEntityId, idpName, spIdentifier, spName);
 		} catch (SQLException ex) {
 			log.warn("Statistics weren't updated due to SQLException.");
-			log.debug("SQLException ({})", ex);
+			log.error("Caught SQLException", ex);
 		}
 	}
 
