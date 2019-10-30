@@ -386,20 +386,23 @@ public class PerunConnectorRpc implements PerunConnector {
 		attrNameMap.put("attrName", attributeName);
 		JsonNode entitylessAttributesJson = makeRpcCall("/attributesManager/getEntitylessAttributes", attrNameMap);
 
-		Long attributeDefinitionId = Mapper.mapAttribute(entitylessAttributesJson.get(0)).getId();
-
-		Map<String, Object> attributeDefinitionIdMap = new LinkedHashMap<>();
-		attributeDefinitionIdMap.put("attributeDefinition", attributeDefinitionId);
-		JsonNode entitylessKeysJson = makeRpcCall("/attributesManager/getEntitylessKeys", attributeDefinitionIdMap);
-
 		Map<String, PerunAttribute> result = new LinkedHashMap<>();
 
-		for(int i = 0; i < entitylessKeysJson.size(); i++) {
-			result.put(entitylessKeysJson.get(i).asText(), Mapper.mapAttribute(entitylessAttributesJson.get(i)));
-		}
+		if (entitylessAttributesJson.size() != 0 && !entitylessAttributesJson.get(0).isNull()) {
 
-		if (result.size() == 0) {
-			return null;
+			Long attributeDefinitionId = Mapper.mapAttribute(entitylessAttributesJson.get(0)).getId();
+
+			Map<String, Object> attributeDefinitionIdMap = new LinkedHashMap<>();
+			attributeDefinitionIdMap.put("attributeDefinition", attributeDefinitionId);
+			JsonNode entitylessKeysJson = makeRpcCall("/attributesManager/getEntitylessKeys", attributeDefinitionIdMap);
+
+			for (int i = 0; i < entitylessKeysJson.size(); i++) {
+				result.put(entitylessKeysJson.get(i).asText(), Mapper.mapAttribute(entitylessAttributesJson.get(i)));
+			}
+
+			if (result.size() == 0) {
+				result = new LinkedHashMap<>();
+			}
 		}
 
 		log.trace("getEntitylessAttributes({}) returns {}", attributeName, result);

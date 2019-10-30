@@ -118,24 +118,16 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
         List<String> attrsToFetch = new ArrayList<>(Arrays.asList(perunFacilityRequestedAupsAttrName, perunFacilityVoShortNamesAttrName));
         Map<String, PerunAttribute> facilityAttributes = perunConnector.getFacilityAttributes(facility, attrsToFetch);
-        PerunAttribute facilityRequestedAupsAttr;
 
         if (facilityAttributes == null) {
             log.warn("Could not fetch attributes {} for facility {}", attrsToFetch, facility);
             log.debug("Skipping to next filter");
             return true;
-        } else if (!facilityAttributes.containsKey(perunFacilityRequestedAupsAttrName) ||
-                (facilityRequestedAupsAttr = facilityAttributes.get(perunFacilityRequestedAupsAttrName)) == null) {
-            log.warn("Attribute {} for facility {} not fetched / is null", perunFacilityRequestedAupsAttrName, facility);
-            log.info("Skipping to next filter");
-            return true;
-        }
-
-        // VARIABLE HAS BEEN ASSIGNED IN THE ELSE IF ABOVE
-        List<String> requiredAups = facilityRequestedAupsAttr.valueAsList();
-        if (requiredAups == null || requiredAups.isEmpty()) {
-            log.info("No AUPs required by service, continue to next filter");
-            log.debug("Continue to next filter");
+        } else if (!facilityAttributes.containsKey(perunFacilityRequestedAupsAttrName) &&
+                !facilityAttributes.containsKey(perunFacilityVoShortNamesAttrName)) {
+            log.warn("Could not fetch attributes {}, {} for facility {}", perunFacilityRequestedAupsAttrName,
+                    perunFacilityVoShortNamesAttrName, facility);
+            log.debug("Skipping to next filter");
             return true;
         }
 
@@ -170,31 +162,85 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
     private Map<String, Aup> getAupsToApprove(PerunUser user, Map<String, PerunAttribute> facilityAttributes) throws ParseException, IOException {
         log.trace("getAupsToApprove({}, {})", user, facilityAttributes);
-
         Map<String, Aup> aupsToApprove= new LinkedHashMap<>();
-        Map<String, List<Aup>> orgAups = new HashMap<>();
+
+        PerunAttribute userAupsAttr = perunConnector.getUserAttribute(user.getId(), perunUserAupsAttrName);
+        Map<String, List<Aup>> userAups = convertToMapKeyToListOfAups(userAupsAttr.valueAsMap());
 
         PerunAttribute requestedAupsAttr = facilityAttributes.get(perunFacilityRequestedAupsAttrName);
-        //we can do this as we have checked for null value in previous step
-        List<String> requiredAups = requestedAupsAttr.valueAsList();
+        PerunAttribute facilityVoShortNamesAttr = facilityAttributes.get(perunFacilityVoShortNamesAttrName);
 
-        PerunAttribute facilityVoShortNames = facilityAttributes.get(perunFacilityVoShortNamesAttrName);
-        PerunAttribute userAupsAttr = perunConnector.getUserAttribute(user.getId(), perunUserAupsAttrName);
+        if (requestedAupsAttr != null && requestedAupsAttr.valueAsList() != null
+                && !requestedAupsAttr.valueAsList().isEmpty()) {
+            Map<String, Aup> orgAupsToApprove = getOrgAupsToApprove(requestedAupsAttr.valueAsList(), userAups);
+            mergeAupMaps(aupsToApprove, orgAupsToApprove);
+        }
+
+        if (facilityVoShortNamesAttr != null && facilityVoShortNamesAttr.valueAsList() != null
+                && !facilityVoShortNamesAttr.valueAsList().isEmpty()) {
+            Map<String, Aup> voAupsToApprove = getVoAupsToApprove(facilityVoShortNamesAttr.valueAsList(), userAups);
+            mergeAupMaps(aupsToApprove, voAupsToApprove);
+        }
+
+        log.trace("getAupsToApprove({}, {}) returns: {}", user, facilityAttributes, aupsToApprove);
+        return aupsToApprove;
+    }
+
+    private void mergeAupMaps(Map<String, Aup> original, Map<String, Aup> updates) {
+        for (Map.Entry<String, Aup> pair: updates.entrySet()) {
+            if (original.containsKey(pair.getKey())) {
+                original.replace(pair.getKey(), pair.getValue());
+            } else {
+                original.put(pair.getKey(), pair.getValue());
+            }
+        }
+    }
+
+    private Map<String, Aup> getVoAupsToApprove(List<String> facilityVoShortNames, Map<String, List<Aup>> userAups)
+            throws IOException, ParseException {
+        log.trace("getVoAupsToApprove({}, {})", facilityVoShortNames, userAups);
+
+        Map<String, Aup> aupsToApprove = new LinkedHashMap<>();
+        Map<String, List<Aup>> voAups = getVoAups(facilityVoShortNames);
+
+        if (!voAups.isEmpty()) {
+            for (Map.Entry<String, List<Aup>> keyToVoAup : voAups.entrySet()) {
+                Aup voLatestAup = getLatestAupFromList(keyToVoAup.getValue());
+
+                if (userAups.containsKey(keyToVoAup.getKey())) {
+                    Aup userLatestAup = getLatestAupFromList(userAups.get(keyToVoAup.getKey()));
+
+                    if (voLatestAup.getDate().equals(userLatestAup.getDate())) {
+                        continue;
+                    }
+                }
+
+                aupsToApprove.put(keyToVoAup.getKey(), voLatestAup);
+            }
+        }
+
+        log.trace("getVoAupsToApprove({}, {}) returns: {}", facilityVoShortNames, userAups, aupsToApprove);
+        return aupsToApprove;
+    }
+
+    private Map<String, Aup> getOrgAupsToApprove(List<String > requestedAups, Map<String, List<Aup>> userAups)
+            throws ParseException, IOException {
+        log.trace("getOrgAupsToApprove({}, {})", requestedAups, userAups);
+
+        Map<String, Aup> aupsToApprove = new LinkedHashMap<>();
+        Map<String, List<Aup>> orgAups = new HashMap<>();
+
         Map<String, PerunAttribute> orgAupsAttr = perunConnector.getEntitylessAttributes(perunOrgAupsAttrName);
 
-        Map<String, List<Aup>> voAups = getVoAups(facilityVoShortNames.valueAsList());
-
-        if (orgAupsAttr != null) {
+        if (orgAupsAttr != null && !orgAupsAttr.isEmpty()) {
             for (Map.Entry<String, PerunAttribute> entry : orgAupsAttr.entrySet()) {
                 List<Aup> aups = Arrays.asList(mapper.readValue(entry.getValue().valueAsString(), Aup[].class));
                 orgAups.put(entry.getKey(), aups);
             }
         }
 
-        Map<String, List<Aup>> userAups = convertToMapKeyToListOfAups(userAupsAttr.valueAsMap());
-
         if (!orgAups.isEmpty()) {
-            for (String requiredOrgAupKey : requiredAups) {
+            for (String requiredOrgAupKey : requestedAups) {
                 if (!orgAups.containsKey(requiredOrgAupKey) || orgAups.get(requiredOrgAupKey) == null) {
                     continue;
                 }
@@ -213,23 +259,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             }
         }
 
-        if (!voAups.isEmpty()) {
-            for (Map.Entry<String, List<Aup>> keyToVoAup : voAups.entrySet()) {
-                Aup voLatestAup = getLatestAupFromList(keyToVoAup.getValue());
-
-                if (userAups.containsKey(keyToVoAup.getKey())) {
-                    Aup userLatestAup = getLatestAupFromList(userAups.get(keyToVoAup.getKey()));
-
-                    if (voLatestAup.getDate().equals(userLatestAup.getDate())) {
-                        continue;
-                    }
-                }
-
-                aupsToApprove.put(keyToVoAup.getKey(), voLatestAup);
-            }
-        }
-
-        log.trace("getAupsToApprove({}, {}) returns: {}", user, facilityAttributes, aupsToApprove);
+        log.trace("getOrgAupsToApprove({}, {}, {}) returns: {}", requestedAups, orgAupsAttr, userAups, aupsToApprove);
         return aupsToApprove;
     }
 
