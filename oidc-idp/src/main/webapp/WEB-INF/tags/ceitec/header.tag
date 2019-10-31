@@ -5,7 +5,7 @@
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
-<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<String>" %>
+<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<java.lang.String>" %>
 
 <c:set var="logoURL" value="${baseURL}proxy/module.php/ceitec/res/img/logo_512.png"/>
 

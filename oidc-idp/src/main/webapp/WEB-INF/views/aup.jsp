@@ -10,7 +10,6 @@
 
 <%
 
-String baseURL = (String) pageContext.getAttribute("baseURL");
 List<String> cssLinks = new ArrayList<>();
 
 pageContext.setAttribute("cssLinks", cssLinks);

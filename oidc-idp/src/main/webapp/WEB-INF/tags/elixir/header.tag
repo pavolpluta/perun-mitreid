@@ -5,7 +5,7 @@
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
-<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<String>" %>
+<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<java.lang.String>" %>
 
 <c:set var="logoURL" value="${baseURL}proxy/module.php/elixir/res/img/logo_256.png"/>
 

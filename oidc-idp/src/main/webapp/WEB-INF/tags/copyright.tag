@@ -1,4 +1,4 @@
-<%@ tag import="cz.muni.ics.oidc.server.configurations.PerunOidcConfig" trimDirectiveWhitespaces="true" %>
+<%@ tag pageEncoding="UTF-8" import="cz.muni.ics.oidc.server.configurations.PerunOidcConfig" trimDirectiveWhitespaces="true" %>
 <%@ tag import="org.springframework.web.context.support.WebApplicationContextUtils" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
