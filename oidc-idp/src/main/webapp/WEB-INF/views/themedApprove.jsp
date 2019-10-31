@@ -45,16 +45,16 @@ pageContext.setAttribute("cssLinks", cssLinks);
 						<c:set var="singleClaim" value="${fn:length(claims[scope.value]) eq 1}" />
 						<li>
 							<div class="row">
-								<div class="col-sm-6">
+								<div class="col-sm-5">
                                     <div class="checkbox-wrapper">
-                                        <input class="mt-0" type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
+                                        <input class="mt-0 mr-half" type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
                                         id="scope_${fn:escapeXml(scope.value)}" value="${fn:escapeXml(scope.value)}">
                                     </div>
-                                    <label class="perun-attrname attrname-formatter" for="scope_${fn:escapeXml(scope.value)}">
-                                        ${scopeValue}
-                                    </label>
+                                    <h2 class="perun-attrname h4">
+										${scopeValue}
+									</h2>
 								</div>
-								<div class="perun-attrcontainer col-sm-6">
+								<div class="perun-attrcontainer col-sm-7">
 									<span class="perun-attrvalue">
 										<ul class="perun-attrlist">
 											<c:forEach var="claim" items="${claims[scope.value]}">
@@ -117,18 +117,20 @@ pageContext.setAttribute("cssLinks", cssLinks);
 			<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
 			<div class="row">
 				<div class="col-sm-6">
-					<form action="$('#user_oauth_approval').attr('value',true)" id="yesform">
-						<button id="yesbutton" name="yes" type="submit" class="btn btn-success btn-lg btn-block btn-primary">
+					<div id="yesform">
+						<button id="yesbutton" name="yes" type="submit" class="btn btn-success btn-lg btn-block btn-primary"
+								onclick="$('#user_oauth_approval').attr('value', true);">
 							<span>${langProps['yes']}</span>
 						</button>
-					</form>
+					</div>
 				</div>
 				<div class="col-sm-6">
-					<form action="$('#user_oauth_approval').attr('value',false)">
-						<button id="nobutton" name="no" type="submit" class="btn btn-lg btn-default btn-block btn-no">
+					<div>
+						<button id="nobutton" name="no" type="submit" class="btn btn-lg btn-default btn-block btn-no"
+						onclick="$('#user_oauth_approval').attr('value', false);">
 							<span>${langProps['no']}</span>
 						</button>
-					</form>
+					</div>
 				</div>
 			</div>
 		</form>
