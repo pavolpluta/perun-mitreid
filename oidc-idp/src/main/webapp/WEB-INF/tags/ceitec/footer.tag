@@ -1,4 +1,4 @@
-<%@tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
+<%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ attribute name="js" required="false"%>
 <%@ attribute name="baseURL" required="true"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>

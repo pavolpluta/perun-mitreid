@@ -1,9 +1,10 @@
+<%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags/common" %>
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
-<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<String>" %>
+<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<java.lang.String>" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html class="no-js touch no-touch" lang="${langProps['other_lang']}">

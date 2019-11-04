@@ -1,4 +1,4 @@
-<%@ tag pageEncoding="UTF-8" %>
+<%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags" %>
 <%@ taglib prefix="elixir" tagdir="/WEB-INF/tags/elixir" %>
@@ -11,7 +11,7 @@
 <%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
 <%@ attribute name="theme" required="true" %>
-<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<String>" %>
+<%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<java.lang.String>" %>
 
 <c:choose>
     <c:when test="${theme eq 'elixir'}">

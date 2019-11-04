@@ -1,4 +1,4 @@
-<%@ tag pageEncoding="UTF-8" %>
+<%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ attribute name="title" required="true" %>
@@ -22,6 +22,9 @@
     <style type="text/css">
         .mt-0 {
             margin-top: 0 !important;
+        }
+        .mr-half {
+            margin-right: .5em;
         }
         .checkbox-wrapper {
             float: left;

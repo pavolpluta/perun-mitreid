@@ -1,3 +1,4 @@
+<%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ attribute name="baseURL" required="true" %>
 
         </div>
