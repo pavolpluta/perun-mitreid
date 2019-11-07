@@ -24,13 +24,12 @@
             margin-top: 0 !important;
         }
         .mr-half {
-            margin-right: .5em;
+            margin-right: .5em !important;
         }
         .checkbox-wrapper {
             float: left;
         }
-        .attrname-formatter {
-            display: block;
-            margin-left: 2em !important;
+        .h4 {
+            clear: inherit !important;
         }
     </style>
