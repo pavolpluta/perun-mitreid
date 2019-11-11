@@ -189,7 +189,11 @@ public class PerunForceAupFilter extends PerunRequestFilter {
     private void mergeAupMaps(Map<String, Aup> original, Map<String, Aup> updates) {
         for (Map.Entry<String, Aup> pair: updates.entrySet()) {
             if (original.containsKey(pair.getKey())) {
-                original.replace(pair.getKey(), pair.getValue());
+                Aup originalAup = original.get(pair.getKey());
+                Aup updateAup = pair.getValue();
+                if (updateAup.getDateAsLocalDate().isAfter(originalAup.getDateAsLocalDate())) {
+                    original.replace(pair.getKey(), pair.getValue());
+                }
             } else {
                 original.put(pair.getKey(), pair.getValue());
             }
@@ -210,7 +214,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
                 if (userAups.containsKey(keyToVoAup.getKey())) {
                     Aup userLatestAup = getLatestAupFromList(userAups.get(keyToVoAup.getKey()));
 
-                    if (voLatestAup.getDate().equals(userLatestAup.getDate())) {
+                    if (! (voLatestAup.getDateAsLocalDate().isAfter(userLatestAup.getDateAsLocalDate()))) {
                         continue;
                     }
                 }
@@ -250,7 +254,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
                 if (userAups.containsKey(requiredOrgAupKey)) {
                     Aup userLatestAup = getLatestAupFromList(userAups.get(requiredOrgAupKey));
 
-                    if (orgLatestAup.getDate().equals(userLatestAup.getDate())) {
+                    if (! (orgLatestAup.getDateAsLocalDate().isAfter(userLatestAup.getDateAsLocalDate()))) {
                         continue;
                     }
                 }

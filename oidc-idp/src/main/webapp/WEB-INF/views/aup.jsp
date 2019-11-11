@@ -28,7 +28,7 @@ pageContext.setAttribute("cssLinks", cssLinks);
         <c:forEach var="aup" items="${newAups}">
             <div>
                 <p style="font-size: 16px; padding: 0; margin: 0;">${langProps['org_vo']} ${" "}<strong><c:out value="${aup.key}"/></strong></p>
-                <p>${langProps['see_aup']} ${aup.value.version} ${" "}<a href="<c:out value="${aup.value.link}"/>">${langProps['here']}</a></p>
+                <p>${langProps['see_aup']}${" "}${aup.value.version}${" "}<a href="<c:out value="${aup.value.link}"/>">${langProps['here']}</a></p>
             </div>
         </c:forEach>
         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>

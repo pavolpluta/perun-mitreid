@@ -1,11 +1,15 @@
 package cz.muni.ics.oidc.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.NullNode;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * AUP object model.
@@ -15,6 +19,8 @@ import java.io.IOException;
 public class Aup {
 
     public static final String SIGNED_ON = "signed_on";
+
+    private static final DateTimeFormatter format = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private String version;
     private String date;
@@ -61,6 +67,11 @@ public class Aup {
         return date;
     }
 
+    @JsonIgnore
+    public LocalDate getDateAsLocalDate() {
+        return LocalDate.parse(date, format);
+    }
+
     public void setDate(String date) {
         this.date = date;
     }
@@ -80,7 +91,6 @@ public class Aup {
     public void setText(String text) {
         this.text = text;
     }
-
 
     public String getSignedOn() {
         return signedOn;

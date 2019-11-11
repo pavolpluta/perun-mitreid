@@ -91,7 +91,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		if (principal == null || principal.getExtLogin() == null || principal.getExtSourceName() == null) {
 			log.debug("User not logged in, redirecting to login page");
 
-			String redirectURL = buildLoginUrl(req, clientId);
+			String redirectURL = buildLoginUrl(req, clientId, false);
 
 			log.debug("Redirecting to URL: {}", redirectURL);
 			res.sendRedirect(redirectURL);
@@ -175,7 +175,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		String acr = getAcrValues(req);
 		if ((acr.contains(REFEDS_MFA) || acr.contains(urlEncode(REFEDS_MFA)))
 				&& req.getParameter(LOGOUT_PARAM) == null) {
-			String loginUrl = buildLoginUrl(req, clientId);
+			String loginUrl = buildLoginUrl(req, clientId, true);
 			String base = config.getSamlLogoutURL();
 			Map<String, String> params = Collections.singletonMap("return", loginUrl);
 			String redirect = buildStringURL(base, params);
@@ -212,12 +212,12 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		acrRepository.store(acr);
 	}
 
-	private String buildLoginUrl(HttpServletRequest req, String clientId)
+	private String buildLoginUrl(HttpServletRequest req, String clientId, boolean loggedOut)
 			throws UnsupportedEncodingException
 	{
 		log.debug("constructLoginRedirectUrl(req: {}, clientId: {})", req, clientId);
 
-		String returnURL = buildReturnUrl(req);
+		String returnURL = buildReturnUrl(req, loggedOut);
 		String authnContextClassRef = buildAuthnContextClassRef(clientId, req);
 
 		String base = config.getSamlLoginURL();
@@ -233,15 +233,21 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return loginURL;
 	}
 
-	private String buildReturnUrl(HttpServletRequest req) {
+	private String buildReturnUrl(HttpServletRequest req, boolean loggedOut) {
 		log.trace("buildReturnUrl({})", req);
 
 		String returnURL;
 
 		if (req.getQueryString() == null) {
-			returnURL = req.getRequestURL().toString() + '?' + LOGOUT_PARAM + '=' + true;
+			returnURL = req.getRequestURL().toString();
+			if (loggedOut) {
+				returnURL += ('?' + LOGOUT_PARAM + '=' + true);
+			}
 		} else {
-			returnURL = req.getRequestURL().toString() + '?' + req.getQueryString() + '&' + LOGOUT_PARAM + '=' + true;
+			returnURL = req.getRequestURL().toString() + '?' + req.getQueryString();
+			if (loggedOut) {
+				returnURL += ('&' + LOGOUT_PARAM + '=' + true);
+			}
 		}
 
 		log.trace("buildReturnUrl() returns: {}", returnURL);
