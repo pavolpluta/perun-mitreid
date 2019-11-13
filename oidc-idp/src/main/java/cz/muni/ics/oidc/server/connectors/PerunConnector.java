@@ -10,6 +10,7 @@ import cz.muni.ics.oidc.server.PerunPrincipal;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Connects to Perun and obtains information.
@@ -155,4 +156,13 @@ public interface PerunConnector {
 	 * @return Vo
 	 */
 	Vo getVoByShortName(String shortName);
+
+	/**
+	 * Gets the resource capabilities
+	 * @param clientId String client id
+	 * @param groupNames Set<String> of group names
+	 * @param capabilitiesAttrName String name of attribute
+	 * @return set of resource capabilities
+	 */
+	Set<String> getResourceCapabilities(String clientId, Set<String> groupNames, String capabilitiesAttrName);
 }

@@ -115,7 +115,14 @@ public class Mapper {
 		String name = jsonNode.get("name").asText();
 		String description = jsonNode.get("description").asText();
 
-		return new Resource(id, voId, name, description);
+		Vo vo = null;
+
+		if (jsonNode.has("vo")) {
+			JsonNode voJson = jsonNode.get("vo");
+			vo = mapVo(voJson);
+		}
+
+		return new Resource(id, voId, name, description, vo);
 	}
 
 	/**

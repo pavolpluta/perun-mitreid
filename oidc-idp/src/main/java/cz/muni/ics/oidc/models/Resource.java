@@ -1,5 +1,7 @@
 package cz.muni.ics.oidc.models;
 
+import java.util.Objects;
+
 /**
  * Resource object model.
  *
@@ -10,12 +12,21 @@ public class Resource extends Model {
 	private Long voId;
 	private String name;
 	private String description;
+	private Vo vo;
 
-	public Resource(Long id, Long voId, String name, String description) {
-		super(id);
-		this.voId = voId;
-		this.name = name;
-		this.description = description;
+    public Resource(Long id, Long voId, String name, String description) {
+        super(id);
+        this.voId = voId;
+        this.name = name;
+        this.description = description;
+    }
+
+    /**
+     * Should be used when RichResource is obtained from Perun
+     */
+    public Resource(Long id, Long voId, String name, String description, Vo vo) {
+		this(id, voId, name, description);
+		this.vo = vo;
 	}
 
 	public Long getVoId() {
@@ -42,6 +53,31 @@ public class Resource extends Model {
 		this.description = description;
 	}
 
+	public Vo getVo() {
+		return vo;
+	}
+
+	public void setVo(Vo vo) {
+		this.vo = vo;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
+		Resource resource = (Resource) o;
+		return Objects.equals(voId, resource.voId) &&
+				Objects.equals(name, resource.name) &&
+				Objects.equals(description, resource.description) &&
+				Objects.equals(vo, resource.vo);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), voId, name, description, vo);
+	}
+
 	@Override
 	public String toString() {
 		return "Resource{" +
@@ -49,6 +85,7 @@ public class Resource extends Model {
 				", voId=" + voId +
 				", name='" + name + '\'' +
 				", description='" + description + '\'' +
+				", vo='" + vo + '\'' +
 				'}';
 	}
 }

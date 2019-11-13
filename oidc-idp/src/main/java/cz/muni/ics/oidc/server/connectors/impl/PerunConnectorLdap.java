@@ -28,6 +28,7 @@ import org.springframework.beans.factory.DisposableBean;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.apache.directory.ldap.client.api.search.FilterBuilder.and;
 import static org.apache.directory.ldap.client.api.search.FilterBuilder.equal;
@@ -54,10 +55,12 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	private static final String PERUN_USER_ID = "perunUserId";
 	private static final String PERUN_RESOURCE = "perunResource";
 	private static final String PERUN_FACILITY_ID = "perunFacilityId";
+	private static final String PERUN_FACILITY_DN = "perunFacilityDn";
 	private static final String PERUN_VO_ID = "perunVoId";
 	private static final String PERUN_GROUP_ID = "perunGroupId";
 	private static final String PERUN_PARENT_GROUP_ID = "perunParentGroupId";
 	private static final String PERUN_UNIQUE_GROUP_NAME = "perunUniqueGroupName";
+	private static final String CAPABILITIES = "capabilities";
 
 	private final String baseDN;
 	private final LdapConnectionPool pool;
@@ -279,5 +282,15 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 
 		log.trace("getVoByShortName({}) returns: {}", shortName, vo);
 		return vo;
+	}
+
+	@Override
+	public Set<String> getResourceCapabilities(String clientId, Set<String> groupNames, String capabilitiesAttrName) {
+		//TODO implement
+		log.trace("getResourceCapabilities({}, {}, {})", clientId, groupNames, capabilitiesAttrName);
+		Set<String> capabilities = fallbackConnector.getResourceCapabilities(clientId, groupNames, capabilitiesAttrName);
+
+		log.trace("getResourceCapabilities({}, {}, {}) returns: {}", clientId, groupNames, capabilitiesAttrName, capabilities);
+		return capabilities;
 	}
 }

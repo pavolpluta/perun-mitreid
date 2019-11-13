@@ -43,8 +43,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -436,7 +438,43 @@ public class PerunConnectorRpc implements PerunConnector {
 		return attr;
 	}
 
-	private List<Member> getMembersByUser(Long userId) {
+	@Override
+	public Set<String> getResourceCapabilities(String clientId, Set<String> groupNames, String capabilitiesAttrName) {
+		log.trace("getResourceCapabilities({}, {}, {})", clientId, groupNames, capabilitiesAttrName);
+
+		Facility facility = getFacilityByClientId(clientId);
+		if (facility == null) {
+		    return new LinkedHashSet<>();
+        }
+
+		List<Resource> resources = getAssignedResources(facility);
+		Set<String> capabilities = new LinkedHashSet<>();
+
+		for (Resource resource : resources) {
+			PerunAttribute mappedAttribute = getAttribute("resource", resource.getId(), capabilitiesAttrName);
+			List<String> resourceCapabilities = mappedAttribute.valueAsList();
+			List<Group> groups = getAssignedGroups(resource.getId());
+
+			for (Group group : groups) {
+				String groupName = group.getName();
+
+				if (resource.getVo() != null) {
+					groupName = resource.getVo().getShortName() + ':' + groupName;
+					group.setUniqueGroupName(groupName);
+				}
+
+				if (groupNames.contains(groupName)) {
+					capabilities.addAll(resourceCapabilities);
+					break;
+				}
+			}
+		}
+
+		log.trace("getResourceCapabilities({}, {}, {}) returns {})", clientId, groupNames, capabilitiesAttrName, capabilities);
+		return capabilities;
+	}
+
+    private List<Member> getMembersByUser(Long userId) {
 		log.trace("getMemberByUser({})", userId);
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("user", userId);
@@ -575,7 +613,7 @@ public class PerunConnectorRpc implements PerunConnector {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
 
-		JsonNode res = makeRpcCall("/facilitiesManager/getAssignedResources", map);
+		JsonNode res = makeRpcCall("/facilitiesManager/getAssignedRichResources", map);
 		List<Resource> resources = Mapper.mapResources(res);
 
 		log.trace("getAssignedResources({}) returns: {}", facility, resources);
@@ -613,5 +651,22 @@ public class PerunConnectorRpc implements PerunConnector {
 
 		log.trace("getRichGroupsAssignedToResourceWithAttributesByNames({}) returns: {}", resource, groups);
 		return groups;
+	}
+
+	private PerunAttribute getAttribute(String entity, Long entityId, String attributeName) {
+		Map<String, Object> getAttrParams = new LinkedHashMap<>();
+		getAttrParams.put(entity, entityId);
+		getAttrParams.put("attributeName", attributeName);
+
+		JsonNode attribute = makeRpcCall("/attributesManager/getAttribute", getAttrParams);
+		return Mapper.mapAttribute(attribute);
+	}
+
+	private List<Group> getAssignedGroups(Long resourceId) {
+		Map<String, Object> getAssignedGroupsParams = new LinkedHashMap<>();
+		getAssignedGroupsParams.put("resource", resourceId);
+		JsonNode groupsJson = makeRpcCall("/resourcesManager/getAssignedGroups", getAssignedGroupsParams);
+
+		return Mapper.mapGroups(groupsJson);
 	}
 }
