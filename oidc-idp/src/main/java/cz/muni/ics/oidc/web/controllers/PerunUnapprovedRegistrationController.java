@@ -83,6 +83,7 @@ public class PerunUnapprovedRegistrationController {
         Facility facility = perunConnector.getFacilityByClientId(clientId);
         Map<String, PerunAttribute> facilityAttributes = perunConnector.getFacilityAttributes(facility,
                 facilityAttrsConfig.getMembershipAttrsAsList());
+
         List<String> voShortNames = facilityAttributes.get(facilityAttrsConfig.getVoShortNamesAttr()).valueAsList();
         Map<Vo, List<Group>> groupsForRegistration = perunConnector.getGroupsForRegistration(facility, userId, voShortNames);
         log.debug("groupsForReg: {}", groupsForRegistration);
