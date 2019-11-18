@@ -1,7 +1,6 @@
 #####################################################################
 ## Template for localization                                       ##
 ## Replace [lang] with en/cs/sk                                    ##
-## Accented chars should be escaped as unicode chars (i.e. \u000D) ##
 ## Put this file in the folder specified by property               ##
 ##   web.langs.customfiles.path                                    ##
 #####################################################################

@@ -8,9 +8,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -79,12 +82,9 @@ public class Localization {
 
 			Properties langProps = new Properties();
 			String resourceFileName = "localization/" + lang + ".properties";
-			try (InputStream resourceIs = getClass().getClassLoader().getResourceAsStream(resourceFileName)) {
-				if (resourceIs == null) {
-					log.warn("could not load {}", resourceFileName);
-					continue;
-				}
-				langProps.load(resourceIs);
+			try (InputStreamReader isr = new InputStreamReader(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(resourceFileName))
+					,StandardCharsets.UTF_8)) {
+				langProps.load(isr);
 				log.trace("Loaded localization file: {}", resourceFileName);
 				localizationFiles.put(lang, langProps);
 			} catch (IOException e) {
@@ -92,8 +92,10 @@ public class Localization {
 			}
 
 			String customFileName = localizationFilesPath + '/' +lang + ".properties";
-			try (InputStream customIs = new FileInputStream(customFileName)) {
-				langProps.load(customIs);
+			try (InputStreamReader isr = new InputStreamReader(
+					new FileInputStream(customFileName), StandardCharsets.UTF_8
+			)) {
+				langProps.load(isr);
 				log.trace("Loaded localization file: {}", customFileName);
 			} catch (FileNotFoundException e) {
 				log.warn("File: {} not found", customFileName);
