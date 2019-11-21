@@ -32,12 +32,15 @@ import java.time.LocalDate;
  * Configuration (replace "name" part with name defined for filter):
  * - filter.name.idpNameAttributeName - Mapping to Request attribute containing name of used Identity Provider
  * - filter.name.idpEntityIdAttributeName - Mapping to Request attribute containing entity_id of used Identity Provider
- * - filter.name.statisticsTableName - Name of the table where to store data (depends on DataSource bean mitreIdStats)
- * - filter.name.identityProvidersMapTableName - Name of the with where mapping of entity_id (IDP) to idp name
- * (depends on DataSource bean mitreIdStats)
- * - filter.name.serviceProvidersMapTableName - Name of the with where mapping of client_id (SP) to client name
- * (depends on DataSource bean mitreIdStats)
- *
+ * - filter.name.statisticsTableName - Name of the table where to store data
+ * 		(depends on DataSource bean mitreIdStats)
+ * - filter.name.identityProvidersMapTableName - Name of the table with mapping of entity_id (IDP) to idp name
+ * 		(depends on DataSource bean mitreIdStats)
+ * - filter.name.serviceProvidersMapTableName - Name of the table with mapping of client_id (SP) to client name
+ * 		(depends on DataSource bean mitreIdStats)
+ * - filter.name.detailedStatisticsEnabled - TRUE if detailed statistics should be logged, FALSE otherwise (by default)
+ * - filter.name.detailedStatisticsTableName - Name of the table where we store detailed statistics
+ * 		(depends on DataSource bean mitreIdStats)
  *
  * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
  */
@@ -51,12 +54,16 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 	private static final String STATISTICS_TABLE_NAME = "statisticsTableName";
 	private static final String IDENTITY_PROVIDERS_MAP_TABLE_NAME = "identityProvidersMapTableName";
 	private static final String SERVICE_PROVIDERS_MAP_TABLE_NAME = "serviceProvidersMapTableName";
+	private static final String DETAILED_STATISTICS_TABLE_NAME = "detailedStatisticsTableName";
+	private static final String DETAILED_STATISTICS_ENABLED = "detailedStatisticsEnabled";
 
 	private final String idpNameAttributeName;
 	private final String idpEntityIdAttributeName;
 	private final String statisticsTableName;
 	private final String identityProvidersMapTableName;
 	private final String serviceProvidersMapTableName;
+	private final String detailedStatisticsTableName;
+	private final boolean detailedStatisticsEnabled;
 	/* END OF CONFIGURATION OPTIONS */
 
 	private final RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
@@ -79,6 +86,12 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		this.statisticsTableName = params.getProperty(STATISTICS_TABLE_NAME);
 		this.identityProvidersMapTableName = params.getProperty(IDENTITY_PROVIDERS_MAP_TABLE_NAME);
 		this.serviceProvidersMapTableName = params.getProperty(SERVICE_PROVIDERS_MAP_TABLE_NAME);
+		this.detailedStatisticsTableName = params.getProperty(DETAILED_STATISTICS_TABLE_NAME);
+		if (params.hasProperty(DETAILED_STATISTICS_ENABLED)) {
+			this.detailedStatisticsEnabled = Boolean.parseBoolean(params.getProperty(DETAILED_STATISTICS_ENABLED));
+		} else {
+			this.detailedStatisticsEnabled = false;
+		}
 	}
 
 	@Override
@@ -107,7 +120,8 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		String idpName = changeEncodingOfParam(idpNameFromRequest,
 				StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8);
 
-		insertLogin(idpEntityId, idpName, clientIdentifier, clientName);
+		String userId = request.getUserPrincipal().getName();
+		insertLogin(idpEntityId, idpName, clientIdentifier, clientName, userId);
 
 		return true;
 	}
@@ -153,6 +167,32 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		} catch (SQLException ex) {
 			log.warn("Statistics weren't updated due to SQLException.");
 			log.error("Caught SQLException", ex);
+		}
+	}
+
+	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName, String userId) {
+		insertLogin(idpEntityId, idpName, spIdentifier, spName);
+
+		if (detailedStatisticsEnabled && userId != null && !userId.trim().isEmpty()) {
+			String detailedStats = "INSERT INTO " + detailedStatisticsTableName + "(year, month, day, sourceIdp, service, user, count)" +
+					" VALUES(?,?,?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
+
+			LocalDate date = LocalDate.now();
+			try (Connection c = mitreIdStats.getConnection()) {
+				try (PreparedStatement preparedStatement = c.prepareStatement(detailedStats)) {
+					preparedStatement.setInt(1, date.getYear());
+					preparedStatement.setInt(2, date.getMonthValue());
+					preparedStatement.setInt(3, date.getDayOfMonth());
+					preparedStatement.setString(4, idpEntityId);
+					preparedStatement.setString(5, spIdentifier);
+					preparedStatement.setString(6, userId);
+					preparedStatement.execute();
+				}
+				log.debug("The login log was successfully stored into database: ({},{},{},{},{})", idpEntityId, idpName, spIdentifier, spName, userId);
+			} catch (SQLException ex) {
+				log.warn("Detailed statistics weren't updated due to SQLException.");
+				log.error("Caught SQLException", ex);
+			}
 		}
 	}
 

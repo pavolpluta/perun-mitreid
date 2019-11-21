@@ -102,6 +102,8 @@
 				<prop key="filter.stats.statisticsTableName">statistics</prop>
 				<prop key="filter.stats.identityProvidersMapTableName">identityProvidersMap</prop>
 				<prop key="filter.stats.serviceProvidersMapTableName">serviceProvidersMap</prop>
+				<prop key="filter.stats.detailedStatisticsTableName">detailedStatistics</prop>
+				<prop key="filter.stats.detailedStatisticsEnabled">false</prop>
 			</props>
 		</property>
 	</bean>
