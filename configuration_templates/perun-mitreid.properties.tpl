@@ -15,9 +15,8 @@
 ### PROXY ###
 #proxy.extSource.name=      # Name of extSource to use for fetching user
 #proxy.base.url=            # Base URL of proxy/idp
-#proxy.login.path=          # Path to login on proxy/idp (will be added to proxy.base.url)
-#proxy.logout.path=         # Path to logout on proxy/idp (will be added to proxy.base.url)
-#proxy.resources.path=      # Path to resources on proxy/idp (will be added to proxy.base.url)
+#proxy.login.url=           # URL to login on proxy/idp
+#proxy.logout.url=          # URL to logout on proxy/idp
 
 
 ### PERUN RPC ###
