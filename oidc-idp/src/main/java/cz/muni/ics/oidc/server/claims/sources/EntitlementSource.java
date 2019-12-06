@@ -62,7 +62,7 @@ public class EntitlementSource extends ClaimSource {
 						.getResourceCapabilities(pctx.getClient().getClientId(), groupNames, capabilities);
 
 				for (String capability : resultCapabilities) {
-					result.add(wrapGroupNameToAARC(capability));
+					result.add(wrapCapabilityToAARC(capability));
 				}
 			}
 		}
@@ -76,7 +76,10 @@ public class EntitlementSource extends ClaimSource {
 	}
 
 	private String wrapGroupNameToAARC(String groupName) {
-		return prefix + UrlEscapers.urlPathSegmentEscaper().escape(groupName) + "#" + authority;
+		return prefix + "group:" + UrlEscapers.urlPathSegmentEscaper().escape(groupName) + "#" + authority;
 	}
 
+	private String wrapCapabilityToAARC(String capability) {
+		return prefix + UrlEscapers.urlPathSegmentEscaper().escape(capability) + "#" + authority;
+	}
 }
