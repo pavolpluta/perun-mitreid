@@ -15,22 +15,22 @@
 
 <c:choose>
     <c:when test="${theme eq 'elixir'}">
-        <elixir:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <elixir:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'cesnet'}">
-        <cesnet:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <cesnet:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'bbmri'}">
-        <bbmri:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <bbmri:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'ceitec'}">
-        <ceitec:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <ceitec:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'europdx'}">
-        <europdx:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <europdx:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'muni'}">
-        <muni:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}"/>
+        <muni:header title="${title}" reqURL="${reqURL}" cssLinks="${cssLinks}" baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:otherwise>
         <o:header title="${title}"/>

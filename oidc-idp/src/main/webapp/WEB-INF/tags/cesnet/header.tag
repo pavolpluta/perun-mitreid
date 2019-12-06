@@ -5,17 +5,18 @@
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
+<%@ attribute name="samlResourcesURL" required="true" %>
 <%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<java.lang.String>" %>
 
-<c:set var="logoURL" value="${baseURL}proxy/module.php/cesnet/res/img/cesnet_RGB.png"/>
+<c:set var="logoURL" value="${samlResourcesURL}/module.php/cesnet/res/img/cesnet_RGB.png"/>
 
-<o:headerInit title="${title}" reqURL="${reqURL}" baseURL="${baseURL}" />
+<o:headerInit title="${title}" reqURL="${reqURL}" baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}" />
 
-<link rel="stylesheet" type="text/css" href="${baseURL}proxy/module.php/cesnet/res/bootstrap/css/bootstrap.min.css" />
-<link rel="stylesheet" type="text/css" href="${baseURL}proxy/module.php/cesnet/res/css/cesnet.css" />
+<link rel="stylesheet" type="text/css" href="${samlResourcesURL}/module.php/cesnet/res/bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" type="text/css" href="${samlResourcesURL}/module.php/cesnet/res/css/cesnet.css" />
 
 <o:headerCssLinks cssLinks="${cssLinks}"/>
 
 </head>
 
-<o:headerBody logoURL="${logoURL}" baseURL="${baseURL}"/>
+<o:headerBody logoURL="${logoURL}"/>

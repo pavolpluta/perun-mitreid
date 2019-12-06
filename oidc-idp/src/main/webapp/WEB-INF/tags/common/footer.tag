@@ -13,26 +13,26 @@
 
 <c:choose>
     <c:when test="${theme eq 'elixir'}">
-        <elixir:footer baseURL="${baseURL}"/>
+        <elixir:footer baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'cesnet'}">
-        <cesnet:footer baseURL="${baseURL}"/>
+        <cesnet:footer baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'bbmri'}">
-        <bbmri:footer baseURL="${baseURL}"/>
+        <bbmri:footer baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'ceitec'}">
-        <ceitec:footer baseURL="${baseURL}"/>
+        <ceitec:footer baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'europdx'}">
-        <europdx:footer baseURL="${baseURL}"/>
+        <europdx:footer baseURL="${baseURL}" samlResourcesURL="${samlResourcesURL}"/>
     </c:when>
     <c:when test="${theme eq 'muni'}">
-        <muni:footer baseURL="${baseURL}"/>
+        <muni:footer/>
     </c:when>
     <c:otherwise>
         <o:footer />
     </c:otherwise>
 </c:choose>
 
-<t:scripts />
+<script type="text/javascript" src="resources/js/lib/jquery.js"></script>

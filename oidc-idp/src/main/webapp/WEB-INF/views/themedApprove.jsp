@@ -7,15 +7,15 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common" %>
 
-<c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
-
+<c:set var="baseURL" value="${baseURL}"/>
+<c:set var="samlResourcesURL" value="${samlResourcesURL}"/>
 <%
 
-	String baseURL = (String) pageContext.getAttribute("baseURL");
+	String samlCssUrl = (String) pageContext.getAttribute("samlResourcesURL");
 	List<String> cssLinks = new ArrayList<>();
 
-	cssLinks.add(baseURL + "proxy/module.php/consent/assets/css/consent.css");
-	cssLinks.add(baseURL + "proxy/module.php/perun/res/css/consent.css");
+	cssLinks.add(samlCssUrl + "/module.php/consent/assets/css/consent.css");
+	cssLinks.add(samlCssUrl + "/module.php/perun/res/css/consent.css");
 
 	pageContext.setAttribute("cssLinks", cssLinks);
 

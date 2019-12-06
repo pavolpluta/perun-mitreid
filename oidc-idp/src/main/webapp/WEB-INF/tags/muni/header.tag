@@ -4,12 +4,13 @@
 <%@ attribute name="title" required="true" %>
 <%@ attribute name="reqURL" required="true" %>
 <%@ attribute name="baseURL" required="true" %>
+<%@ attribute name="samlResourcesURL" required="true" %>
 <%@ attribute name="cssLinks" required="true" type="java.util.ArrayList<java.lang.String>" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html class="no-js touch no-touch" lang="${langProps['other_lang']}">
 <head>
-    <meta charset="utf-8" />
+    <meta name="charset" content="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="Masarykova univerzita" />
 
@@ -55,7 +56,6 @@
                         <p class="menu-lang__selected">
                             <a href="${alternateURL}"
                                 rel="alternate" hreflang="${langProps['other_lang']}" lang="${langProps['other_lang']}"
-                                class="menu-lang__selected__link">
                                 ${langProps['other_language']}
                             </a>
                         </p>
@@ -67,7 +67,6 @@
                                     <li class="menu-mobile__item">
                                         <a href="${alternateUrl}"
                                             class="menu-mobile__link menu-mobile__link--lang" rel="alternate"
-                                            hreflang="${langProps['other_lang']}" lang="${langProps['other_lang']}">
                                             ${langProps['other_language']}
                                         </a>
                                     </li>

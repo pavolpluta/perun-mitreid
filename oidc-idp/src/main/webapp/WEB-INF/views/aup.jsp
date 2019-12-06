@@ -6,8 +6,6 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common" %>
 
-<c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
-
 <%
 
 List<String> cssLinks = new ArrayList<>();

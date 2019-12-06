@@ -31,9 +31,11 @@ public class PerunOidcConfig {
 	private String jwk;
 	private String jdbcUrl;
 	private String theme;
+	private String baseURL;
 	private String registrarUrl;
 	private String samlLoginURL;
 	private String samlLogoutURL;
+	private String samlResourcesURL;
 	private boolean askPerunForIdpFiltersEnabled;
 	private String perunOIDCVersion;
 	private String mitreidVersion;
@@ -72,6 +74,22 @@ public class PerunOidcConfig {
 		return theme;
 	}
 
+	public String getBaseURL() {
+		return baseURL;
+	}
+
+	public void setBaseURL(String baseURL) {
+		this.baseURL = baseURL;
+	}
+
+	public String getSamlResourcesURL() {
+		return samlResourcesURL;
+	}
+
+	public void setSamlResourcesURL(String samlResourcesURL) {
+		this.samlResourcesURL = samlResourcesURL;
+	}
+
 	public String getRegistrarUrl() {
 		return registrarUrl;
 	}
@@ -80,13 +98,9 @@ public class PerunOidcConfig {
 		this.registrarUrl = registrarUrl;
 	}
 
-
-
-
 	public void setIdTokenScopes(Set<String> idTokenScopes) {
 		this.idTokenScopes = idTokenScopes;
 	}
-
 
 	public Set<String> getIdTokenScopes() {
 		return idTokenScopes;
@@ -176,17 +190,22 @@ public class PerunOidcConfig {
 	@PostConstruct
 	public void postInit() {
 		//load URLs from properties if available or construct them from issuer URL
-		String loginURL = coreProperties.getProperty("proxy.login.url");
-		if (loginURL != null && !loginURL.trim().isEmpty()) {
-			samlLoginURL = loginURL.trim();
+		if (samlLoginURL != null && !samlLoginURL.trim().isEmpty()) {
+			samlLoginURL = samlLoginURL.trim();
 		} else {
 			samlLoginURL = UriComponentsBuilder.fromHttpUrl(configBean.getIssuer()).replacePath("/Shibboleth.sso/Login").build().toString();
 		}
-		String logoutURL = coreProperties.getProperty("proxy.logout.url");
-		if (logoutURL != null && !logoutURL.trim().isEmpty()) {
-			samlLogoutURL = logoutURL.trim();
+
+		if (samlLogoutURL != null && !samlLogoutURL.trim().isEmpty()) {
+			samlLogoutURL = samlLoginURL.trim();
 		} else {
 			samlLogoutURL = UriComponentsBuilder.fromHttpUrl(configBean.getIssuer()).replacePath("/Shibboleth.sso/Logout").build().toString();
+		}
+
+		if (samlResourcesURL != null && !samlResourcesURL.trim().isEmpty()) {
+			samlResourcesURL = samlResourcesURL.trim();
+		} else {
+			samlResourcesURL = UriComponentsBuilder.fromHttpUrl(configBean.getIssuer()).replacePath("/proxy").build().toString();
 		}
 	}
 
@@ -202,9 +221,11 @@ public class PerunOidcConfig {
 			log.info("JDBC URL: {}", jdbcUrl);
 			log.info("LDAP: ldaps://{}/{}", coreProperties.getProperty("ldap.host"), coreProperties.getProperty("ldap.baseDN"));
 			log.info("THEME: {}", theme);
-			log.info("Registrar URL: {}", registrarUrl);
+			log.info("baseURL: {}", baseURL);
 			log.info("LOGIN  URL: {}", samlLoginURL);
 			log.info("LOGOUT URL: {}", samlLogoutURL);
+			log.info("samlResourcesURL: {}", samlResourcesURL);
+			log.info("Registrar URL: {}", registrarUrl);
 			log.info("accessTokenClaimsModifier: {}", coreProperties.getProperty("accessTokenClaimsModifier"));
 			log.info("Proxy EXT_SOURCE name: {}", proxyExtSourceName);
 			log.info("Available languages: {}", availableLangs);

@@ -3,7 +3,6 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="o" tagdir="/WEB-INF/tags/common" %>
 <%@ attribute name="logoURL" required="true" %>
-<%@ attribute name="baseURL" required="true" %>
 
 <body>
 
