@@ -4,13 +4,21 @@
 
 ### APPLICATION PROPERTIES ###
 #main.oidc.issuer.url=https://perun-dev.meta.zcu.cz/oidc/
-#proxy.extSource.name=                                                      # Name of extSource to use for fetching user
 #jwk=file:///etc/perun/perun-oidc-keystore.jwks                             # Path to JWKs
 #admins=3197,59835                                                          # Comma separated list of IDs for admins
 #accessTokenClaimsModifier=cz.muni.ics.***.NoOpAccessTokenClaimsModifier    # Fully qualified class name for Access token modifier
 #idpFilters.askPerun.enabled=false                                          # Enable / disable filtering of IdPs on WAYF
 #registrar.url=https://perun-dev.cesnet.cz/allfed/registrar/                # URL of Perun registrar module
 #id_token.scopes=openid,profile,email,phone,address                         # Comma separated list of scopes included in ID_TOKEN
+
+
+### PROXY ###
+#proxy.extSource.name=      # Name of extSource to use for fetching user
+#proxy.base.url=            # Base URL of proxy/idp
+#proxy.login.path=          # Path to login on proxy/idp (will be added to proxy.base.url)
+#proxy.logout.path=         # Path to logout on proxy/idp (will be added to proxy.base.url)
+#proxy.resources.path=      # Path to resources on proxy/idp (will be added to proxy.base.url)
+
 
 ### PERUN RPC ###
 #perun.rpc.url=https://perun.elixir-czech.cz/krb/rpc
@@ -24,6 +32,7 @@
 #ldap.password=yyyyyyy
 #ldap.timeoutSecs=120
 #ldap.baseDN=dc=perun,dc=cesnet,dc=cz
+
 
 ### JDBC ###
 #jdbc.driver=org.mariadb.jdbc.Driver
@@ -45,6 +54,7 @@
 #web.theme=default [muni|cesnet|elixir|europdx|bbmri|ceitec]    # theme for web interface
 #web.langs=EN,CS,SK [EN|CS|SK]                                  # comma separated list of enabled languages
 #web.langs.customfiles.path=/etc/perun                          # path to custom localization files
+#web.baseURL=                                                   # base URL where the web sits
 
 
 ### FACILITY ATTRIBUTES MAPPING ###
