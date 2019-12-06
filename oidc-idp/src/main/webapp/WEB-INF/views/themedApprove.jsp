@@ -7,15 +7,15 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common" %>
 
-<c:set var="baseURL" value="${fn:substringBefore(config.issuer, 'oidc')}" />
-
+<c:set var="baseURL" value="${baseURL}"/>
+<c:set var="samlResourcesURL" value="${samlResourcesURL}"/>
 <%
 
-	String baseURL = (String) pageContext.getAttribute("baseURL");
+	String samlCssUrl = (String) pageContext.getAttribute("samlResourcesURL");
 	List<String> cssLinks = new ArrayList<>();
 
-	cssLinks.add(baseURL + "proxy/module.php/consent/assets/css/consent.css");
-	cssLinks.add(baseURL + "proxy/module.php/perun/res/css/consent.css");
+	cssLinks.add(samlCssUrl + "/module.php/consent/assets/css/consent.css");
+	cssLinks.add(samlCssUrl + "/module.php/perun/res/css/consent.css");
 
 	pageContext.setAttribute("cssLinks", cssLinks);
 
@@ -32,8 +32,11 @@
 	<c:remove scope="session" var="SPRING_SECURITY_LAST_EXCEPTION" />
 	<form name="confirmationForm"
 		  action="${pageContext.request.contextPath.endsWith('/') ? pageContext.request.contextPath : pageContext.request.contextPath.concat('/')}authorize" method="post">
-		<p>${langProps['consent_privacypolicy']}
-			&#32;<a target='_blank' href='${fn:escapeXml(client.policyUri)}'><em>${fn:escapeXml(client.clientName)}</em></a>
+		<p>
+			<c:if test="${not empty client.policyUri}">
+				${langProps['consent_privacypolicy']}
+				&#32;<a target='_blank' href='${fn:escapeXml(client.policyUri)}'><em>${fn:escapeXml(client.clientName)}</em></a>
+			</c:if>
 		</p>
 		<ul id="perun-table_with_attributes" class="perun-attributes">
 			<c:forEach var="scope" items="${scopes}">

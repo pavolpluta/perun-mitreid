@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc.web.controllers;
 
 import com.google.common.base.Strings;
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -82,6 +83,13 @@ public class ControllerUtils {
 
 		log.trace("createRedirectUrl returns: {}", builder.toString());
 		return builder.toString();
+	}
+
+	public static void setPageOptions(Map<String, Object> model, HttpServletRequest req, Localization localization, PerunOidcConfig perunOidcConfig) {
+		setLanguageForPage(model, req, localization);
+		model.put("theme", perunOidcConfig.getTheme().toLowerCase());
+		model.put("baseURL", perunOidcConfig.getBaseURL());
+		model.put("samlResourcesURL", perunOidcConfig.getSamlResourcesURL());
 	}
 
 	private static String removeQueryParameter(String url, String parameterName) throws URISyntaxException {

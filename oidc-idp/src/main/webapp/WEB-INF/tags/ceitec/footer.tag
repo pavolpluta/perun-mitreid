@@ -1,6 +1,7 @@
 <%@ tag pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@ attribute name="js" required="false"%>
 <%@ attribute name="baseURL" required="true"%>
+<%@ attribute name="samlResourcesURL" required="true"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
@@ -12,7 +13,7 @@
 <div id="footer">
     <div style="margin: 0px auto; max-width: 1000px;">
         <div style="float: left;">
-            <img src="${baseURL}proxy/module.php/ceitec/res/img/logo_64.png" alt="CEITEC Logo">
+            <img src="${samlResourcesURL}/module.php/ceitec/res/img/logo_64.png" alt="CEITEC Logo">
         </div>
         <div style="float: left;">
             <p>CEITEC, Masaryk University, Žerotínovo nám. 9, 601 77 Brno, Czech Republic

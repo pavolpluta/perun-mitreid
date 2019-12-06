@@ -109,9 +109,8 @@ public class PerunUnapprovedRegistrationController {
             }
         }
 
-        ControllerUtils.setLanguageForPage(model, request, localization);
+        ControllerUtils.setPageOptions(model, request, localization, perunOidcConfig);
         model.put("client", client);
-        model.put("theme", perunOidcConfig.getTheme().toLowerCase());
         model.put("facilityId", facilityId);
         model.put("action", buildActionUrl(request));
         model.put("groupsForRegistration", groupsForRegistration);
@@ -140,14 +139,13 @@ public class PerunUnapprovedRegistrationController {
                                    @RequestParam("user_id") Long userId) {
         HttpServletRequest request = (HttpServletRequest) req;
 
-        model.put("theme", perunOidcConfig.getTheme().toLowerCase());
         model.put("page", "regContinue");
         model.put("client_id", clientId);
         model.put("facility_id", facilityId);
         model.put("user_id", userId);
         model.put("action", request.getRequestURL().toString()
                 .replace(REGISTRATION_CONTINUE_MAPPING, REGISTRATION_FORM_MAPPING));
-        ControllerUtils.setLanguageForPage(model, request, localization);
+        ControllerUtils.setPageOptions(model, request, localization, perunOidcConfig);
 
         return "registrationFormContinue";
     }

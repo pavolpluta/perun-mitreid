@@ -71,10 +71,8 @@ public class AupController {
             newAups.put(keyAupPair.getKey(), new Aup(keyAupPair.getValue()));
         }
 
-        model.put("theme", perunOidcConfig.getTheme());
         model.put(NEW_AUPS, newAups);
-
-        ControllerUtils.setLanguageForPage(model, request, localization);
+        ControllerUtils.setPageOptions(model, request, localization, perunOidcConfig);
 
         return "aup";
     }

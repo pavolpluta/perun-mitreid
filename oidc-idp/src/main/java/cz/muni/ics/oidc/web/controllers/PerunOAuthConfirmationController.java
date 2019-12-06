@@ -94,14 +94,13 @@ public class PerunOAuthConfirmationController{
         }
 
         model.put("client", client);
-        model.put("theme", perunOidcConfig.getTheme().toLowerCase());
 
         //get result
         String result = oAuthConfirmationController.confimAccess(model, authRequest, p);
 
         //prepare scopes in our way
         PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsernameAndClientId(p.getName(),client.getClientId());
-        ControllerUtils.setLanguageForPage(model, req, localization);
+        ControllerUtils.setPageOptions(model, req, localization, perunOidcConfig);
         setScopesAndClaims(model, authRequest, user);
 
         if (result.equals("approve") && perunOidcConfig.getTheme().equalsIgnoreCase("default")) {

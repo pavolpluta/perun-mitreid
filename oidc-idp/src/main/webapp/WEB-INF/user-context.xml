@@ -23,6 +23,9 @@
 				<prop key="logo.image.url">resources/images/perun_24px.png</prop>
 				<prop key="topbar.title">Perun OIDC</prop>
 				<prop key="proxy.extSource.name"/>
+				<prop key="proxy.base.url"/>
+				<prop key="proxy.login.url"/>
+				<prop key="proxy.logout.url"/>
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
 				<prop key="perun.rpc.user">xxxxx</prop>
 				<prop key="perun.rpc.password">yyyyy</prop>
@@ -45,6 +48,7 @@
 				<prop key="web.theme">default</prop>
 				<prop key="web.langs">EN</prop> <!-- EN,CS,SK -->
 				<prop key="web.langs.customfiles.path">/etc/perun</prop>
+				<prop key="web.baseURL">https://login.cesnet.cz/proxy</prop>
 				<prop key="idpFilters.askPerun.enabled">false</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
 				<prop key="id_token.scopes">openid,profile,email,phone,address</prop>
@@ -152,6 +156,10 @@
 		<property name="jwk" value="${jwk}"/>
 		<property name="jdbcUrl" value="${jdbc.url}"/>
 		<property name="theme" value="${web.theme}"/>
+		<property name="samlLoginURL" value="${proxy.login.url}"/>
+		<property name="samlLogoutURL" value="${proxy.logout.url}"/>
+		<property name="samlResourcesURL" value="${proxy.base.url}"/>
+		<property name="baseURL" value="${web.baseURL}"/>
 		<property name="registrarUrl" value="${registrar.url}"/>
 		<property name="askPerunForIdpFiltersEnabled" value="${idpFilters.askPerun.enabled}"/>
 		<property name="proxyExtSourceName" value="${proxy.extSource.name}"/>

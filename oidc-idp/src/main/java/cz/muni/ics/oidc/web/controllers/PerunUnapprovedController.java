@@ -58,10 +58,8 @@ public class PerunUnapprovedController {
             return HttpCodeView.VIEWNAME;
         }
 
-        ControllerUtils.setLanguageForPage(model, request, localization);
-
+        ControllerUtils.setPageOptions(model, request, localization, perunOidcConfig);
         model.put("client", client);
-        model.put("theme", perunOidcConfig.getTheme().toLowerCase());
 
         return "unapproved";
     }
