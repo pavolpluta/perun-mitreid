@@ -10,7 +10,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html class="no-js touch no-touch" lang="${langProps['other_lang']}">
 <head>
-    <meta name="charset" content="utf-8" />
+    <meta cahrset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="Masarykova univerzita" />
 
@@ -49,13 +49,14 @@
         <div class="row-main">
             <div class="header__wrap">
                 <h1 class="header__logo">
-                    <img src="${baseURL}proxy/module.php/${theme}/res/img/${langProps['img_name']}.png" width="${langProps['img_width']}" height="${langProps['img_height']}" alt="MUNI Logo"/>
+                    <img src="${samlResourcesURL}/module.php/${theme}/img/${langProps['img_name']}.png"
+                         width="${langProps['img_width']}" height="${langProps['img_height']}" alt="${langProps['muni_logo']}"/>
                 </h1>
                 <div class="header__side">
                     <div class="menu-lang" role="navigation">
                         <p class="menu-lang__selected">
-                            <a href="${alternateURL}"
-                                rel="alternate" hreflang="${langProps['other_lang']}" lang="${langProps['other_lang']}"
+                            <a href="${alternateURL}" rel="alternate" hreflang="${langProps['other_lang']}"
+                               lang="${langProps['other_lang']}" class="menu-lang__selected__link">
                                 ${langProps['other_language']}
                             </a>
                         </p>
@@ -65,8 +66,8 @@
                             <div class="row-main">
                                 <ul class="menu-mobile__list">
                                     <li class="menu-mobile__item">
-                                        <a href="${alternateUrl}"
-                                            class="menu-mobile__link menu-mobile__link--lang" rel="alternate"
+                                        <a href="${alternateURL}" rel="alternate" hreflang="${langProps['other_lang']}"
+                                            class="menu-mobile__link menu-mobile__link--lang" lang="${langProps['other_lang']}">
                                             ${langProps['other_language']}
                                         </a>
                                     </li>

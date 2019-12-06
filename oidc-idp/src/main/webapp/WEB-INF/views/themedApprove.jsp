@@ -32,8 +32,11 @@
 	<c:remove scope="session" var="SPRING_SECURITY_LAST_EXCEPTION" />
 	<form name="confirmationForm"
 		  action="${pageContext.request.contextPath.endsWith('/') ? pageContext.request.contextPath : pageContext.request.contextPath.concat('/')}authorize" method="post">
-		<p>${langProps['consent_privacypolicy']}
-			&#32;<a target='_blank' href='${fn:escapeXml(client.policyUri)}'><em>${fn:escapeXml(client.clientName)}</em></a>
+		<p>
+			<c:if test="${not empty client.policyUri}">
+				${langProps['consent_privacypolicy']}
+				&#32;<a target='_blank' href='${fn:escapeXml(client.policyUri)}'><em>${fn:escapeXml(client.clientName)}</em></a>
+			</c:if>
 		</p>
 		<ul id="perun-table_with_attributes" class="perun-attributes">
 			<c:forEach var="scope" items="${scopes}">
