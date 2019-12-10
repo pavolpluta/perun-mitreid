@@ -1,7 +1,9 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+##[Unreleased]
+
+## [v1.23.1]
 ### Changed
 - Changed logging configuration - log all classes at the level specified while building
 ### Fixed
