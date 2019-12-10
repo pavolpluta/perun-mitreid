@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [v1.23.0]
 ### Changed
 - Updated MUNI template
 - Updated sample configuration template file
