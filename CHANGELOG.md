@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Changed
+- Changed logging configuration - log all classes at the level specified while building
+### Fixed
+- Fixed handling of group "members" in resource capabilities
 
 ## [v1.23.0]
 ### Changed
@@ -14,11 +18,11 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Added property to specify SAML URL - used as path to CSS files from Proxy
 
-## [v1.22.2 (bugfix release)]
+## [v1.22.2]
 ### Fixed
 - Fixed bug in remember consent functionality - view did not send the parameter
 
-## [v1.22.1 (bugfix release)]
+## [v1.22.1]
 ### Fixed
 - Fixed bug in recourceCapabilities - thrown NullPointerException when obtained attribute has been null
 
@@ -96,7 +100,7 @@ All notable changes to this project will be documented in this file.
 - Added new access control filters
 - Implemented forwarding Identity Provider filters
 
-## [v1.16.1 (bugfix release)]
+## [v1.16.1]
 ### Changed
 - Changed dependency on MITREid version with declared release of refresh_token
 
@@ -108,7 +112,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Added support for build parameters
 
-## [v1.15.1 (bugfix release)]
+## [v1.15.1]
 ### Changed
 - Scopes and claims at the consent page are rendered in sorted manner
 ### Fixed
