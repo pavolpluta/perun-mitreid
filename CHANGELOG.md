@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+## Changed
+- Changed logging configuration - log all classes at the level specified while building
+## Fixed
+- Fixed handling of group "members" in resource capabilities
 
 ## [v1.23.0]
 ### Changed

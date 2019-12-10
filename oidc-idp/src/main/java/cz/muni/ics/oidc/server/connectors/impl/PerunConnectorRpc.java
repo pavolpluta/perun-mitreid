@@ -457,19 +457,26 @@ public class PerunConnectorRpc implements PerunConnector {
 				continue;
 			}
 			List<Group> groups = getAssignedGroups(resource.getId());
-
 			for (Group group : groups) {
 				String groupName = group.getName();
-
-				if (resource.getVo() != null) {
+				if ("members".equals(groupName)) {
+					log.trace("Group is members, continue with special handling");
+					groupName = "";
+					if (resource.getVo() != null) {
+						groupName = resource.getVo().getShortName();
+					}
+				} else if (resource.getVo() != null) {
 					groupName = resource.getVo().getShortName() + ':' + groupName;
-					group.setUniqueGroupName(groupName);
 				}
+				group.setUniqueGroupName(groupName);
+				log.trace("Constructed unique groupName: {}", groupName);
 
 				if (groupNames.contains(groupName)) {
+					log.trace("Group found in user's group, add capabilities");
 					capabilities.addAll(resourceCapabilities);
 					break;
 				}
+				log.trace("Group not found, continue to the next one");
 			}
 		}
 
@@ -662,7 +669,9 @@ public class PerunConnectorRpc implements PerunConnector {
 		getAttrParams.put("attributeName", attributeName);
 
 		JsonNode attribute = makeRpcCall("/attributesManager/getAttribute", getAttrParams);
-		return Mapper.mapAttribute(attribute);
+		PerunAttribute attr = Mapper.mapAttribute(attribute);
+		log.trace("getAttribute({}, {}, {}) returns: {}", entity, entityId, attributeName, attr);
+		return attr;
 	}
 
 	private List<Group> getAssignedGroups(Long resourceId) {
@@ -670,6 +679,8 @@ public class PerunConnectorRpc implements PerunConnector {
 		getAssignedGroupsParams.put("resource", resourceId);
 		JsonNode groupsJson = makeRpcCall("/resourcesManager/getAssignedGroups", getAssignedGroupsParams);
 
-		return Mapper.mapGroups(groupsJson);
+		List<Group> assignedGroups = Mapper.mapGroups(groupsJson);
+		log.trace("getAssignedGroups({}) returns: {}", resourceId, assignedGroups);
+		return assignedGroups;
 	}
 }
