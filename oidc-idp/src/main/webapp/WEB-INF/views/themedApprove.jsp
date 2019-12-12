@@ -46,7 +46,7 @@
 				</c:if>
 
 				<c:set var="singleClaim" value="${fn:length(claims[scope.value]) eq 1}" />
-				<li>
+				<li class="scope-item scope_${fn:escapeXml(scope.value)}">
 					<div class="row">
 						<div class="col-sm-5">
 							<div class="checkbox-wrapper">
