@@ -53,7 +53,7 @@
 								<input class="mt-0 mr-half" type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
 									   id="scope_${fn:escapeXml(scope.value)}" value="${fn:escapeXml(scope.value)}">
 							</div>
-							<h2 class="perun-attrname h4">${scopeValue}</h2>
+							<label for="scope_${fn:escapeXml(scope.value)}" class="perun-attrname h4">${scopeValue}</label>
 						</div>
 						<div class="perun-attrcontainer col-sm-7">
 							<span class="perun-attrvalue">
