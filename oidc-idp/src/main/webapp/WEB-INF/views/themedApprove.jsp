@@ -59,7 +59,7 @@
 						</div>
 						<div class="perun-attrcontainer col-sm-7">
 							<span class="perun-attrvalue">
-								<ul class="perun-attrlist">
+								<ul class="perun-attrlist small">
 									<c:forEach var="claim" items="${claims[scope.value]}">
 										<c:choose>
 											<c:when test="${not singleClaim}">
