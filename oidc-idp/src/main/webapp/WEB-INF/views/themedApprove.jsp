@@ -23,7 +23,7 @@
 
 <t:header title="${langProps['consent_header']}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
 
-<h1>${langProps['consent_header']}</h1>
+<h1 class="h3">${langProps['consent_header']}</h1>
 
 </div> <%-- header --%>
 
@@ -53,8 +53,8 @@
 								<input class="mt-0 mr-half" type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
 									   id="scope_${fn:escapeXml(scope.value)}" value="${fn:escapeXml(scope.value)}">
 							</div>
-							<h2 class="perun-attrname h4">
-								<label for="scope_${fn:escapeXml(scope.value)}" class="h4">${scopeValue}</label>
+							<h2 class="perun-attrname h5">
+								<label for="scope_${fn:escapeXml(scope.value)}" class="h5">${scopeValue}</label>
 							</h2>
 						</div>
 						<div class="perun-attrcontainer col-sm-7">
@@ -68,7 +68,7 @@
 													<c:if test="${empty fn:trim(claimKey)}">
 														<c:set var="claimKey" value="${claim.key}"/>
 													</c:if>
-													<h3 class="visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block h5 mb-0">
+													<h3 class="visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block h6 mb-0">
 														${claimKey}:
 													</h3>
 													<c:choose>
