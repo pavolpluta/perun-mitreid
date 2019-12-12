@@ -25,6 +25,9 @@
         .mt-0 {
             margin-top: 0 !important;
         }
+        .mb-0 {
+            margin-bottom: 0 !important;
+        }
         .checkbox-wrapper {
             float: left;
         }

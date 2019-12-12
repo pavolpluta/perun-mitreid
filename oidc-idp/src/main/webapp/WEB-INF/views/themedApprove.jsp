@@ -53,7 +53,9 @@
 								<input class="mt-0 mr-half" type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
 									   id="scope_${fn:escapeXml(scope.value)}" value="${fn:escapeXml(scope.value)}">
 							</div>
-							<label for="scope_${fn:escapeXml(scope.value)}" class="perun-attrname h4">${scopeValue}</label>
+							<h2 class="perun-attrname h4">
+								<label for="scope_${fn:escapeXml(scope.value)}" class="h4">${scopeValue}</label>
+							</h2>
 						</div>
 						<div class="perun-attrcontainer col-sm-7">
 							<span class="perun-attrvalue">
@@ -61,23 +63,24 @@
 									<c:forEach var="claim" items="${claims[scope.value]}">
 										<c:choose>
 											<c:when test="${not singleClaim}">
-												<li>
+												<li class="subclaim subclaim_${fn:escapeXml(claim.key)}">
 													<c:set var="claimKey" value="${langProps[claim.key]}"/>
 													<c:if test="${empty fn:trim(claimKey)}">
 														<c:set var="claimKey" value="${claim.key}"/>
 													</c:if>
-													<strong>${claimKey}:</strong>
+													<h3 class="visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block h5 mb-0">
+														${claimKey}:
+													</h3>
 													<c:choose>
 														<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
-															<br/>
-															<ul>
+															<ul class="subclaim-value">visible-md-inline-block
 																<c:forEach var="subValue" items="${claim.value}">
 																	<li>${subValue}</li>
 																</c:forEach>
 															</ul>
 														</c:when>
 														<c:otherwise>
-															${claim.value}
+															<span class="subclaim-value">${claim.value}</span>
 														</c:otherwise>
 													</c:choose>
 												</li>
