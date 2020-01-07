@@ -197,7 +197,7 @@ public class PerunOidcConfig {
 		}
 
 		if (samlLogoutURL != null && !samlLogoutURL.trim().isEmpty()) {
-			samlLogoutURL = samlLoginURL.trim();
+			samlLogoutURL = samlLogoutURL.trim();
 		} else {
 			samlLogoutURL = UriComponentsBuilder.fromHttpUrl(configBean.getIssuer()).replacePath("/Shibboleth.sso/Logout").build().toString();
 		}

@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 - Changed logging configuration - log all classes at the level specified while building
 ### Fixed
 - Fixed handling of group "members" in resource capabilities
+- Fixed wrong behavior of MFA forced logout
+- Fixed wrong loading of SAML logout URL when specified in properties
 
 ## [v1.23.0]
 ### Changed

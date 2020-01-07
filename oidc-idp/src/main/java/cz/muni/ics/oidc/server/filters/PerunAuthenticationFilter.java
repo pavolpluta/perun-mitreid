@@ -240,19 +240,16 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		if (req.getQueryString() == null) {
 			returnURL = req.getRequestURL().toString();
-			if (loggedOut) {
-				returnURL += ('?' + LOGOUT_PARAM + '=' + true);
-			}
+			returnURL += ('?' + LOGOUT_PARAM + '=' + true);
 		} else {
 			returnURL = req.getRequestURL().toString() + '?' + req.getQueryString();
-			if (loggedOut) {
-				returnURL += ('&' + LOGOUT_PARAM + '=' + true);
-			}
+			returnURL += ('&' + LOGOUT_PARAM + '=' + true);
 		}
 
 		log.trace("buildReturnUrl() returns: {}", returnURL);
 		return returnURL;
 	}
+
 
 	private String buildAuthnContextClassRef(String clientId, HttpServletRequest req) {
 		log.trace("buildAuthnContextClassRef(clientId: {}, req: {})", clientId, req);
