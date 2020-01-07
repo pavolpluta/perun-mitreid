@@ -2,8 +2,12 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- Added option to read classes for HTML pages from file
 ### Changed
 - Changed logging configuration - log all classes at the level specified while building
+- Consent uses the loading of HTML classes from the file for some elements
+- Updated templates for consent page
 ### Fixed
 - Fixed handling of group "members" in resource capabilities
 

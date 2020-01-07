@@ -53,13 +53,14 @@
 								<input class="mt-0 mr-half" type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
 									   id="scope_${fn:escapeXml(scope.value)}" value="${fn:escapeXml(scope.value)}">
 							</div>
-							<h2 class="perun-attrname h5">
-								<label for="scope_${fn:escapeXml(scope.value)}" class="h5">${scopeValue}</label>
+							<h2 class="perun-attrname <c:out value="${classes['perun-attrname.h2.class']}"/>">
+								<label for="scope_${fn:escapeXml(scope.value)}"
+									   class="<c:out value="${classes['perun-attrname.h2.class']}"/>">${scopeValue}</label>
 							</h2>
 						</div>
 						<div class="perun-attrcontainer col-sm-7">
 							<span class="perun-attrvalue">
-								<ul class="perun-attrlist small">
+								<ul class="perun-attrlist <c:out value="${classes['perun-attrcontainer.ul.class']}"/>">
 									<c:forEach var="claim" items="${claims[scope.value]}">
 										<c:choose>
 											<c:when test="${not singleClaim}">
@@ -68,7 +69,8 @@
 													<c:if test="${empty fn:trim(claimKey)}">
 														<c:set var="claimKey" value="${claim.key}"/>
 													</c:if>
-													<h3 class="visible-xs-block visible-sm-inline-block visible-md-inline-block visible-lg-inline-block h6 mb-0">
+													<h3 class="visible-xs-block visible-sm-inline-block visible-md-inline-block
+													visible-lg-inline-block <c:out value="${classes['perun-attrlist.h3.class']}"/>">
 														${claimKey}:
 													</h3>
 													<c:choose>

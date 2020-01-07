@@ -9,6 +9,7 @@ import cz.muni.ics.oidc.models.Aup;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.web.WebHtmlClasses;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,9 @@ public class AupController {
     @Autowired
     private Localization localization;
 
+    @Autowired
+    private WebHtmlClasses htmlClasses;
+
     @GetMapping(value = "/" + URL)
     public String showAup(HttpServletRequest request, Map<String, Object> model,
                           @SessionAttribute(name = NEW_AUPS) String newAupsString) throws IOException
@@ -72,7 +76,7 @@ public class AupController {
         }
 
         model.put(NEW_AUPS, newAups);
-        ControllerUtils.setPageOptions(model, request, localization, perunOidcConfig);
+        ControllerUtils.setPageOptions(model, request, localization, htmlClasses, perunOidcConfig);
 
         return "aup";
     }

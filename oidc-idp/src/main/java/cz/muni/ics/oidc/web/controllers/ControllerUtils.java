@@ -2,6 +2,7 @@ package cz.muni.ics.oidc.web.controllers;
 
 import com.google.common.base.Strings;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.web.WebHtmlClasses;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
@@ -85,8 +86,10 @@ public class ControllerUtils {
 		return builder.toString();
 	}
 
-	public static void setPageOptions(Map<String, Object> model, HttpServletRequest req, Localization localization, PerunOidcConfig perunOidcConfig) {
+	public static void setPageOptions(Map<String, Object> model, HttpServletRequest req, Localization localization,
+									  WebHtmlClasses classes, PerunOidcConfig perunOidcConfig) {
 		setLanguageForPage(model, req, localization);
+		model.put("classes", classes.getWebHtmlClassesProperties());
 		model.put("theme", perunOidcConfig.getTheme().toLowerCase());
 		model.put("baseURL", perunOidcConfig.getBaseURL());
 		model.put("samlResourcesURL", perunOidcConfig.getSamlResourcesURL());
