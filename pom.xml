@@ -15,6 +15,21 @@
 			<url>http://www.muni.cz/people/3988</url>
 			<organization>ÚVT MU</organization>
 		</developer>
+		<developer>
+			<name>Dominik František Bučík</name>
+			<email>bucik@ics.muni.cz</email>
+			<organization>ÚVT MU</organization>
+		</developer>
+		<developer>
+			<name>Pavel Vyskočil</name>
+			<email>Pavel.Vyskocil@cesnet.cz</email>
+			<organization>CESNET z.s.p.o.</organization>
+		</developer>
+		<developer>
+			<name>Dominik Baránek</name>
+			<email>baranek@ics.muni.cz</email>
+			<organization>ÚVT MU</organization>
+		</developer>
 	</developers>
 
 	<modules>
