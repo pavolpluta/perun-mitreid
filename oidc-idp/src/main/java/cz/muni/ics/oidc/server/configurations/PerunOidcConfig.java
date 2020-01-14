@@ -49,6 +49,7 @@ public class PerunOidcConfig {
 	@Autowired
 	private Properties coreProperties;
 	private String localizationFilesPath;
+	private String webClassesFilePath;
 
 	public void setRpcUrl(String rpcUrl) {
 		this.rpcUrl = rpcUrl;
@@ -185,6 +186,14 @@ public class PerunOidcConfig {
 
 	public void setLocalizationFilesPath(String localizationFilesPath) {
 		this.localizationFilesPath = localizationFilesPath;
+	}
+
+	public String getWebClassesFilePath() {
+		return webClassesFilePath;
+	}
+
+	public void setWebClassesFilePath(String webClassesFilePath) {
+		this.webClassesFilePath = webClassesFilePath;
 	}
 
 	@PostConstruct

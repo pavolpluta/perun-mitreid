@@ -23,7 +23,7 @@
 
 <t:header title="${langProps['consent_header']}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
 
-<h1>${langProps['consent_header']}</h1>
+<h1 class="h3">${langProps['consent_header']}</h1>
 
 </div> <%-- header --%>
 
@@ -46,38 +46,43 @@
 				</c:if>
 
 				<c:set var="singleClaim" value="${fn:length(claims[scope.value]) eq 1}" />
-				<li>
+				<li class="scope-item scope_${fn:escapeXml(scope.value)}">
 					<div class="row">
 						<div class="col-sm-5">
 							<div class="checkbox-wrapper">
 								<input class="mt-0 mr-half" type="checkbox" name="scope_${ fn:escapeXml(scope.value) }" checked="checked"
 									   id="scope_${fn:escapeXml(scope.value)}" value="${fn:escapeXml(scope.value)}">
 							</div>
-							<h2 class="perun-attrname h4">${scopeValue}</h2>
+							<h2 class="perun-attrname <c:out value="${classes['perun-attrname.h2.class']}"/>">
+								<label for="scope_${fn:escapeXml(scope.value)}"
+									   class="<c:out value="${classes['perun-attrname.h2.class']}"/>">${scopeValue}</label>
+							</h2>
 						</div>
 						<div class="perun-attrcontainer col-sm-7">
 							<span class="perun-attrvalue">
-								<ul class="perun-attrlist">
+								<ul class="perun-attrlist <c:out value="${classes['perun-attrcontainer.ul.class']}"/>">
 									<c:forEach var="claim" items="${claims[scope.value]}">
 										<c:choose>
 											<c:when test="${not singleClaim}">
-												<li>
+												<li class="subclaim subclaim_${fn:escapeXml(claim.key)}">
 													<c:set var="claimKey" value="${langProps[claim.key]}"/>
 													<c:if test="${empty fn:trim(claimKey)}">
 														<c:set var="claimKey" value="${claim.key}"/>
 													</c:if>
-													<strong>${claimKey}:</strong>
+													<h3 class="visible-xs-block visible-sm-inline-block visible-md-inline-block
+													visible-lg-inline-block <c:out value="${classes['perun-attrlist.h3.class']}"/>">
+														${claimKey}:
+													</h3>
 													<c:choose>
 														<c:when test="${claim.value.getClass().name eq 'java.util.ArrayList'}">
-															<br/>
-															<ul>
+															<ul class="subclaim-value">visible-md-inline-block
 																<c:forEach var="subValue" items="${claim.value}">
 																	<li>${subValue}</li>
 																</c:forEach>
 															</ul>
 														</c:when>
 														<c:otherwise>
-															${claim.value}
+															<span class="subclaim-value">${claim.value}</span>
 														</c:otherwise>
 													</c:choose>
 												</li>

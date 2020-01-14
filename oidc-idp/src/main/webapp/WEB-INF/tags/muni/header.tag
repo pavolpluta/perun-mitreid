@@ -22,9 +22,6 @@
     <link rel="stylesheet" type="text/css" href="https://id.muni.cz/simplesaml/module.php/muni/css/style2.css?1.2">
 
     <style type="text/css">
-        .mt-0 {
-            margin-top: 0 !important;
-        }
         .checkbox-wrapper {
             float: left;
         }

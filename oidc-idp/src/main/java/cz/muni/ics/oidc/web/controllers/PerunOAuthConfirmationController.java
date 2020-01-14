@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import cz.muni.ics.oidc.server.PerunScopeClaimTranslationService;
 import cz.muni.ics.oidc.server.userInfo.PerunUserInfo;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.web.WebHtmlClasses;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.model.SystemScope;
@@ -70,6 +71,9 @@ public class PerunOAuthConfirmationController{
     @Autowired
     private Localization localization;
 
+    @Autowired
+    private WebHtmlClasses htmlClasses;
+
     @RequestMapping(value = "/oauth/confirm_access", params = { "client_id" })
     public String confirmAccess(Map<String, Object> model, HttpServletRequest req, Principal p,
                                 @ModelAttribute("authorizationRequest") AuthorizationRequest authRequest) {
@@ -100,7 +104,7 @@ public class PerunOAuthConfirmationController{
 
         //prepare scopes in our way
         PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsernameAndClientId(p.getName(),client.getClientId());
-        ControllerUtils.setPageOptions(model, req, localization, perunOidcConfig);
+        ControllerUtils.setPageOptions(model, req, localization, htmlClasses, perunOidcConfig);
         setScopesAndClaims(model, authRequest, user);
 
         if (result.equals("approve") && perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
