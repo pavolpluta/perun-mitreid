@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - Fixed handling of group "members" in resource capabilities
 - Fixed wrong behavior of MFA forced logout
 - Fixed wrong loading of SAML logout URL when specified in properties
+- Fixed wrong handling of date and time because of ignoring time zone (ACR expiration)
 
 ## [v1.23.0]
 ### Changed
