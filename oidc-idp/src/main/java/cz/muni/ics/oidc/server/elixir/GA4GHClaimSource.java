@@ -67,6 +67,7 @@ public class GA4GHClaimSource extends ClaimSource {
 
 	private static final String BONA_FIDE_URL = "https://doi.org/10.1038/s41431-018-0219-y";
 	private static final String ELIXIR_ORG_URL = "https://elixir-europe.org/";
+	private static final String ELIXIR_ID = "elixir_id";
 
 	private RestTemplate remsRestTemplate;
 	private String remsUrl;
@@ -228,11 +229,11 @@ public class GA4GHClaimSource extends ClaimSource {
 		Set<String> linkedIdentities = new HashSet<>();
 		//call Resource Entitlement Management System
 		if (remsRestTemplate != null) {
-			callPermissionsJwtAPI(remsRestTemplate, remsUrl + pctx.getSub(), pctx, passport, linkedIdentities);
+			callPermissionsJwtAPI(remsRestTemplate, remsUrl,  Collections.singletonMap(ELIXIR_ID, pctx.getSub()), pctx, passport, linkedIdentities);
 		}
 		//call European Genome Archive
 		if (egaRestTemplate != null) {
-			callPermissionsAPI(egaRestTemplate, egaUrl + pctx.getSub() + "/", pctx, passport);
+			callPermissionsJwtAPI(egaRestTemplate, egaUrl, Collections.singletonMap(ELIXIR_ID, pctx.getSub()), pctx, passport, linkedIdentities);
 		}
 		if (!linkedIdentities.isEmpty()) {
 			long now = Instant.now().getEpochSecond();
@@ -242,8 +243,8 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 	}
 
-	private void callPermissionsJwtAPI(RestTemplate restTemplate, String actionURL, ClaimSourceProduceContext pctx, ArrayNode passport, Set<String> linkedIdentities) {
-		JsonNode response = callHttpJsonAPI(restTemplate, actionURL);
+	private void callPermissionsJwtAPI(RestTemplate restTemplate, String actionURL, Map<String,String> uriVariables, ClaimSourceProduceContext pctx, ArrayNode passport, Set<String> linkedIdentities) {
+		JsonNode response = callHttpJsonAPI(restTemplate, actionURL, uriVariables);
 		if (response != null) {
 			JsonNode visas = response.path(GA4GH_CLAIM);
 			if (visas.isArray()) {
@@ -283,6 +284,7 @@ public class GA4GHClaimSource extends ClaimSource {
 	static {
 		createTrustedJwksUrl("https://jwt-elixir-rems-proxy.rahtiapp.fi/jwks.json", "REMS");
 		createTrustedJwksUrl("https://login.elixir-czech.org/oidc/jwk", "ELIXIR");
+		createTrustedJwksUrl("https://ega.ebi.ac.uk:8053/ega-openid-connect-server/jwk", "EGA");
 	}
 
 	public static PassportVisa parseAndVerifyVisa(String jwtString) {
@@ -319,7 +321,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		checkVisaKey(visa, doc, "sub");
 		checkVisaKey(visa, doc, "exp");
 		checkVisaKey(visa, doc, "iss");
-		JsonNode visa_v1 = doc.get("ga4gh_visa_v1");
+		JsonNode visa_v1 = doc.path("ga4gh_visa_v1");
 		checkVisaKey(visa, visa_v1, "type");
 		checkVisaKey(visa, visa_v1, "asserted");
 		checkVisaKey(visa, visa_v1, "value");
@@ -339,41 +341,30 @@ public class GA4GHClaimSource extends ClaimSource {
 	}
 
 	static private void checkVisaKey(PassportVisa visa, JsonNode jsonNode, String key) {
-		if (jsonNode.get(key).isMissingNode()) {
+		if (jsonNode.path(key).isMissingNode()) {
 			log.warn(key + " is missing");
 			visa.setVerified(false);
-		}
-	}
-
-	private void callPermissionsAPI(RestTemplate restTemplate, String actionURL, ClaimSourceProduceContext pctx, ArrayNode passport) {
-		JsonNode permissions = callHttpJsonAPI(restTemplate, actionURL);
-		if (permissions != null) {
-			JsonNode grants = permissions.path("ga4gh").path("ControlledAccessGrants");
-			if (grants.isArray()) {
-				for (JsonNode grant : grants) {
-					String value = grant.path("value").asText();
-					String source = grant.path("source").asText();
-					String by = grant.path("by").asText();
-					long asserted = grant.path("asserted").asLong();
-					long expires = grant.path("expires").asLong();
-					JsonNode condition = grant.get("condition");
-					passport.add(createPassportVisa("ControlledAccessGrants", pctx, value, source, by, asserted, expires, condition));
-				}
-			} else {
-				log.warn("permissions is not an array in {}", permissions);
+		} else {
+			switch (key) {
+				case "sub": visa.setSub(jsonNode.path(key).asText()); break;
+				case "iss": visa.setIss(jsonNode.path(key).asText()); break;
+				case "type": visa.setType(jsonNode.path(key).asText()); break;
+				case "value": visa.setValue(jsonNode.path(key).asText()); break;
 			}
 		}
 	}
 
 	@SuppressWarnings("Duplicates")
-	private static JsonNode callHttpJsonAPI(RestTemplate rt, String actionUrl) {
+	private static JsonNode callHttpJsonAPI(RestTemplate rt, String actionUrl, Map<String,String> uriVariables) {
 		//get permissions data
 		try {
 			JsonNode result;
 			//make the call
 			try {
-				log.debug("calling Permissions API at {}", actionUrl);
-				result = rt.getForObject(actionUrl, JsonNode.class);
+				if(log.isDebugEnabled()) {
+					log.debug("calling Permissions API at {}", rt.getUriTemplateHandler().expand(actionUrl, uriVariables));
+				}
+				result = rt.getForObject(actionUrl, JsonNode.class, uriVariables);
 			} catch (HttpClientErrorException ex) {
 				MediaType contentType = ex.getResponseHeaders().getContentType();
 				String body = ex.getResponseBodyAsString();
@@ -407,6 +398,10 @@ public class GA4GHClaimSource extends ClaimSource {
 		String linkedIdentity;
 		String signer;
 		String prettyPayload;
+		private String sub;
+		private String iss;
+		private String type;
+		private String value;
 
 		PassportVisa(String jwt) {
 			this.jwt = jwt;
@@ -447,12 +442,47 @@ public class GA4GHClaimSource extends ClaimSource {
 		@Override
 		public String toString() {
 			return "PassportVisa{" +
-					"jwt='" + jwt + '\'' +
+//					"jwt='" + jwt + '\'' +
+					"  type=" + type +
+					", sub=" + sub +
+					", iss=" + iss +
+					", value=" + value +
 					", verified=" + verified +
 					", linkedIdentity=" + linkedIdentity +
 					'}';
 		}
 
+		public void setSub(String sub) {
+			this.sub = sub;
+		}
+
+		public String getSub() {
+			return sub;
+		}
+
+		public void setIss(String iss) {
+			this.iss = iss;
+		}
+
+		public String getIss() {
+			return iss;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public void setValue(String value) {
+			this.value = value;
+		}
+
+		public String getValue() {
+			return value;
+		}
 	}
 
 
