@@ -75,7 +75,8 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 
 		String state = params.get(Acr.PARAM_STATE);
 		String acrValues = params.get(Acr.PARAM_ACR);
-		Acr acr = acrRepository.get(sub, clientId, acrValues, state);
+
+		Acr acr = acrRepository.getActive(sub, clientId, acrValues, state);
 
 		String authnContextClass = null;
 		if (acr != null) {

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -174,9 +175,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		Acr acr = new Acr(sub, clientId, acrValues, state, shibAuthnContextClass);
 
-		long t = Calendar.getInstance().getTimeInMillis();
-		Date afterAddingTenMins = new Date(t + (10 * ONE_MINUTE_IN_MILLIS));
-		acr.setExpiration(afterAddingTenMins);
+		long expiresAtEpoch = Instant.now().plusSeconds(600L).toEpochMilli();
+		acr.setExpiresAt(expiresAtEpoch);
 
 		log.debug("storing acr: {}", acr);
 		acrRepository.store(acr);
