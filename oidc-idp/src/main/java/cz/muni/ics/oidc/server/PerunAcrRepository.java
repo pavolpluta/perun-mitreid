@@ -11,6 +11,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
+import java.util.Calendar;
 import java.util.Date;
 
 @Repository
@@ -29,6 +30,9 @@ public class PerunAcrRepository {
 		query.setParameter(Acr.PARAM_CLIENT_ID, clientId);
 		query.setParameter(Acr.PARAM_ACR, acr);
 		query.setParameter(Acr.PARAM_STATE, state);
+		long t = Calendar.getInstance().getTimeInMillis();
+		Date expiration = new Date(t);
+		query.setParameter(Acr.PARAM_EXPIRATION, expiration);
 
 		Acr result = query.getSingleResult();
 		log.trace("get() returns: {}", result);
