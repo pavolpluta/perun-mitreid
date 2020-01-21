@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Consent uses the loading of HTML classes from the file for some elements
 - Updated templates for consent page
 - Moved logs of user logins into the statistics filter, removed userID from it
+- Changed handling of user logins
 ### Fixed
 - Fixed handling of group "members" in resource capabilities
 - Fixed wrong behavior of MFA forced logout

@@ -12,7 +12,6 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.time.Instant;
-import java.util.Date;
 
 @Repository
 @Transactional(value="defaultTransactionManager")
@@ -30,10 +29,6 @@ public class PerunAcrRepository {
 		query.setParameter(Acr.PARAM_CLIENT_ID, clientId);
 		query.setParameter(Acr.PARAM_ACR, acr);
 		query.setParameter(Acr.PARAM_STATE, state);
-		long t = Calendar.getInstance().getTimeInMillis();
-		Date expiration = new Date(t);
-		query.setParameter(Acr.PARAM_EXPIRATION, expiration);
-
 		long currentEpochTime = Instant.now().toEpochMilli();
 		query.setParameter(Acr.PARAM_EXPIRES_AT, currentEpochTime);
 
@@ -77,7 +72,7 @@ public class PerunAcrRepository {
 	public void deleteExpired() {
 		log.trace("deleteExpired()");
 		Query query = manager.createNamedQuery(Acr.DELETE_EXPIRED);
-		query.setParameter(Acr.PARAM_EXPIRES_AT, new Date(System.currentTimeMillis()));
+		query.setParameter(Acr.PARAM_EXPIRES_AT, Instant.now().toEpochMilli());
 		query.executeUpdate();
 	}
 }
