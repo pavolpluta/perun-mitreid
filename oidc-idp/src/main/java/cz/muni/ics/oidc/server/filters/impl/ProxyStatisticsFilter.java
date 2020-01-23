@@ -2,6 +2,9 @@ package cz.muni.ics.oidc.server.filters.impl;
 
 import com.google.common.base.Strings;
 import cz.muni.ics.oidc.BeanUtil;
+import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
@@ -24,6 +27,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
+
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.CLIENT_ID;
 
 
 /**
@@ -71,6 +76,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 	private final OAuth2RequestFactory authRequestFactory;
 	private final ClientDetailsEntityService clientService;
 	private final DataSource mitreIdStats;
+	private final PerunOidcConfig config;
 
 	public ProxyStatisticsFilter(PerunRequestFilterParams params) {
 		super(params);
@@ -80,6 +86,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
 		this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
 		this.mitreIdStats = beanUtil.getBean("mitreIdStats", DataSource.class);
+		this.config = beanUtil.getBean(PerunOidcConfig.class);
 
 		this.idpNameAttributeName = params.getProperty(IDP_NAME_ATTRIBUTE_NAME);
 		this.idpEntityIdAttributeName = params.getProperty(IDP_ENTITY_ID_ATTRIBUTE_NAME);
@@ -120,8 +127,11 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		String idpName = changeEncodingOfParam(idpNameFromRequest,
 				StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8);
 
+
 		String userId = request.getUserPrincipal().getName();
 		insertLogin(idpEntityId, idpName, clientIdentifier, clientName, userId);
+
+		logUserLogin(request);
 
 		return true;
 	}
@@ -203,5 +213,26 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		}
 
 		return null;
+	}
+
+	private void logUserLogin(HttpServletRequest req) {
+		String clientId = req.getParameter(CLIENT_ID);
+
+		if (clientId == null || clientId.isEmpty()) {
+			return;
+		}
+
+		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
+		if (client == null) {
+			return;
+		}
+
+		PerunPrincipal perunPrincipal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
+		if (perunPrincipal == null) {
+			return;
+		}
+
+		log.info("User identity: {}, service: {}, serviceName: {}, via IdP: {}", perunPrincipal.getExtLogin(),
+				client.getClientId(), client.getClientName(), perunPrincipal.getExtSourceName() );
 	}
 }

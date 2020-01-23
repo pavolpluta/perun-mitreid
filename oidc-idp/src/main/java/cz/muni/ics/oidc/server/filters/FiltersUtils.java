@@ -18,6 +18,8 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+
 /**
  * Utility class for filters. Contains common methods used by most of filter classes.
  *
@@ -100,5 +102,36 @@ public class FiltersUtils {
 
 		PerunPrincipal principal = new PerunPrincipal(p.getName(), extSourceName);
 		return perunConnector.getPreauthenticatedUserId(principal);
+	}
+
+	/**
+	 * Extract PerunPrincipal from request
+	 * @param req request object
+	 * @param proxyExtSourceName name of proxy
+	 * @return extracted principal or null if not present
+	 */
+	public static PerunPrincipal extractPerunPrincipal(HttpServletRequest req, String proxyExtSourceName) {
+		String extLogin = null;
+		String extSourceName = null;
+
+		String shibIdentityProvider = proxyExtSourceName;
+		if (shibIdentityProvider == null) {
+			shibIdentityProvider = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
+		}
+		String remoteUser = req.getRemoteUser();
+
+		if (isNotEmpty(shibIdentityProvider)) {
+			extSourceName = shibIdentityProvider;
+		}
+
+		if (isNotEmpty(remoteUser)) {
+			extLogin = remoteUser;
+		}
+
+		if (extSourceName == null || extLogin == null) {
+			return null;
+		}
+
+		return new PerunPrincipal(extLogin, extSourceName);
 	}
 }
