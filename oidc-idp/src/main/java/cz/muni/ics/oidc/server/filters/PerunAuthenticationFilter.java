@@ -73,15 +73,12 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	@Autowired
 	private PerunAcrRepository acrRepository;
 
-	@Autowired
-	private ClientDetailsEntityService clientService;
-
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 
-		PerunPrincipal principal = extractPerunPrincipal(req);
+		PerunPrincipal principal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
 		String clientId = null;
 
 		if (req.getParameter(Acr.PARAM_CLIENT_ID) != null) {
@@ -104,8 +101,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 				}
 			}
 
-			logUserLogin(req, principal);
-
 			super.doFilter(request, response, chain);
 		}
 	}
@@ -120,7 +115,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	protected Object getPreAuthenticatedPrincipal(HttpServletRequest req) {
 		log.debug("getPreAuthenticatedPrincipal()");
 
-		PerunPrincipal perunPrincipal = extractPerunPrincipal(req);
+		PerunPrincipal perunPrincipal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
 		if (perunPrincipal == null) {
 			String shibIdentityProvider = config.getProxyExtSourceName();
 			if (shibIdentityProvider == null) {
@@ -139,31 +134,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	@Override
 	protected Object getPreAuthenticatedCredentials(HttpServletRequest httpServletRequest) {
 		return "no credentials";
-	}
-
-	private PerunPrincipal extractPerunPrincipal(HttpServletRequest req) {
-		String extLogin = null;
-		String extSourceName = null;
-
-		String shibIdentityProvider = config.getProxyExtSourceName();
-		if (shibIdentityProvider == null) {
-			shibIdentityProvider = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
-		}
-		String remoteUser = req.getRemoteUser();
-
-		if (isNotEmpty(shibIdentityProvider)) {
-			extSourceName = shibIdentityProvider;
-		}
-
-		if (isNotEmpty(remoteUser)) {
-			extLogin = remoteUser;
-		}
-
-		if (extSourceName == null || extLogin == null) {
-			return null;
-		}
-
-		return new PerunPrincipal(extLogin, extSourceName);
 	}
 
 	private boolean handleACR(HttpServletRequest req, HttpServletResponse res, PerunPrincipal principal, String clientId)
@@ -389,25 +359,4 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return result;
 	}
 
-	private void logUserLogin(HttpServletRequest req, PerunPrincipal principal) {
-		String clientId = req.getParameter(CLIENT_ID);
-
-		if (clientId == null || clientId.isEmpty()) {
-			return;
-		}
-
-		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
-		if (client == null) {
-			return;
-		}
-
-		PerunUser user = perunConnector.getPreauthenticatedUserId(principal);
-		Long userId = null;
-		if (user != null) {
-			userId = user.getId();
-		}
-
-		log.info("UserId: {}, identity: {}, service: {}, serviceName: {}, via IdP: {}", userId,
-				principal.getExtLogin(), client.getClientId(), client.getClientName(), principal.getExtSourceName() );
-	}
 }
