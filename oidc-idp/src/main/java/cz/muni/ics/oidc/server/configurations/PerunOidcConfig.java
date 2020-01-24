@@ -50,6 +50,7 @@ public class PerunOidcConfig {
 	private Properties coreProperties;
 	private String localizationFilesPath;
 	private String webClassesFilePath;
+	private String emailContact;
 
 	public void setRpcUrl(String rpcUrl) {
 		this.rpcUrl = rpcUrl;
@@ -196,6 +197,14 @@ public class PerunOidcConfig {
 		this.webClassesFilePath = webClassesFilePath;
 	}
 
+	public String getEmailContact() {
+		return emailContact;
+	}
+
+	public void setEmailContact(String emailContact) {
+		this.emailContact = emailContact;
+	}
+
 	@PostConstruct
 	public void postInit() {
 		//load URLs from properties if available or construct them from issuer URL
@@ -239,6 +248,7 @@ public class PerunOidcConfig {
 			log.info("Proxy EXT_SOURCE name: {}", proxyExtSourceName);
 			log.info("Available languages: {}", availableLangs);
 			log.info("Localization files path: {}", localizationFilesPath);
+			log.info("Email contact: {}", emailContact);
 			log.info("MitreID version: {}", getMitreidVersion());
 			log.info("Perun OIDC version: {}", getPerunOIDCVersion());
 		}

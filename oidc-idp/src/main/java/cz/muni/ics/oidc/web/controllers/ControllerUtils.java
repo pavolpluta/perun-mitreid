@@ -10,7 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -28,6 +31,7 @@ public class ControllerUtils {
 	private static final String LANG_KEY = "lang";
 	private static final String REQ_URL_KEY = "reqURL";
 	private static final String LANGS_MAP_KEY = "langsMap";
+	public static final String LANG_PROPS_KEY = "langProps";
 
 	public static void setLanguageForPage(Map<String, Object> model, HttpServletRequest req, Localization localization) {
 		String langFromParam = req.getParameter(LANG_KEY);
@@ -59,12 +63,20 @@ public class ControllerUtils {
 		model.put(LANG_KEY, langKey);
 		model.put(REQ_URL_KEY, reqUrl);
 		model.put(LANGS_MAP_KEY, localization.getEntriesAvailable());
-		model.put("langProps", langProperties);
+		model.put(LANG_PROPS_KEY, langProperties);
 	}
 
+	/**
+	 * Create redirect URL
+	 * @param request Request object
+	 * @param removedPart Part of URL to be removed
+	 * @param pathPart What to include as Path
+	 * @param params Map object of parameters
+	 * @return
+	 */
 	public static String createRedirectUrl(HttpServletRequest request, String removedPart,
 										   String pathPart, Map<String, String> params) {
-		log.trace("createRedirectUrl({}, {}, {}, {})", request, removedPart, pathPart, params);
+		log.trace("createRedirectUrl({}, {}, {}, {})", request.getRequestURL(), removedPart, pathPart, params);
 		int endIndex = request.getRequestURL().toString().indexOf(removedPart);
 		String baseUrl = request.getRequestURL().toString().substring(0, endIndex);
 
@@ -74,10 +86,15 @@ public class ControllerUtils {
 		if (! params.isEmpty()) {
 			builder.append('?');
 			for (Map.Entry<String, String> entry: params.entrySet()) {
-				builder.append(entry.getKey());
-				builder.append('=');
-				builder.append(entry.getValue());
-				builder.append('&');
+				try {
+					String encodedParamVal = URLEncoder.encode(entry.getValue(), String.valueOf(StandardCharsets.UTF_8));
+					builder.append(entry.getKey());
+					builder.append('=');
+					builder.append(encodedParamVal);
+					builder.append('&');
+				} catch (UnsupportedEncodingException e) {
+					log.warn("Failed to encode param: {}, {}", entry.getKey(), entry.getValue());
+				}
 			}
 			builder.deleteCharAt(builder.length() - 1);
 		}

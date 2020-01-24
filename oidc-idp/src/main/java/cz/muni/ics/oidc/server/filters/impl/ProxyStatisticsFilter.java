@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
@@ -28,7 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
-import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.CLIENT_ID;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_CLIENT_ID;
 
 
 /**
@@ -216,7 +215,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 	}
 
 	private void logUserLogin(HttpServletRequest req) {
-		String clientId = req.getParameter(CLIENT_ID);
+		String clientId = req.getParameter(PARAM_CLIENT_ID);
 
 		if (clientId == null || clientId.isEmpty()) {
 			return;

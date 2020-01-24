@@ -50,6 +50,7 @@
 				<prop key="web.langs.customfiles.path">/etc/perun</prop>
 				<prop key="web.classes.path">/etc/perun/web/classes.properties</prop>
 				<prop key="web.baseURL">https://login.cesnet.cz/proxy</prop>
+				<prop key="email.contact">login@cesnet.cz</prop>
 				<prop key="idpFilters.askPerun.enabled">false</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
 				<prop key="id_token.scopes">openid,profile,email,phone,address</prop>
@@ -168,6 +169,7 @@
 		<property name="availableLangs" value="#{'${web.langs}'.split('\s*,\s*')}"/>
 		<property name="localizationFilesPath" value="${web.langs.customfiles.path}"/>
 		<property name="webClassesFilePath" value="${web.classes.path}"/>
+		<property name="emailContact" value="${email.contact}"/>
 	</bean>
 
 	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig">

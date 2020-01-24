@@ -15,9 +15,13 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
+import java.util.AbstractMap;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_FORCE_AUTHN;
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
 /**
@@ -133,5 +137,80 @@ public class FiltersUtils {
 		}
 
 		return new PerunPrincipal(extLogin, extSourceName);
+	}
+
+	/**
+	 * Check if given scope has been requested
+	 * @param scopeParam Value of parameter "scope" from request
+	 * @param scope Name of scope to be found.
+	 * @return TRUE if present, false otherwise
+	 */
+	public static boolean isScopePresent(String scopeParam, String scope) {
+		if (scopeParam == null || scopeParam.trim().isEmpty()) {
+			return false;
+		}
+
+		String[] scopes = scopeParam.split(" ");
+		for (String s : scopes) {
+			if (s.equals(scope)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Build URL of original request, remove forceAuthn parameter.
+	 * @param req request wrapper object
+	 * @return Rebuilt URL.
+	 */
+	public static String buildRequestURL(HttpServletRequest req) {
+		return buildRequestURL(req, null);
+	}
+
+	/**
+	 * Build URL of original request, remove forceAuthn parameter, add new parameters if passed.
+	 * @param req request wrapper object
+	 * @param additionalParams parameters to be added
+	 * @return Rebuilt URL.
+	 */
+	public static String buildRequestURL(HttpServletRequest req, Map<String, String> additionalParams) {
+		log.trace("buildReturnUrl({})", req);
+
+		String returnURL = req.getRequestURL().toString();
+
+		if (req.getQueryString() != null) {
+			if (req.getQueryString().contains(PARAM_FORCE_AUTHN)) {
+				String queryStr = removeForceAuthParam(req.getQueryString());
+				returnURL += ('?' + queryStr);
+			} else {
+				returnURL += ('?' + req.getQueryString());
+			}
+
+			if (additionalParams != null) {
+				returnURL += ('&' + additionalParams.entrySet().stream()
+						.map(pair -> pair.getKey() + '=' + pair.getValue())
+						.collect(Collectors.joining("&")));
+			}
+		}
+
+		log.trace("buildReturnUrl() returns: {}", returnURL);
+		return returnURL;
+	}
+
+	private static String removeForceAuthParam(String query) {
+		return Arrays.stream(query.split("&"))
+				.map(FiltersUtils::splitQueryParameter)
+				.filter(pair -> !PARAM_FORCE_AUTHN.equals(pair.getKey()))
+				.map(pair -> pair.getKey() + "=" + pair.getValue())
+				.collect(Collectors.joining("&"));
+	}
+
+	private static Map.Entry<String, String> splitQueryParameter(String it) {
+		final int idx = it.indexOf("=");
+		final String key = (idx > 0) ? it.substring(0, idx) : it;
+		final String value = (idx > 0 && it.length() > idx + 1) ? it.substring(idx + 1) : "";
+		return new AbstractMap.SimpleImmutableEntry<>(key, value);
 	}
 }

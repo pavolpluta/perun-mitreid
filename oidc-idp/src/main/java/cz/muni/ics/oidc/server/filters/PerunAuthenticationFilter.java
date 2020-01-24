@@ -24,15 +24,25 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
+
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.EFILTER_PREFIX;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.FILTER_PREFIX;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.IDP_ENTITY_ID_PREFIX;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_AUTHN_CONTEXT_CLASS_REF;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_FORCE_AUTHN;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_LOGGED_OUT;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_TARGET;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_WAYF_EFILTER;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_WAYF_FILTER;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_WAYF_IDP;
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.REFEDS_MFA;
+import static org.mitre.oauth2.model.RegisteredClientFields.CLIENT_ID;
 
 /**
  * Extracts preauthenticated user id. The user must be already authenticated by Kerberos, Shibboleth, X509,
@@ -43,20 +53,6 @@ import java.util.stream.Collectors;
 public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessingFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthenticationFilter.class);
-
-	private static final String WAYF_IDP = "wayf_idpentityid";
-	private static final String WAYF_FILTER = "wayf_filter";
-	private static final String WAYF_EFILTER = "wayf_efilter";
-	private static final String CLIENT_ID = "client_id";
-	private static final String IDP_ENTITY_ID_PREFIX = "urn:cesnet:proxyidp:idpentityid:";
-	private static final String FILTER_PREFIX = "urn:cesnet:proxyidp:filter:";
-	private static final String EFILTER_PREFIX = "urn:cesnet:proxyidp:efilter:";
-
-	private static final String AUTHN_CONTEXT_CLASS_REF = "authnContextClassRef";
-	private static final String REFEDS_MFA = "https://refeds.org/profile/mfa";
-	private static final String FORCE_AUTHN = "forceAuthn";
-	private static final String LOGIN_PARAM_TARGET = "target";
-	private static final String PARAM_LOGOUT_PERFORMED = "loggedOut";
 
 	@Autowired
 	private PerunConnector perunConnector;
@@ -87,7 +83,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			// MFA - go to login with forceAuthn and also add loggedOut (as otherwise it would match the ACR again)
 			log.debug("MFA requested, force login");
 			redirectURL = buildLoginURL(req, clientId, true, true);
-		} else if (req.getParameter(FORCE_AUTHN) != null) {
+		} else if (req.getParameter(PARAM_FORCE_AUTHN) != null) {
 			// FORCE AUTHENTICATION - go to login with forceAuthn, it wil get removed and will not match when returned back
 			log.debug("Force login");
 			redirectURL = buildLoginURL(req, clientId, true, false);
@@ -114,7 +110,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	private boolean mfaRequestedAndNotPerformedYet(HttpServletRequest req) {
 		return req.getParameter(Acr.PARAM_ACR) != null
 				&& req.getParameter(Acr.PARAM_ACR).contains(REFEDS_MFA)
-				&& req.getParameter(PARAM_LOGOUT_PERFORMED) == null;
+				&& req.getParameter(PARAM_LOGGED_OUT) == null;
 	}
 
 	/**
@@ -174,70 +170,27 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		String returnURL;
 		if (addLoggedOut) {
-			returnURL = buildRequestURL(req, Collections.singletonMap(PARAM_LOGOUT_PERFORMED, "true"));
+			returnURL = FiltersUtils.buildRequestURL(req, Collections.singletonMap(PARAM_LOGGED_OUT, "true"));
 		} else {
-			returnURL = buildRequestURL(req);
+			returnURL = FiltersUtils.buildRequestURL(req);
 		}
 		String authnContextClassRef = buildAuthnContextClassRef(clientId, req);
 
 		String base = config.getSamlLoginURL();
 		Map<String, String> params = new HashMap<>();
-		params.put(LOGIN_PARAM_TARGET, returnURL);
+		params.put(PARAM_TARGET, returnURL);
 
 		if (authnContextClassRef != null && !authnContextClassRef.trim().isEmpty()) {
-			params.put(AUTHN_CONTEXT_CLASS_REF, authnContextClassRef);
+			params.put(PARAM_AUTHN_CONTEXT_CLASS_REF, authnContextClassRef);
 		}
 		if (forceAuthn) {
-			params.put(FORCE_AUTHN, "true");
+			params.put(PARAM_FORCE_AUTHN, "true");
 		}
 
 		String loginURL = buildStringURL(base, params);
 
 		log.debug("constructLoginRedirectUrl returns: '{}'", loginURL);
 		return loginURL;
-	}
-
-	private String buildRequestURL(HttpServletRequest req) {
-		return buildRequestURL(req, null);
-	}
-
-	private String buildRequestURL(HttpServletRequest req, Map<String, String> additionalParams) {
-		log.trace("buildReturnUrl({})", req);
-
-		String returnURL = req.getRequestURL().toString();
-
-		if (req.getQueryString() != null) {
-			if (req.getQueryString().contains(FORCE_AUTHN)) {
-				String queryStr = removeForceAuthParam(req.getQueryString());
-				returnURL += ('?' + queryStr);
-			} else {
-				returnURL += ('?' + req.getQueryString());
-			}
-
-			if (additionalParams != null) {
-				returnURL += ('&' + additionalParams.entrySet().stream()
-						.map(pair -> pair.getKey() + '=' + pair.getValue())
-						.collect(Collectors.joining("&")));
-			}
-		}
-
-		log.trace("buildReturnUrl() returns: {}", returnURL);
-		return returnURL;
-	}
-
-	public String removeForceAuthParam(String query) {
-		return Arrays.stream(query.split("&"))
-				.map(this::splitQueryParameter)
-				.filter(pair -> !FORCE_AUTHN.equals(pair.getKey()))
-				.map(pair -> pair.getKey() + "=" + pair.getValue())
-				.collect(Collectors.joining("&"));
-	}
-
-	public Map.Entry<String, String> splitQueryParameter(String it) {
-		final int idx = it.indexOf("=");
-		final String key = (idx > 0) ? it.substring(0, idx) : it;
-		final String value = (idx > 0 && it.length() > idx + 1) ? it.substring(idx + 1) : "";
-		return new AbstractMap.SimpleImmutableEntry<>(key, value);
 	}
 
 	private String buildAuthnContextClassRef(String clientId, HttpServletRequest req) {
@@ -308,8 +261,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		String idpFilter = extractIdpFilter(req, filterAttributes);
 		String idpEfilter = extractIdpEFilter(req, filterAttributes);
 
-		if (req.getParameter(WAYF_IDP) != null) {
-			idpEntityId = req.getParameter(WAYF_IDP);
+		if (req.getParameter(PARAM_WAYF_IDP) != null) {
+			idpEntityId = req.getParameter(PARAM_WAYF_IDP);
 		}
 
 		if (idpEntityId != null) {
@@ -338,8 +291,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	private String extractIdpEFilter(HttpServletRequest req, Map<String, PerunAttribute> filterAttributes) {
 		log.debug("extractIdpEFilter");
 		String result = null;
-		if (req.getParameter(WAYF_EFILTER) != null) {
-			result = req.getParameter(WAYF_EFILTER);
+		if (req.getParameter(PARAM_WAYF_EFILTER) != null) {
+			result = req.getParameter(PARAM_WAYF_EFILTER);
 		} else if (filterAttributes.get(facilityAttrsConfig.getWayfEFilterAttr()) != null) {
 			PerunAttribute filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfEFilterAttr());
 			if (filterAttribute.getValue() != null) {
@@ -354,8 +307,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	private String extractIdpFilter(HttpServletRequest req, Map<String, PerunAttribute> filterAttributes) {
 		log.debug("extractIdpFilter");
 		String result = null;
-		if (req.getParameter(WAYF_FILTER) != null) {
-			result = req.getParameter(WAYF_FILTER);
+		if (req.getParameter(PARAM_WAYF_FILTER) != null) {
+			result = req.getParameter(PARAM_WAYF_FILTER);
 		} else if (filterAttributes.get(facilityAttrsConfig.getWayfFilterAttr()) != null) {
 			PerunAttribute filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfFilterAttr());
 			if (filterAttribute.getValue() != null) {
