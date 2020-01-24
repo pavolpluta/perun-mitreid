@@ -9,27 +9,25 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-import javax.persistence.Temporal;
-import java.util.Date;
 
 import static org.mitre.openid.connect.models.Acr.PARAM_ACR;
-import static org.mitre.openid.connect.models.Acr.PARAM_EXPIRATION;
+import static org.mitre.openid.connect.models.Acr.PARAM_EXPIRES_AT;
 import static org.mitre.openid.connect.models.Acr.PARAM_SUB;
 
 @Entity
 @Table(name = "acrs")
 @NamedQueries({
-		@NamedQuery(name = Acr.GET, query = "SELECT acr FROM Acr acr WHERE " +
+		@NamedQuery(name = Acr.GET_ACTIVE, query = "SELECT acr FROM Acr acr WHERE " +
 				"acr.sub = :" + PARAM_SUB +
 				" AND acr.clientId = :" + Acr.PARAM_CLIENT_ID +
 				" AND acr.acrValues = :" + PARAM_ACR + " AND acr.state = :" + Acr.PARAM_STATE +
-				" AND acr.expiration >= :" + Acr.PARAM_EXPIRATION),
+				" AND acr.expiresAt > :" + PARAM_EXPIRES_AT),
 		@NamedQuery(name = Acr.GET_BY_ID, query = "SELECT acr from Acr acr WHERE acr.id = :" + Acr.PARAM_ID),
-		@NamedQuery(name = Acr.DELETE_EXPIRED, query = "DELETE FROM Acr acr WHERE acr.expiration <= :" + Acr.PARAM_EXPIRATION)
+		@NamedQuery(name = Acr.DELETE_EXPIRED, query = "DELETE FROM Acr acr WHERE acr.expiresAt <= :" + Acr.PARAM_EXPIRES_AT)
 })
 public class Acr {
 
-	public static final String GET = "Acr.get";
+	public static final String GET_ACTIVE = "Acr.getActive";
 	public static final String GET_BY_ID = "Acr.getById";
 	public static final String DELETE_EXPIRED = "Acr.deleteExpired";
 
@@ -38,7 +36,7 @@ public class Acr {
 	public static final String PARAM_CLIENT_ID = "client_id";
 	public static final String PARAM_ACR = "acr_values";
 	public static final String PARAM_STATE = "state";
-	public static final String PARAM_EXPIRATION = "expiration";
+	public static final String PARAM_EXPIRES_AT = "expiration";
 
 	private Long id;
 	private String sub;
@@ -46,7 +44,7 @@ public class Acr {
 	private String acrValues;
 	private String state;
 	private String shibAuthnContextClass;
-	private Date expiration;
+	private long expiresAt;
 
 	public Acr() {
 
@@ -129,14 +127,13 @@ public class Acr {
 	}
 
 	@Basic
-	@Temporal(javax.persistence.TemporalType.TIMESTAMP)
 	@Column(name = "expiration")
-	public Date getExpiration() {
-		return expiration;
+	public long getExpiresAt() {
+		return expiresAt;
 	}
 
-	public void setExpiration(Date expiration) {
-		this.expiration = expiration;
+	public void setExpiresAt(long expiresAt) {
+		this.expiresAt = expiresAt;
 	}
 
 	@Override
@@ -148,7 +145,7 @@ public class Acr {
 				", acr='" + acrValues + '\'' +
 				", state='" + state + '\'' +
 				", shibAuthnContextClass='" + shibAuthnContextClass + '\'' +
-				", expiration=" + expiration +
+				", expiration=" + expiresAt +
 				'}';
 	}
 }

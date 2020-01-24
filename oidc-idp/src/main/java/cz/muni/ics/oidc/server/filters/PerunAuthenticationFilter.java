@@ -1,16 +1,13 @@
 package cz.muni.ics.oidc.server.filters;
 
-import org.mitre.openid.connect.models.Acr;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.server.PerunAcrRepository;
-import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
-import org.mitre.oauth2.model.ClientDetailsEntity;
-import org.mitre.oauth2.service.ClientDetailsEntityService;
+import org.mitre.openid.connect.models.Acr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,16 +23,16 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import java.util.stream.Collectors;
 
 /**
  * Extracts preauthenticated user id. The user must be already authenticated by Kerberos, Shibboleth, X509,
@@ -57,9 +54,9 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 	private static final String AUTHN_CONTEXT_CLASS_REF = "authnContextClassRef";
 	private static final String REFEDS_MFA = "https://refeds.org/profile/mfa";
-	private static final String LOGOUT_PARAM = "loggedOut";
-
-	private static final long ONE_MINUTE_IN_MILLIS = 60000;
+	private static final String FORCE_AUTHN = "forceAuthn";
+	private static final String LOGIN_PARAM_TARGET = "target";
+	private static final String PARAM_LOGOUT_PERFORMED = "loggedOut";
 
 	@Autowired
 	private PerunConnector perunConnector;
@@ -81,28 +78,43 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		PerunPrincipal principal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
 		String clientId = null;
 
-		if (req.getParameter(Acr.PARAM_CLIENT_ID) != null) {
-			clientId = req.getParameter(Acr.PARAM_CLIENT_ID);
+		if (req.getParameter(CLIENT_ID) != null) {
+			clientId = req.getParameter(CLIENT_ID);
 		}
 
-		if (principal == null || principal.getExtLogin() == null || principal.getExtSourceName() == null) {
+		String redirectURL = null;
+		if (mfaRequestedAndNotPerformedYet(req)) {
+			// MFA - go to login with forceAuthn and also add loggedOut (as otherwise it would match the ACR again)
+			log.debug("MFA requested, force login");
+			redirectURL = buildLoginURL(req, clientId, true, true);
+		} else if (req.getParameter(FORCE_AUTHN) != null) {
+			// FORCE AUTHENTICATION - go to login with forceAuthn, it wil get removed and will not match when returned back
+			log.debug("Force login");
+			redirectURL = buildLoginURL(req, clientId, true, false);
+		} else if (principal == null || principal.getExtLogin() == null || principal.getExtSourceName() == null) {
+			// AUTHENTICATE
 			log.debug("User not logged in, redirecting to login page");
+			redirectURL = buildLoginURL(req, clientId, false, false);
+		}
 
-			String redirectURL = buildLoginUrl(req, clientId, false);
-
+		if (redirectURL != null) {
 			log.debug("Redirecting to URL: {}", redirectURL);
 			res.sendRedirect(redirectURL);
 		} else {
-			log.debug("User is logged in");
-			if (req.getParameter(Acr.PARAM_ACR) != null) {
-				boolean end = handleACR(req, res, principal, clientId);
-				if (end) {
-					return;
-				}
+			log.debug("User is logged in, store ACR and log login");
+
+			if (principal != null && req.getParameter(Acr.PARAM_ACR) != null) {
+				storeAcr(principal, req);
 			}
 
 			super.doFilter(request, response, chain);
 		}
+	}
+
+	private boolean mfaRequestedAndNotPerformedYet(HttpServletRequest req) {
+		return req.getParameter(Acr.PARAM_ACR) != null
+				&& req.getParameter(Acr.PARAM_ACR).contains(REFEDS_MFA)
+				&& req.getParameter(PARAM_LOGOUT_PERFORMED) == null;
 	}
 
 	/**
@@ -136,32 +148,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return "no credentials";
 	}
 
-	private boolean handleACR(HttpServletRequest req, HttpServletResponse res, PerunPrincipal principal, String clientId)
-			throws IOException
-	{
-		log.trace("handleACR(req, res, principal: {}, clientId: {}", principal, clientId);
-		boolean end;
-
-		String acr = getAcrValues(req);
-		if ((acr.contains(REFEDS_MFA) || acr.contains(urlEncode(REFEDS_MFA)))
-				&& req.getParameter(LOGOUT_PARAM) == null) {
-			String loginUrl = buildLoginUrl(req, clientId, true);
-			String base = config.getSamlLogoutURL();
-			Map<String, String> params = Collections.singletonMap("return", loginUrl);
-			String redirect = buildStringURL(base, params);
-
-			res.sendRedirect(redirect);
-			end = true;
-		} else {
-			log.debug("storing acr");
-			storeAcr(principal, req);
-			end = false;
-		}
-
-		log.trace("handleACR() return: {}", end);
-		return end;
-	}
-
 	private void storeAcr(PerunPrincipal principal, HttpServletRequest req) {
 		String sub = principal.getExtLogin();
 		String clientId = req.getParameter(Acr.PARAM_CLIENT_ID);
@@ -174,27 +160,35 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		Acr acr = new Acr(sub, clientId, acrValues, state, shibAuthnContextClass);
 
-		long t = Calendar.getInstance().getTimeInMillis();
-		Date afterAddingTenMins = new Date(t + (10 * ONE_MINUTE_IN_MILLIS));
-		acr.setExpiration(afterAddingTenMins);
+		long expiresAtEpoch = Instant.now().plusSeconds(600L).toEpochMilli();
+		acr.setExpiresAt(expiresAtEpoch);
 
 		log.debug("storing acr: {}", acr);
 		acrRepository.store(acr);
 	}
 
-	private String buildLoginUrl(HttpServletRequest req, String clientId, boolean loggedOut)
+	private String buildLoginURL(HttpServletRequest req, String clientId, boolean forceAuthn, boolean addLoggedOut)
 			throws UnsupportedEncodingException
 	{
 		log.debug("constructLoginRedirectUrl(req: {}, clientId: {})", req, clientId);
 
-		String returnURL = buildReturnUrl(req, loggedOut);
+		String returnURL;
+		if (addLoggedOut) {
+			returnURL = buildRequestURL(req, Collections.singletonMap(PARAM_LOGOUT_PERFORMED, "true"));
+		} else {
+			returnURL = buildRequestURL(req);
+		}
 		String authnContextClassRef = buildAuthnContextClassRef(clientId, req);
 
 		String base = config.getSamlLoginURL();
 		Map<String, String> params = new HashMap<>();
-		params.put("target", returnURL);
+		params.put(LOGIN_PARAM_TARGET, returnURL);
+
 		if (authnContextClassRef != null && !authnContextClassRef.trim().isEmpty()) {
 			params.put(AUTHN_CONTEXT_CLASS_REF, authnContextClassRef);
+		}
+		if (forceAuthn) {
+			params.put(FORCE_AUTHN, "true");
 		}
 
 		String loginURL = buildStringURL(base, params);
@@ -203,23 +197,48 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return loginURL;
 	}
 
-	private String buildReturnUrl(HttpServletRequest req, boolean loggedOut) {
+	private String buildRequestURL(HttpServletRequest req) {
+		return buildRequestURL(req, null);
+	}
+
+	private String buildRequestURL(HttpServletRequest req, Map<String, String> additionalParams) {
 		log.trace("buildReturnUrl({})", req);
 
-		String returnURL;
+		String returnURL = req.getRequestURL().toString();
 
-		if (req.getQueryString() == null) {
-			returnURL = req.getRequestURL().toString();
-			returnURL += ('?' + LOGOUT_PARAM + '=' + true);
-		} else {
-			returnURL = req.getRequestURL().toString() + '?' + req.getQueryString();
-			returnURL += ('&' + LOGOUT_PARAM + '=' + true);
+		if (req.getQueryString() != null) {
+			if (req.getQueryString().contains(FORCE_AUTHN)) {
+				String queryStr = removeForceAuthParam(req.getQueryString());
+				returnURL += ('?' + queryStr);
+			} else {
+				returnURL += ('?' + req.getQueryString());
+			}
+
+			if (additionalParams != null) {
+				returnURL += ('&' + additionalParams.entrySet().stream()
+						.map(pair -> pair.getKey() + '=' + pair.getValue())
+						.collect(Collectors.joining("&")));
+			}
 		}
 
 		log.trace("buildReturnUrl() returns: {}", returnURL);
 		return returnURL;
 	}
 
+	public String removeForceAuthParam(String query) {
+		return Arrays.stream(query.split("&"))
+				.map(this::splitQueryParameter)
+				.filter(pair -> !FORCE_AUTHN.equals(pair.getKey()))
+				.map(pair -> pair.getKey() + "=" + pair.getValue())
+				.collect(Collectors.joining("&"));
+	}
+
+	public Map.Entry<String, String> splitQueryParameter(String it) {
+		final int idx = it.indexOf("=");
+		final String key = (idx > 0) ? it.substring(0, idx) : it;
+		final String value = (idx > 0 && it.length() > idx + 1) ? it.substring(idx + 1) : "";
+		return new AbstractMap.SimpleImmutableEntry<>(key, value);
+	}
 
 	private String buildAuthnContextClassRef(String clientId, HttpServletRequest req) {
 		log.trace("buildAuthnContextClassRef(clientId: {}, req: {})", clientId, req);
