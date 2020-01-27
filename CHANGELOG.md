@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - Fixed wrong behavior of MFA forced logout
 - Fixed wrong loading of SAML logout URL when specified in properties
 - Fixed wrong handling of date and time because of ignoring time zone (ACR expiration)
+- Fixed bad rendering of registration pages (registration into groups when authorization has failed) - double service name in heading
 
 ## [v1.23.0]
 ### Changed
