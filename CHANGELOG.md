@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - Moved logs of user logins into the statistics filter, removed userID from it
 - Changed handling of user logins
 - Removed ProxyIDP header from unapproved page
+- Modified ProxyStatisticsFilter to respond to new version of SimpleSAMLphp perun statistics
 ### Fixed
 - Fixed handling of group "members" in resource capabilities
 - Fixed wrong behavior of MFA forced logout
