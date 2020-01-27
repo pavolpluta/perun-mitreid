@@ -26,12 +26,14 @@ pageContext.setAttribute("cssLinks", cssLinks);
 <div id="content">
     <div id="head">
         <h1>${fn:escapeXml(langProps['registration_header1'])}
-            <c:if test="${not empty client.clientName and not empty client.clientUri}">
-                &#32;<a href="${fn:escapeXml(client.clientUri)}">${fn:escapeXml(client.clientName)}</a>
-            </c:if>
-            <c:if test="${not empty client.clientName}">
-                &#32;${fn:escapeXml(client.clientName)}
-            </c:if>
+            <c:choose>
+                <c:when test="${not empty client.clientName and not empty client.clientUri}">
+                    &#32;<a href="${fn:escapeXml(client.clientUri)}">${fn:escapeXml(client.clientName)}</a>
+                </c:when>
+                <c:when test="${not empty client.clientName}">
+                    &#32;${fn:escapeXml(client.clientName)}
+                </c:when>
+            </c:choose>
             &#32;${langProps['registration_header2']}
         </h1>
     </div>
