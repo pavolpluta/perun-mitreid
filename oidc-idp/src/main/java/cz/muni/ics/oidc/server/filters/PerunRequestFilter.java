@@ -2,6 +2,8 @@ package cz.muni.ics.oidc.server.filters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -10,6 +12,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.AUTHORIZE_REQ_PATTERN;
 
 /**
  * Abstract class for Perun filters. All filters called in CallPerunFiltersFilter has to extend this.
@@ -31,6 +35,8 @@ public abstract class PerunRequestFilter {
     private static final String DELIMITER = ",";
     private static final String CLIENT_IDS = "clientIds";
     private static final String SUBS = "subs";
+
+    private static final    RequestMatcher requestMatcher = new AntPathRequestMatcher(AUTHORIZE_REQ_PATTERN);
 
     private String filterName;
     private Set<String> clientIds = new HashSet<>();
@@ -63,8 +69,13 @@ public abstract class PerunRequestFilter {
     protected abstract boolean process(ServletRequest request, ServletResponse response) throws IOException;
 
     public boolean doFilter(ServletRequest req, ServletResponse res) throws IOException {
-
-        if (!skip((HttpServletRequest) req)) {
+        HttpServletRequest request = (HttpServletRequest) req;
+        // skip everything that's not an authorize URL
+        if (!requestMatcher.matches(request)) {
+            log.debug("Filter: {} has been skipped, did not match /authorize", filterName);
+            return true;
+        }
+        if (!skip(request)) {
             log.debug("Executing filter: {}", filterName);
             return process(req, res);
         } else {
@@ -75,7 +86,7 @@ public abstract class PerunRequestFilter {
 
     private boolean skip(HttpServletRequest request) {
         String sub = request.getUserPrincipal().getName();
-        String clientId = request.getParameter(PerunFilterConstants.CLIENT_ID);
+        String clientId = request.getParameter(PerunFilterConstants.PARAM_CLIENT_ID);
 
         if (sub != null && subs.contains(sub)) {
             log.debug("Skipping filter {} because of sub {}", filterName, sub);

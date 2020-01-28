@@ -19,30 +19,4 @@
     <meta name="robots" content="noindex, nofollow" />
 
     <link rel="stylesheet" type="text/css" href="${samlResourcesURL}/resources/default.css" />
-
-    <style type="text/css">
-        .mt-0 {
-            margin-top: 0 !important;
-        }
-        .mr-half {
-            margin-right: .5em !important;
-        }
-        .checkbox-wrapper {
-            float: left;
-        }
-        .h4 {
-            clear: inherit !important;
-        }
-        .h1, .h2, .h3, .h4, .h5, .h6 {
-            letter-spacing: normal;
-        }
-        .mb-0 {
-            margin-bottom: 0 !important;
-        }
-        .oh {
-            overflow: hidden;
-        }
-        .mt-0 {
-            margin-top: 0 !important;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="resources/css/customs.css">

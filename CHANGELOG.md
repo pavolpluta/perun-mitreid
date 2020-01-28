@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - Added option to read classes for HTML pages from file
+- Implemented request filter - isCesnetEligible (see class documentation for more info)
+- Created an unapproved page that displays passed texts
 ### Changed
 - changed the implementation of GA4GHClaimSource because the EGA Permissions service
   changed its API to be GA4GH-compatible
@@ -12,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - Updated templates for consent page
 - Moved logs of user logins into the statistics filter, removed userID from it
 - Changed handling of user logins
+- Removed ProxyIDP header from unapproved page
 ### Fixed
 - Fixed handling of group "members" in resource capabilities
 - Fixed wrong behavior of MFA forced logout

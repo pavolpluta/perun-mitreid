@@ -2,7 +2,6 @@
 <%@ page import="java.lang.String" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
-<%@ taglib prefix="authz" uri="http://www.springframework.org/security/tags"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags/common"%>
@@ -16,10 +15,6 @@ pageContext.setAttribute("cssLinks", cssLinks);
 %>
 
 <t:header title="${title}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
-
-    <h1>
-        <a class="header-link" href="/proxy/">Proxy IdP</a>
-    </h1>
 
 </div> <%-- header --%>
 
@@ -49,8 +44,8 @@ pageContext.setAttribute("cssLinks", cssLinks);
         </c:if>
         <h1>${langProps['403_header']}</h1>
         <p>${langProps['403_text']}&#32;${fn:escapeXml(client.clientName)}
-            <br/>
             <c:if test="${not empty client.clientUri}">
+                <br/>
                 ${langProps['403_informationPage']}&#32;
                 <a href="${fn:escapeXml(client.clientUri)}">
                     ${fn:escapeXml(client.clientUri)}
