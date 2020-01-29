@@ -45,9 +45,6 @@ import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_CLIENT_
  * 		(depends on DataSource bean mitreIdStats)
  * - filter.name.serviceProvidersMapTableName - Name of the table with mapping of client_id (SP) to client name
  * 		(depends on DataSource bean mitreIdStats)
- * - filter.name.detailedStatisticsEnabled - TRUE if detailed statistics should be logged, FALSE otherwise (by default)
- * - filter.name.detailedStatisticsTableName - Name of the table where we store detailed statistics
- * 		(depends on DataSource bean mitreIdStats)
  *
  * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
  */
