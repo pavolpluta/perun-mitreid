@@ -160,8 +160,8 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 			return null;
 		}
 
-		if (!customRegUrl.startsWith("http://")) {
-			customRegUrl = "http://" + customRegUrl;
+		if (!customRegUrl.startsWith("http://") && !customRegUrl.startsWith("https://")) {
+			customRegUrl = "https://" + customRegUrl;
 		}
 
 		try {
@@ -170,10 +170,10 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 			conn.connect();
 			return customRegUrl;
 		} catch (IOException e) {
-			//this is ok, we can try add https:// to the url
+			//this is ok, we can try to replace https:// with http://
 		}
 
-		customRegUrl = customRegUrl.replace("http://", "https://");
+		customRegUrl = customRegUrl.replace("https://", "http://");
 
 		try {
 			URL url = new URL(customRegUrl);
