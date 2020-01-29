@@ -8,6 +8,7 @@ import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
+import org.mariadb.jdbc.internal.com.read.resultset.SelectResultSet;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
@@ -23,7 +24,9 @@ import javax.sql.DataSource;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 
@@ -48,6 +51,7 @@ import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_CLIENT_
  *
  * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
  */
+@SuppressWarnings("SqlResolve")
 public class ProxyStatisticsFilter extends PerunRequestFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(ProxyStatisticsFilter.class);
@@ -58,16 +62,12 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 	private static final String STATISTICS_TABLE_NAME = "statisticsTableName";
 	private static final String IDENTITY_PROVIDERS_MAP_TABLE_NAME = "identityProvidersMapTableName";
 	private static final String SERVICE_PROVIDERS_MAP_TABLE_NAME = "serviceProvidersMapTableName";
-	private static final String DETAILED_STATISTICS_TABLE_NAME = "detailedStatisticsTableName";
-	private static final String DETAILED_STATISTICS_ENABLED = "detailedStatisticsEnabled";
 
 	private final String idpNameAttributeName;
 	private final String idpEntityIdAttributeName;
 	private final String statisticsTableName;
 	private final String identityProvidersMapTableName;
 	private final String serviceProvidersMapTableName;
-	private final String detailedStatisticsTableName;
-	private final boolean detailedStatisticsEnabled;
 	/* END OF CONFIGURATION OPTIONS */
 
 	private final RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
@@ -92,12 +92,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		this.statisticsTableName = params.getProperty(STATISTICS_TABLE_NAME);
 		this.identityProvidersMapTableName = params.getProperty(IDENTITY_PROVIDERS_MAP_TABLE_NAME);
 		this.serviceProvidersMapTableName = params.getProperty(SERVICE_PROVIDERS_MAP_TABLE_NAME);
-		this.detailedStatisticsTableName = params.getProperty(DETAILED_STATISTICS_TABLE_NAME);
-		if (params.hasProperty(DETAILED_STATISTICS_ENABLED)) {
-			this.detailedStatisticsEnabled = Boolean.parseBoolean(params.getProperty(DETAILED_STATISTICS_ENABLED));
-		} else {
-			this.detailedStatisticsEnabled = false;
-		}
+
 	}
 
 	@Override
@@ -135,73 +130,87 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		return true;
 	}
 
-	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName) {
+	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName, String userId) {
 		LocalDate date = LocalDate.now();
 
-		String queryStats = "INSERT INTO " + statisticsTableName + "(year, month, day, sourceIdp, service, count)" +
-				" VALUES(?,?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
+		if (userId == null || userId.trim().isEmpty()) {
+			log.debug("UserId is null or empty, skip insert!");
+			return;
+		}
 
-		String queryIdPMap = "INSERT INTO " + identityProvidersMapTableName + "(entityId, name)" +
-				" VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
-
-		String queryServiceMap = "INSERT INTO " + serviceProvidersMapTableName + "(identifier, name)" +
-				" VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
+		String insertLoginQuery = "INSERT INTO " + statisticsTableName + "(day, idpId, spId, user, logins)" +
+				" VALUES(?, ?, ?, ?, '1') ON DUPLICATE KEY UPDATE logins = logins + 1";
 
 		try (Connection c = mitreIdStats.getConnection()) {
-			try (PreparedStatement preparedStatement = c.prepareStatement(queryStats)) {
-				preparedStatement.setInt(1, date.getYear());
-				preparedStatement.setInt(2, date.getMonthValue());
-				preparedStatement.setInt(3, date.getDayOfMonth());
-				preparedStatement.setString(4, idpEntityId);
-				preparedStatement.setString(5, spIdentifier);
+			insertIdpMap(c, idpEntityId, idpName);
+			insertSpMap(c, spIdentifier, spName);
+			int idpId = extractIdpId(c, idpEntityId);
+			int spId = extractSpId(c, spIdentifier);
+
+			try (PreparedStatement preparedStatement = c.prepareStatement(insertLoginQuery)) {
+				preparedStatement.setDate(1, Date.valueOf(date));
+				preparedStatement.setInt(2, idpId);
+				preparedStatement.setInt(3, spId);
+				preparedStatement.setString(4, userId);
 				preparedStatement.execute();
+				log.debug("The login log has been successfully stored into database: ({}, {}, {}, {}, {})",
+						idpEntityId, idpName, spIdentifier, spName, userId);
 			}
-			if (!Strings.isNullOrEmpty(idpName)) {
-				try (PreparedStatement preparedStatement = c.prepareStatement(queryIdPMap)) {
-					preparedStatement.setString(1, idpEntityId);
-					preparedStatement.setString(2, idpName);
-					preparedStatement.setString(3, idpName);
-					preparedStatement.execute();
-				}
-			}
-			if (!Strings.isNullOrEmpty(spName)) {
-				try (PreparedStatement preparedStatement = c.prepareStatement(queryServiceMap)) {
-					preparedStatement.setString(1, spIdentifier);
-					preparedStatement.setString(2, spName);
-					preparedStatement.setString(3, spName);
-					preparedStatement.execute();
-				}
-			}
-			log.debug("The login log was successfully stored into database: ({},{},{},{})", idpEntityId, idpName, spIdentifier, spName);
 		} catch (SQLException ex) {
 			log.warn("Statistics weren't updated due to SQLException.");
 			log.error("Caught SQLException", ex);
 		}
 	}
 
-	private void insertLogin(String idpEntityId, String idpName, String spIdentifier, String spName, String userId) {
-		insertLogin(idpEntityId, idpName, spIdentifier, spName);
+	private int extractSpId(Connection c, String spIdentifier) throws SQLException {
+		String getSpIdQuery = "SELECT * FROM " + serviceProvidersMapTableName + " WHERE identifier= ?";
 
-		if (detailedStatisticsEnabled && userId != null && !userId.trim().isEmpty()) {
-			String detailedStats = "INSERT INTO " + detailedStatisticsTableName + "(year, month, day, sourceIdp, service, user, count)" +
-					" VALUES(?,?,?,?,?,?,'1') ON DUPLICATE KEY UPDATE count = count + 1";
+		try (PreparedStatement preparedStatement = c.prepareStatement(getSpIdQuery)) {
+			preparedStatement.setString(1, spIdentifier);
+			ResultSet rs = preparedStatement.executeQuery();
+			rs.first();
+			int spId = rs.getInt("spId");
+			log.debug("Extracted spId {}", spId);
+			return spId;
+		}
+	}
 
-			LocalDate date = LocalDate.now();
-			try (Connection c = mitreIdStats.getConnection()) {
-				try (PreparedStatement preparedStatement = c.prepareStatement(detailedStats)) {
-					preparedStatement.setInt(1, date.getYear());
-					preparedStatement.setInt(2, date.getMonthValue());
-					preparedStatement.setInt(3, date.getDayOfMonth());
-					preparedStatement.setString(4, idpEntityId);
-					preparedStatement.setString(5, spIdentifier);
-					preparedStatement.setString(6, userId);
-					preparedStatement.execute();
-				}
-				log.debug("The login log was successfully stored into database: ({},{},{},{},{})", idpEntityId, idpName, spIdentifier, spName, userId);
-			} catch (SQLException ex) {
-				log.warn("Detailed statistics weren't updated due to SQLException.");
-				log.error("Caught SQLException", ex);
-			}
+	private int extractIdpId(Connection c, String idpEntityId) throws SQLException {
+		String getIdPIdQuery = "SELECT * FROM " + identityProvidersMapTableName + " WHERE identifier = ?";
+
+		try (PreparedStatement preparedStatement = c.prepareStatement(getIdPIdQuery)) {
+			preparedStatement.setString(1, idpEntityId);
+			ResultSet rs = preparedStatement.executeQuery();
+			rs.first();
+			int idpId = rs.getInt("idpId");
+			log.debug("Extracted idpId {}", idpId);
+			return idpId;
+		}
+	}
+
+	private void insertSpMap(Connection c, String spIdentifier, String spName) throws SQLException {
+		String insertSpMapQuery = "INSERT INTO " + serviceProvidersMapTableName + "(identifier, name)" +
+				" VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
+
+		try (PreparedStatement preparedStatement = c.prepareStatement(insertSpMapQuery)) {
+			preparedStatement.setString(1, spIdentifier);
+			preparedStatement.setString(2, spName);
+			preparedStatement.setString(3, spName);
+			preparedStatement.execute();
+			log.debug("Insert into SP map table performed");
+		}
+	}
+
+	private void insertIdpMap(Connection c, String idpEntityId, String idpName) throws SQLException {
+		String insertIdpMapQuery = "INSERT INTO " + identityProvidersMapTableName + "(identifier, name)" +
+				" VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?";
+
+		try (PreparedStatement preparedStatement = c.prepareStatement(insertIdpMapQuery)) {
+			preparedStatement.setString(1, idpEntityId);
+			preparedStatement.setString(2, idpName);
+			preparedStatement.setString(3, idpName);
+			preparedStatement.execute();
+			log.debug("Insert into IdP map table performed");
 		}
 	}
 
