@@ -64,37 +64,9 @@ pageContext.setAttribute("cssLinks", cssLinks);
             <input type="submit" value="${langProps['registration_continue']}" class="btn btn-lg btn-primary btn-block">
         </form>
     </div>
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script type="text/javascript">
-        function filter() {
-            hideGroups();
-            $('.selectGroup').val("");
-            const vo = $("#selectVo").val();
-            if (vo !== "") {
-                showGroups();
-                $(".groupOption").each(function () {
-                    const value = $(this).val();
-                    if (value.startsWith(vo, 0)) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            }
-        }
-        function showGroups() {
-            $(".selectGroup").show();
-        }
-        function hideGroups() {
-            $(".selectGroup").hide();
-        }
-        $(document).ready(function() {
-            $("#selectVo").val("");
-        });
-    </script>
-
 </div>
 </div><!-- ENDWRAP -->
 
 <t:footer baseURL="${baseURL}" theme="${theme}"/>
+
+<script type="text/javascript" src="resources/js/reg_form_select.js"></script>
