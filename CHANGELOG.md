@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - Removed ProxyIDP header from unapproved page
 - Modified ProxyStatisticsFilter to respond to new version of SimpleSAMLphp perun statistics
 - Changed loading of JS files due to content-security policy
+- Changed database table [acrs](https://github.com/CESNET/perun-mitreid/blob/release_1_24/oidc-idp/src/main/webapp/WEB-INF/classes/db/mysql/acrs.sql): `ALTER TABLE  acrs MODIFY COLUMN expiration BIGINT;`
 ### Fixed
 - Fixed handling of group "members" in resource capabilities
 - Fixed wrong behavior of MFA forced logout
