@@ -114,8 +114,8 @@
 		<div class="row" id="saveconsentcontainer">
 			<div class="col-xs-12">
 				<div class="checkbox">
-					<input type="checkbox" name="remember" id="remember-forever" value="until-revoked"/>
-					<label for="remember-forever">${langProps['remember']}</label>
+					<input type="checkbox" name="remember" id="saveconsent" value="until-revoked"/>
+					<label for="saveconsent">${langProps['remember']}</label>
 				</div>
 			</div>
 		</div>
