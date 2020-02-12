@@ -12,9 +12,10 @@ import java.util.Set;
 
 /**
  * This source converts groupNames and resource capabilities to AARC format and joins them with eduPersonEntitlement
- * Configuration (replace [claimName] with claimName defined for source):
+ * Configuration (replace [claimName] with claimName defined for the source):
  * - custom.claim.[claimName].groupNames - groupNames attribute name
- * - custom.claim.[claimName].eduPersonEntitlement - eduPersonEntitlement attribute name
+ * - custom.claim.[claimName].forwardedEntitlements - forwardedEntitlements attribute name, if not specified, the forwarded
+ * entitlements will not be added to the list
  * - custom.claim.[claimName].capabilities - capabilities attribute name
  * - custom.claim.[claimName].prefix - prefix added before name of group
  * - custom.claim.[claimName].authority - source of claim
@@ -32,7 +33,7 @@ public class EntitlementSource extends ClaimSource {
 	public EntitlementSource(ClaimSourceInitContext ctx) {
 		super(ctx);
 		groupNames = ctx.getProperty("groupNames", null);
-		eduPersonEntitlement = ctx.getProperty("eduPersonEntitlement", null);
+		eduPersonEntitlement = ctx.getProperty("forwardedEntitlements", null);
 		capabilities = ctx.getProperty("capabilities", null);
 		prefix = ctx.getProperty("prefix", null);
 		authority = ctx.getProperty("authority", null);
@@ -42,7 +43,6 @@ public class EntitlementSource extends ClaimSource {
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
 
 		JsonNode groupNamesJson = pctx.getRichUser().getJson(groupNames);
-		JsonNode eduPersonEntitlementJson = pctx.getRichUser().getJson(eduPersonEntitlement);
 
 		JsonNodeFactory factory = JsonNodeFactory.instance;
 		ArrayNode result = new ArrayNode(factory);
@@ -67,9 +67,13 @@ public class EntitlementSource extends ClaimSource {
 			}
 		}
 
-		if (eduPersonEntitlementJson != null) {
-			ArrayNode eduPersonEntitlementArrayNode = (ArrayNode) eduPersonEntitlementJson;
-			result.addAll(eduPersonEntitlementArrayNode);
+		if (this.eduPersonEntitlement != null && !this.eduPersonEntitlement.trim().isEmpty()) {
+			JsonNode eduPersonEntitlementJson = pctx.getRichUser().getJson(eduPersonEntitlement);
+
+			if (eduPersonEntitlementJson != null) {
+				ArrayNode eduPersonEntitlementArrayNode = (ArrayNode) eduPersonEntitlementJson;
+				result.addAll(eduPersonEntitlementArrayNode);
+			}
 		}
 
 		return result;
