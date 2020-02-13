@@ -12,6 +12,7 @@ import cz.muni.ics.oidc.server.userInfo.UserInfoModifierInitContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,7 +20,14 @@ import java.util.stream.Collectors;
 /**
  * UserInfo modifier to filter out groups that are not assigned to facility.
  * Group names are in AARC format from EduPersonEntitlement attribute.
- * Do not use on other that EduPersonEntitlement attribute (scope).
+ * Do not use on other than EduPersonEntitlement attribute (scope).
+ *
+ * Configuration (replace [modName] with the actual name of modifier specified in modifier list)
+ * <ul>
+ *     <li>userInfo.modifier.[modName].scope - scope for which the modifier should be executed</li>
+ *     <li>userInfo.modifier.[modName].prefix - prefix of entitlement used for matching</li>
+ *     <li>userInfo.modifier.[modName].authority - suffix of entitlement (who has released it) used for matching</li>
+ * </ul>
  *
  * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
@@ -48,15 +56,13 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 
 	@Override
 	public void modify(PerunUserInfo perunUserInfo, String clientId) {
-		if (clientId == null) {
-			return;
-		}
+		List<String> facilityGroups = new ArrayList<>();
 
-		Facility facility = perunConnector.getFacilityByClientId(clientId);
-		List<String> facilityGroups = perunConnector.getGroupsAssignedToResourcesWithUniqueNames(facility);
-
-		if (facilityGroups == null || facilityGroups.isEmpty()) {
-			return;
+		if (clientId != null) {
+			Facility facility = perunConnector.getFacilityByClientId(clientId);
+			if (facility != null) {
+				facilityGroups = perunConnector.getGroupsAssignedToResourcesWithUniqueNames(facility);
+			}
 		}
 
 		Set<String> facilityGroupNamesInAarcFormat = facilityGroups.stream()
@@ -69,9 +75,8 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 
 		if (eduPersonEntitlementJson != null) {
 			ArrayNode eduPersonEntitlementArrayNode = (ArrayNode) eduPersonEntitlementJson;
-			for (int i = 0; i < eduPersonEntitlementArrayNode.size(); i++) {
-				String value = eduPersonEntitlementArrayNode.get(i).textValue();
-
+			for (JsonNode jsonNode : eduPersonEntitlementArrayNode) {
+				String value = jsonNode.textValue();
 				if (facilityGroupNamesInAarcFormat.contains(value)) {
 					log.trace("Entitlement {} has been found, keep it", value);
 					result.add(value);
@@ -101,6 +106,6 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 			uniqueGroupName = uniqueGroupName.replace(":members", "");
 		}
 
-		return prefix + UrlEscapers.urlPathSegmentEscaper().escape(uniqueGroupName) + '#' + authority;
+		return prefix + "group:" + UrlEscapers.urlPathSegmentEscaper().escape(uniqueGroupName) + '#' + authority;
 	}
 }

@@ -57,8 +57,9 @@ public class PerunUserInfoService implements UserInfoService {
 	@Autowired
 	private PerunOidcConfig perunOidcConfig;
 
-	private static final String SOURCE_CLASS = ".sourceClass";
-	private static final String MODIFIER_CLASS = ".modifierClass";
+	private static final String SOURCE = ".source";
+	private static final String CLASS = ".class";
+	private static final String MODIFIER = ".modifier";
 
 	private PerunConnector perunConnector;
 	private Properties properties;
@@ -77,6 +78,7 @@ public class PerunUserInfoService implements UserInfoService {
 	private String localeAttribute;
 	private List<String> customClaimNames;
 	private List<PerunCustomClaimDefinition> customClaims = new ArrayList<>();
+	private UserInfoModifierContext userInfoModifierContext;
 
 	public void setProperties(Properties properties) {
 		this.properties = properties;
@@ -150,16 +152,18 @@ public class PerunUserInfoService implements UserInfoService {
 				continue;
 			}
 			//get ClaimSource
-			ClaimSource claimSource = loadClaimSource(propertyPrefix);
+			ClaimSource claimSource = loadClaimSource(propertyPrefix + SOURCE);
 			//optional claim value modifier
-			ClaimModifier claimModifier = loadClaimValueModifier(propertyPrefix);
+			ClaimModifier claimModifier = loadClaimValueModifier(propertyPrefix + MODIFIER);
 			//add claim definition
 			customClaims.add(new PerunCustomClaimDefinition(scope, claim, claimSource, claimModifier));
 		}
+
+		this.userInfoModifierContext = new UserInfoModifierContext(properties, perunConnector);
 	}
 
 	private ClaimModifier loadClaimValueModifier(String propertyPrefix) {
-		String modifierClass = properties.getProperty(propertyPrefix + MODIFIER_CLASS);
+		String modifierClass = properties.getProperty(propertyPrefix + CLASS);
 		if (modifierClass != null) {
 			try {
 				Class<?> rawClazz = Class.forName(modifierClass);
@@ -185,13 +189,13 @@ public class PerunUserInfoService implements UserInfoService {
 				return null;
 			}
 		} else {
-			log.debug("property {} not found, skipping", propertyPrefix + MODIFIER_CLASS);
+			log.debug("property {} not found, skipping", propertyPrefix);
 			return null;
 		}
 	}
 
 	private ClaimSource loadClaimSource(String propertyPrefix) {
-		String sourceClass = properties.getProperty(propertyPrefix + SOURCE_CLASS, PerunAttributeClaimSource.class.getName());
+		String sourceClass = properties.getProperty(propertyPrefix + CLASS, PerunAttributeClaimSource.class.getName());
 		try {
 			Class<?> rawClazz = Class.forName(sourceClass);
 			if (!ClaimSource.class.isAssignableFrom(rawClazz)) {
@@ -229,17 +233,17 @@ public class PerunUserInfoService implements UserInfoService {
 			log.warn("did not found client with id {}", clientId);
 			return null;
 		}
+
 		UserInfo userInfo;
 		try {
 			userInfo = cache.get(new UserClientPair(username, clientId, client));
 			log.trace("loaded UserInfo from cache for '{}'/'{}'", userInfo.getName(), client.getClientName());
-			UserInfoModifierContext ctx = new UserInfoModifierContext(properties, perunConnector);
-			ctx.modify((PerunUserInfo) userInfo, clientId);
-			log.trace("Modified userInfo {}", userInfo);
+			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, clientId);
 		} catch (ExecutionException e) {
 			log.error("cannot get user from cache", e);
 			return null;
 		}
+
 		return userInfo;
 	}
 
@@ -250,16 +254,14 @@ public class PerunUserInfoService implements UserInfoService {
 		try {
 			userInfo = cache.get(new UserClientPair(username));
 			log.trace("loaded UserInfo from cache for '{}'", userInfo.getName());
-
-			UserInfoModifierContext ctx = new UserInfoModifierContext(properties, perunConnector);
-			ctx.modify((PerunUserInfo) userInfo, null);
+			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, null);
 			log.trace("Modified userInfo {}", userInfo);
-
-			return cache.get(new UserClientPair(username));
 		} catch (UncheckedExecutionException | ExecutionException e) {
 			log.error("cannot get user from cache", e);
 			return null;
 		}
+
+		return userInfo;
 	}
 
 	@Override
