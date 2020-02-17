@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
@@ -19,27 +19,34 @@ public class UserInfoModifierContext {
 
 	private static final Logger log = LoggerFactory.getLogger(PerunUserInfoService.class);
 
-	private static final String MODIFIER_CLASS = ".modifierClass";
+	private static final String MODIFIER_CLASS = ".class";
 
-	private List<String> modifiers;
 	private Properties properties;
 	private PerunConnector perunConnector;
+	private List<UserInfoModifier> modifiers;
 
 	public UserInfoModifierContext(Properties properties, PerunConnector perunConnector) {
 		this.properties = properties;
-		String property = properties.getProperty("userInfo.modifiers");
-		modifiers = Arrays.asList(property.split(","));
 		this.perunConnector = perunConnector;
+		this.modifiers = new LinkedList<>();
+
+		String modifierNamesProperty = properties.getProperty("userInfo.modifiers");
+		String[] modifierNames = modifierNamesProperty.split(",");
+		for (String m : modifierNames) {
+			UserInfoModifier modifier = loadModifier("userInfo.modifier." + m);
+			if (modifier != null) {
+				log.trace("Executing modifier {}", m);
+				modifiers.add(modifier);
+			}
+		}
+
 	}
 
 	public PerunUserInfo modify(PerunUserInfo perunUserInfo, String clientId) {
 		log.trace("modify({}, {})", perunUserInfo, clientId);
-		for (String m : modifiers) {
-			UserInfoModifier modifier = loadModifier("userInfo.modifier." + m);
-			if (modifier != null) {
-				log.trace("Executing modifier {}", m);
-				modifier.modify(perunUserInfo, clientId);
-			}
+
+		for (UserInfoModifier m : modifiers) {
+			m.modify(perunUserInfo, clientId);
 		}
 
 		return perunUserInfo;
@@ -61,7 +68,7 @@ public class UserInfoModifierContext {
 			Constructor<UserInfoModifier> constructor = clazz.getConstructor(UserInfoModifierInitContext.class);
 			UserInfoModifierInitContext ctx = new UserInfoModifierInitContext(propertyPrefix, properties, perunConnector);
 			UserInfoModifier userInfoModifier = constructor.newInstance(ctx);
-			log.info("loaded modifier '{}' for {}", userInfoModifier, propertyPrefix);
+			log.info("loaded a modifier '{}' for {}", userInfoModifier, propertyPrefix);
 			return userInfoModifier;
 		} catch (ClassNotFoundException e) {
 			log.error("modifier class {} not found", modifierClass);

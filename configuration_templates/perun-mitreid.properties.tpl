@@ -93,10 +93,11 @@
 #custom.claims=c1,c2                            # Comma separated list of names for custom claims
 
 # CUSTOM CLAIM C1
-#custom.claim.c1.scope=c1Scope                                          # Name of scope for claim c1
-#custom.claim.c1.sourceClass=[cz.muni.***.PerunAttributeClaimSource]    # Fully qualified class name for the claim source, defaults to PerunAttributeClaimSource
-#custom.claim.c1.modifierClass=                                         # Fully qualified class name for the claim modifier, modifier class is optional
-#custom.claim.c1.prop1=[val]                                            # Value for custom claim C1 property PROP1
+#custom.claim.c1.scope=                    # Name of scope for claim c1
+#custom.claim.c1.source.class=             # Fully qualified class name for the claim source, defaults to PerunAttributeClaimSource
+#custom.claim.c1.source.prop1=             # Value for custom claim source C1 property PROP1
+#custom.claim.c1.modifier.class=           # Fully qualified class name for the claim modifier, modifier class is optional
+#custom.claim.c1.modifier.prop1=           # Value for custom claim modifier C1 property PROP1
 
 
 ##################################################################################################################
@@ -107,9 +108,9 @@
 #userInfo.modifiers=mod1,mod2           # Comma separated list of names for UserInfo object modifiers
 
 # USER INFO MODIFIER MOD1
-#userInfo.modifier.mod1.class=[fully qualified class name]  # Fully qualified class name the modifier instantiates
-#userInfo.modifier.mod1.prop1=[val]                         # Value for modifier MOD1 and property PROP1
-#userInfo.modifier.mod1.prop2=[val]                         # Value for modifier MOD1 and property PROP2
+#userInfo.modifier.mod1.class=           # Fully qualified class name the modifier instantiates
+#userInfo.modifier.mod1.prop1=           # Value for modifier MOD1 and property PROP1
+#userInfo.modifier.mod1.prop2=           # Value for modifier MOD1 and property PROP2
 
 
 ##########################################################################################################
@@ -119,7 +120,7 @@
 
 #filter.names=f1,f2           # Comma separated list of names for UserInfo object modifiers
 
-# USER INFO MODIFIER MOD1
+# REQUEST FILTER F1
 #filter.f1.class=[fully qualified class name]  # Fully qualified class name the filter instantiates
 #filter.f1.subs=[val1,val2]                    # Comma separated list of user SUB attribute values. If current is in the list, filter will be skipped
 #filter.f1.clientIds=[val1,val2]               # Comma separated list of client_ids. If current is in the list, filter will be skipped
