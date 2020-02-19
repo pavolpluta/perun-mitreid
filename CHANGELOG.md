@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- Added service name to the consent header
 ### Changed
 - Changed property names for specifying custom claims (see configuration template for required format)
 - UserInfo modifiers are now loaded only at the startup, previously were loaded for each modification separately
