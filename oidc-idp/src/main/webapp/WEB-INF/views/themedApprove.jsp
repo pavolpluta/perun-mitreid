@@ -23,7 +23,7 @@
 
 <t:header title="${langProps['consent_header']}" reqURL="${reqURL}" baseURL="${baseURL}" cssLinks="${cssLinks}" theme="${theme}"/>
 
-<h1 class="h3">${langProps['consent_header']}</h1>
+<h1 class="h3">${langProps['consent_header']} ${" "} ${fn:escapeXml(client.clientName)}</h1>
 
 </div> <%-- header --%>
 
