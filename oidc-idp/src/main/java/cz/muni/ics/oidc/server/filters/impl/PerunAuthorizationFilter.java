@@ -2,11 +2,11 @@ package cz.muni.ics.oidc.server.filters.impl;
 
 import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.models.Facility;
-import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
@@ -50,7 +50,7 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 
 	private final OAuth2RequestFactory authRequestFactory;
 	private final ClientDetailsEntityService clientService;
-	private final PerunConnector perunConnector;
+	private final PerunAdapter perunAdapter;
 	private final FacilityAttrsConfig facilityAttrsConfig;
 	private final PerunOidcConfig perunOidcConfig;
 
@@ -63,7 +63,7 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 
 		this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
 		this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
-		this.perunConnector = beanUtil.getBean(PerunConnector.class);
+		this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
 		this.facilityAttrsConfig = beanUtil.getBean(FacilityAttrsConfig.class);
 		this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
 	}
@@ -81,38 +81,43 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 
 		String clientIdentifier = client.getClientId();
 
-		Facility facility = perunConnector.getFacilityByClientId(clientIdentifier);
+		Facility facility = perunAdapter.getFacilityByClientId(clientIdentifier);
 		if (facility == null) {
 			log.error("Could not find facility with clientID: {}", clientIdentifier);
 			log.info("Skipping filter because not able to find facility");
 			return true;
 		}
 
-		PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunConnector);
+		PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
+		if (user == null) {
+			log.error("Could not find user in request");
+			log.info("Skipping filter because not able to extract user");
+			return true;
+		}
 
 		return decideAccess(facility, user, request, response, clientIdentifier);
 	}
 
 	private boolean decideAccess(Facility facility, PerunUser user, HttpServletRequest request,
-							  HttpServletResponse response, String clientIdentifier) {
-		Map<String, PerunAttribute> facilityAttributes = perunConnector.getFacilityAttributes(
-				facility, facilityAttrsConfig.getMembershipAttrsAsList());
+								 HttpServletResponse response, String clientIdentifier) {
+		Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(
+				facility, facilityAttrsConfig.getMembershipAttrNames());
 
 		if (! facilityAttributes.get(facilityAttrsConfig.getCheckGroupMembershipAttr()).valueAsBoolean()) {
 			log.debug("Membership check not requested, skipping filter");
 			return true;
 		}
-		boolean canAccess = perunConnector.canUserAccessBasedOnMembership(facility, user.getId());
 
+		boolean canAccess = perunAdapter.canUserAccessBasedOnMembership(facility, user.getId());
 		if (canAccess) {
 			// allow access, continue with chain
 			log.info("User allowed to access the service");
 			return true;
 		} else if (facilityAttributes.get(facilityAttrsConfig.getAllowRegistrationAttr()).valueAsBoolean()) {
 			log.info("User not allowed to access the service");
-			boolean canRegister = perunConnector.groupWhereCanRegisterExists(facility);
+			boolean canRegister = perunAdapter.getAdapterRpc().groupWhereCanRegisterExists(facility);
 			if (canRegister) {
-				PerunAttribute customRegUrlAttr = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr());
+				PerunAttributeValue customRegUrlAttr = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr());
 				if (customRegUrlAttr != null && customRegUrlAttr.getValue()!= null) {
 					String customRegUrl = facilityAttributes.get(
 							facilityAttrsConfig.getRegistrationURLAttr()).valueAsString();

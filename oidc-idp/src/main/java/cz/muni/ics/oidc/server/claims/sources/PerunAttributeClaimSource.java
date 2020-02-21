@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc.server.claims.sources;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
@@ -27,7 +28,11 @@ public class PerunAttributeClaimSource extends ClaimSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		return pctx.getRichUser().getJson(attributeName);
+		if (pctx.getAttrValues().containsKey(attributeName)) {
+			return pctx.getAttrValues().get(attributeName).valueAsJson();
+		} else {
+			return NullNode.getInstance();
+		}
 	}
 
 	@Override

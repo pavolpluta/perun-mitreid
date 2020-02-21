@@ -13,7 +13,8 @@ public abstract class Model {
 	}
 
 	public Model(Long id) {
-		this.id = id;
+		super();
+		this.setId(id);
 	}
 
 	public Long getId() {
@@ -21,6 +22,10 @@ public abstract class Model {
 	}
 
 	public void setId(Long id) {
+		if (id == null) {
+			throw new IllegalArgumentException("id cannot be null");
+		}
+
 		this.id = id;
 	}
 

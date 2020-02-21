@@ -53,6 +53,7 @@ All notable changes to this project will be documented in this file.
 - Updated templates for consent page
 - Moved logs of user logins into the statistics filter, removed userID from it
 - Changed handling of user logins
+- Refactored whole logic of connecting to the sources of data (Perun, LDAP)
 - Removed ProxyIDP header from unapproved page
 - Modified ProxyStatisticsFilter to respond to new version of SimpleSAMLphp perun statistics
 - Changed loading of JS files due to content-security policy

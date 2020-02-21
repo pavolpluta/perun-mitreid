@@ -5,11 +5,13 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.mitre.oauth2.model.ClientDetailsEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -23,30 +25,43 @@ import java.util.TreeSet;
  */
 public class GroupNamesSource extends ClaimSource {
 
+	public static final Logger log = LoggerFactory.getLogger(GroupNamesSource.class);
+
 	public GroupNamesSource(ClaimSourceInitContext ctx) {
 		super(ctx);
 	}
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		PerunConnector perunConnector = pctx.getPerunConnector();
+		return produceValue(pctx, true);
+	}
+
+	protected JsonNode produceValueWithoutReplacing(ClaimSourceProduceContext pctx) {
+		return produceValue(pctx, false);
+	}
+
+	private JsonNode produceValue(ClaimSourceProduceContext pctx, boolean trimMembers) {
+		PerunAdapter perunConnector = pctx.getPerunAdapter();
 		ClientDetailsEntity client = pctx.getClient();
 		Facility facility = null;
 
 		if (client != null) {
 			String clientId = client.getClientId();
 			facility = perunConnector.getFacilityByClientId(clientId);
+			log.debug("found facility ({}) for client_id ({})", facility, clientId);
 		}
 
 		Set<Group> userGroups = new HashSet<>();
 		if (facility != null) {
-			userGroups = perunConnector.getGroupsWhereUserIsActiveWithUniqueNames(facility.getId(), pctx.getRichUser().getId());
+			userGroups = perunConnector.getGroupsWhereUserIsActiveWithUniqueNames(facility.getId(),
+					pctx.getPerunUserId());
+			log.debug("Found user groups: {}", userGroups);
 		}
 
 		Set<String> groups = new TreeSet<>();
 		userGroups.forEach(g -> {
 			String uniqueName = g.getUniqueGroupName();
-			if (uniqueName != null && !uniqueName.trim().isEmpty()
+			if (trimMembers && uniqueName != null && !uniqueName.trim().isEmpty()
 					&& "members".equals(g.getName())) {
 				uniqueName = uniqueName.replace(":members", "");
 				g.setUniqueGroupName(uniqueName);
@@ -62,5 +77,6 @@ public class GroupNamesSource extends ClaimSource {
 
 		return result;
 	}
+
 
 }

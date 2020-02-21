@@ -63,6 +63,9 @@ import java.util.UUID;
  * <ul>
  *     <li><b>custom.claim.[claimName].source.config_file</b> - full path to the configuration file for this claim. See
  *     configuration templates for such a file.</li>
+ *     <li><b>custom.claim.[claimName].source.bonaFideStatus.attr</b> - mapping for bonaFideStatus Attriute</li>
+ *     <li><b>custom.claim.[claimName].source.bonaFideStatusREMS.attr</b> - mapping for bonaFideStatus Attriute</li>
+ *     <li><b>custom.claim.[claimName].source.groupAffiliations.attr</b> - mapping for groupAffiliations Attriute</li>
  * </ul>
  *
  * @author Martin Kuba <makub@ics.muni.cz>
@@ -85,6 +88,10 @@ public class GA4GHClaimSource extends ClaimSource {
 	private static final Map<URI, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
 	private static final Map<URI, String> signers = new HashMap<>();
 
+	private String bonaFideStatusAttr;
+	private String bonaFideStatusREMSAttr;
+	private String groupAffiliationsAttr;
+
 	public GA4GHClaimSource(ClaimSourceInitContext ctx) throws URISyntaxException {
 		super(ctx);
 		log.debug("initializing");
@@ -94,6 +101,9 @@ public class GA4GHClaimSource extends ClaimSource {
 		jku = new URI(issuer + JWKSetPublishingEndpoint.URL);
 		// load config file
 		parseConfigFile(ctx.getProperty("config_file", "/etc/mitreid/elixir/ga4gh_config.yml"));
+		bonaFideStatusAttr = ctx.getProperty("bonaFideStatus.attr", null);
+		bonaFideStatusREMSAttr = ctx.getProperty("bonaFideStatusREMS.attr", null);
+		groupAffiliationsAttr = ctx.getProperty("groupAffiliations.attr", null);
 	}
 
 	static void parseConfigFile(String file) {
@@ -150,7 +160,9 @@ public class GA4GHClaimSource extends ClaimSource {
 			return null;
 		}
 
-		List<Affiliation> affiliations = pctx.getPerunConnector().getUserExtSourcesAffiliations(pctx.getPerunUserId());
+		List<Affiliation> affiliations = pctx.getPerunAdapter()
+				.getAdapterRpc()
+				.getUserExtSourcesAffiliations(pctx.getPerunUserId());
 
 		ArrayNode ga4gh_passport_v1 = JsonNodeFactory.instance.arrayNode();
 		addAffiliationAndRoles(pctx, ga4gh_passport_v1, affiliations);
@@ -172,9 +184,11 @@ public class GA4GHClaimSource extends ClaimSource {
 
 	private void addAcceptedTermsAndPolicies(ClaimSourceProduceContext pctx, ArrayNode passport) {
 		//by=self for members of the group 10432 "Bona Fide Researchers"
-		boolean userInGroup = pctx.getPerunConnector().isUserInGroup(pctx.getPerunUserId(), 10432L);
+		boolean userInGroup = pctx.getPerunAdapter().isUserInGroup(pctx.getPerunUserId(), 10432L);
 		if (userInGroup) {
-			PerunAttribute bonaFideStatus = pctx.getPerunConnector().getUserAttribute(pctx.getPerunUserId(), "urn:perun:user:attribute-def:def:bonaFideStatus");
+			PerunAttribute bonaFideStatus = pctx.getPerunAdapter()
+					.getAdapterRpc()
+					.getUserAttribute(pctx.getPerunUserId(), bonaFideStatusAttr);
 			String valueCreatedAt = bonaFideStatus.getValueCreatedAt();
 			long asserted;
 			if (valueCreatedAt != null) {
@@ -189,7 +203,9 @@ public class GA4GHClaimSource extends ClaimSource {
 
 	private void addResearcherStatuses(ClaimSourceProduceContext pctx, ArrayNode passport, List<Affiliation> affiliations) {
 		//by=peer for users with attribute elixirBonaFideStatusREMS
-		PerunAttribute elixirBonaFideStatusREMS = pctx.getPerunConnector().getUserAttribute(pctx.getPerunUserId(), "urn:perun:user:attribute-def:def:elixirBonaFideStatusREMS");
+		PerunAttribute elixirBonaFideStatusREMS = pctx.getPerunAdapter()
+				.getAdapterRpc()
+				.getUserAttribute(pctx.getPerunUserId(), bonaFideStatusREMSAttr);
 		String valueCreatedAt = elixirBonaFideStatusREMS.getValueCreatedAt();
 		if (valueCreatedAt != null) {
 			long asserted = Timestamp.valueOf(valueCreatedAt).getTime() / 1000L;
@@ -204,7 +220,7 @@ public class GA4GHClaimSource extends ClaimSource {
 			}
 		}
 		//by=so for users with faculty affiliation asserted by membership in a group with groupAffiliations attribute
-		for (Affiliation affiliation : pctx.getPerunConnector().getGroupAffiliations(pctx.getPerunUserId())) {
+		for (Affiliation affiliation : pctx.getPerunAdapter().getGroupAffiliations(pctx.getPerunUserId(), groupAffiliationsAttr)) {
 			if (affiliation.getValue().startsWith("faculty@")) {
 				long expires = ZonedDateTime.now().plusYears(1L).toEpochSecond();
 				passport.add(createPassportVisa("ResearcherStatus", pctx, BONA_FIDE_URL, ELIXIR_ORG_URL, "so", affiliation.getAsserted(), expires, null));

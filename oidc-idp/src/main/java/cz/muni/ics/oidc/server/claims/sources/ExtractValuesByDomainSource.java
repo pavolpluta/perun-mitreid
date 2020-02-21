@@ -3,6 +3,7 @@ package cz.muni.ics.oidc.server.claims.sources;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
@@ -36,13 +37,14 @@ public class ExtractValuesByDomainSource extends ClaimSource {
 			return null;
 		}
 
-		JsonNode attribute = pctx.getRichUser().getJson(attributeName);
+		PerunAttributeValue attributeValue = pctx.getAttrValues().get(attributeName);
 
-		if (attribute != null) {
-			if (attribute.isTextual() && hasDomain(attribute.textValue(), domain)) {
-				return attribute;
-			} else if (attribute.isArray()) {
-				ArrayNode arrayNode = (ArrayNode) attribute;
+		if (attributeValue != null) {
+			JsonNode attributeValueJson = attributeValue.valueAsJson();
+			if (attributeValueJson.isTextual() && hasDomain(attributeValueJson.textValue(), domain)) {
+				return attributeValueJson;
+			} else if (attributeValueJson.isArray()) {
+				ArrayNode arrayNode = (ArrayNode) attributeValueJson;
 				JsonNodeFactory factory = JsonNodeFactory.instance;
 				ArrayNode result = new ArrayNode(factory);
 

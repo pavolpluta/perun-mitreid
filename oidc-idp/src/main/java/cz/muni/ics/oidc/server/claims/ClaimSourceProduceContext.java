@@ -1,8 +1,10 @@
 package cz.muni.ics.oidc.server.claims;
 
-import cz.muni.ics.oidc.models.RichUser;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import org.mitre.oauth2.model.ClientDetailsEntity;
+
+import java.util.Map;
 
 /**
  * Context in which the value of the claim is produced.
@@ -13,20 +15,20 @@ public class ClaimSourceProduceContext {
 
 	private final long perunUserId;
 	private final String sub;
-	private final RichUser richUser;
-	private final PerunConnector perunConnector;
+	private final Map<String, PerunAttributeValue> attrValues;
+	private final PerunAdapter perunAdapter;
 	private final ClientDetailsEntity client;
 
-	public ClaimSourceProduceContext(long perunUserId, String sub, RichUser richUser, PerunConnector perunConnector, ClientDetailsEntity client) {
+	public ClaimSourceProduceContext(long perunUserId, String sub, Map<String, PerunAttributeValue> attrValues, PerunAdapter perunAdapter, ClientDetailsEntity client) {
 		this.perunUserId = perunUserId;
 		this.sub = sub;
-		this.richUser = richUser;
-		this.perunConnector = perunConnector;
+		this.attrValues = attrValues;
+		this.perunAdapter = perunAdapter;
 		this.client = client;
 	}
 
-	public RichUser getRichUser() {
-		return richUser;
+	public Map<String, PerunAttributeValue> getAttrValues() {
+		return attrValues;
 	}
 
 	public long getPerunUserId() {
@@ -37,8 +39,8 @@ public class ClaimSourceProduceContext {
 		return sub;
 	}
 
-	public PerunConnector getPerunConnector() {
-		return perunConnector;
+	public PerunAdapter getPerunAdapter() {
+		return perunAdapter;
 	}
 
 	public ClientDetailsEntity getClient() {

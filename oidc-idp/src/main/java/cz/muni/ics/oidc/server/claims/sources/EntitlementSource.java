@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.net.UrlEscapers;
 import cz.muni.ics.oidc.models.Facility;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
+import org.apache.directory.api.util.Strings;
 import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
@@ -36,7 +38,7 @@ import java.util.TreeSet;
  */
 public class EntitlementSource extends GroupNamesSource {
 
-	private final String eduPersonEntitlement;
+	private final String forwardedEntitlements;
 	private final String resourceCapabilities;
 	private final String facilityCapabilities;
 	private final String prefix;
@@ -44,22 +46,22 @@ public class EntitlementSource extends GroupNamesSource {
 
 	public EntitlementSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		eduPersonEntitlement = ctx.getProperty("forwardedEntitlements", null);
-		resourceCapabilities = ctx.getProperty("resourceCapabilities", null);
-		facilityCapabilities = ctx.getProperty("facilityCapabilities", null);
+		forwardedEntitlements = ctx.getProperty("forwardedEntitlements", "eduPersonEntitlement");
+		resourceCapabilities = ctx.getProperty("resourceCapabilities", "capabilities");
+		facilityCapabilities = ctx.getProperty("facilityCapabilities", "capabilities");
 		prefix = ctx.getProperty("prefix", null);
 		authority = ctx.getProperty("authority", null);
 	}
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		JsonNode groupNamesJson = super.produceValue(pctx);
+		JsonNode groupNamesJson = super.produceValueWithoutReplacing(pctx);
 
 		Set<String> entitlements = new TreeSet<>();
 
 		Facility facility = null;
 		if (pctx.getClient() != null) {
-			facility = pctx.getPerunConnector().getFacilityByClientId(pctx.getClient().getClientId());
+			facility = pctx.getPerunAdapter().getFacilityByClientId(pctx.getClient().getClientId());
 		}
 
 		if (groupNamesJson != null) {
@@ -68,12 +70,20 @@ public class EntitlementSource extends GroupNamesSource {
 
 			for (int i = 0; i < groupNamesArrayNode.size(); i++) {
 				String value = groupNamesArrayNode.get(i).textValue();
-				groupNames.add(value);
-				entitlements.add(wrapGroupNameToAARC(value));
+				String[] parts = value.split(":", 2);
+				if (parts.length == 2 && !Strings.isEmpty(parts[1]) && "members".equals(parts[1])) {
+					parts[1] = parts[1].replace("members", "");
+				}
+
+				String gname = parts[0];
+				if (Strings.isNotEmpty(parts[1])) {
+					gname += (':' + parts[1]);
+				}
+				entitlements.add(wrapGroupNameToAARC(gname));
 			}
 
 			if (facility != null && !StringUtils.isEmpty(this.resourceCapabilities)) {
-				Set<String> resultCapabilities = pctx.getPerunConnector()
+				Set<String> resultCapabilities = pctx.getPerunAdapter()
 						.getResourceCapabilities(facility, groupNames, resourceCapabilities);
 
 				for (String capability : resultCapabilities) {
@@ -83,17 +93,17 @@ public class EntitlementSource extends GroupNamesSource {
 		}
 
 		if (facility != null && !StringUtils.isEmpty(this.facilityCapabilities)) {
-			Set<String> resultCapabilities = pctx.getPerunConnector()
+			Set<String> resultCapabilities = pctx.getPerunAdapter()
 					.getFacilityCapabilities(facility, facilityCapabilities);
 			for (String capability : resultCapabilities) {
 				entitlements.add(wrapCapabilityToAARC(capability));
 			}
 		}
 
-		if (this.eduPersonEntitlement != null && !this.eduPersonEntitlement.trim().isEmpty()) {
-			JsonNode eduPersonEntitlementJson = pctx.getRichUser().getJson(eduPersonEntitlement);
-
-			if (eduPersonEntitlementJson != null) {
+		if (this.forwardedEntitlements != null && !this.forwardedEntitlements.trim().isEmpty()) {
+			PerunAttributeValue forwardedEntitlementsVal = pctx.getAttrValues().get(forwardedEntitlements);
+			if (forwardedEntitlementsVal != null && !PerunAttributeValue.NULL.equals(forwardedEntitlementsVal)) {
+				JsonNode eduPersonEntitlementJson = forwardedEntitlementsVal.valueAsJson();
 				for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
 					entitlements.add(eduPersonEntitlementJson.get(i).asText());
 				}
