@@ -6,12 +6,14 @@ All notable changes to this project will be documented in this file.
 - Added support for ShedLock in scheduled tasks
 - Added DB table for ShedLock, see SQL scripts for the table definition that needs to be created
 - Added service name to the consent header
+- Added claim source producing groupNames
 - Added redirection of logged user to unapproved in case the user representation cannot be found in Perun
 ### Changed
 - Overridden calling of scheduled task from MitreID with our custom class
 - Changed property names for specifying custom claims (see configuration template for required format)
 - UserInfo modifiers are now loaded only at the startup, previously were loaded for each modification separately
 - Changed EntitlementSource, if forwardedEntitlements attribute name is not specified, the forwarded entitlements will not be added to the list
+- Modified EntitlementSource to extend GroupNamesSource, removed groupNames attribute from its' configuration options
 - Removed reference to CERIT-SC from CESNET footer
 ### Fixed
 - When used in clustered environment, running scheduled task caused DeadLocks to appear in DB

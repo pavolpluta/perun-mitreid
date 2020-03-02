@@ -484,7 +484,47 @@ public class PerunConnectorRpc implements PerunConnector {
 		return capabilities;
 	}
 
-    private List<Member> getMembersByUser(Long userId) {
+	@Override
+	public Set<Group> getGroupsWhereUserIsActiveWithUniqueNames(Long facilityId, Long userId) {
+		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {})", facilityId, userId);
+		Set<Group> groups = this.getGroupsWhereUserIsActive(facilityId, userId);
+
+		Map<Long, String> voIdToShortNameMap = new HashMap<>();
+		groups.forEach(g -> {
+			if (!voIdToShortNameMap.containsKey(g.getVoId())) {
+				Vo vo = this.getVoById(g.getVoId());
+				voIdToShortNameMap.put(vo.getId(), vo.getShortName());
+			}
+			g.setUniqueGroupName(voIdToShortNameMap.get(g.getVoId()) + ':' + g.getName());
+		});
+
+		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {}) returns: {}", facilityId, userId, groups);
+		return groups;
+	}
+
+	private Set<Group> getGroupsWhereUserIsActive(Long facilityId, Long userId) {
+		log.trace("getGroupsWhereUserIsActive({}, {})", facilityId, userId);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facilityId);
+		map.put("user", userId);
+		JsonNode res = makeRpcCall("/usersManager/getGroupsWhereUserIsActive", map);
+
+		Set<Group> groups = new HashSet<>(Mapper.mapGroups(res));
+		log.trace("getGroupsWhereUserIsActive({}, {}) returns: {}", facilityId, userId, groups);
+		return groups;
+	}
+
+	private Vo getVoById(Long voId) {
+		log.trace("getVoById({})",voId);
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("id", voId);
+
+		Vo vo = Mapper.mapVo(makeRpcCall("/vosManager/getVoById", map));
+		log.trace("getVoById({}) returns {}", voId, vo);
+		return vo;
+	}
+
+	private List<Member> getMembersByUser(Long userId) {
 		log.trace("getMemberByUser({})", userId);
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("user", userId);
