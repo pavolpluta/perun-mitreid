@@ -3,7 +3,7 @@ package cz.muni.ics.oidc.models;
 /**
  * Represents user from Perun.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunUser {
 

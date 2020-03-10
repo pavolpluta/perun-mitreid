@@ -56,6 +56,8 @@ import java.util.UUID;
 /**
  * Class producing GA4GH Passport claim. The claim is specified in
  * https://bit.ly/ga4gh-passport-v1
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 @SuppressWarnings("unused")
 public class GA4GHClaimSource extends ClaimSource {

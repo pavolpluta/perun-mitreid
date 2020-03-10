@@ -39,6 +39,8 @@ import static cz.muni.ics.oidc.server.elixir.GA4GHClaimSource.parseAndVerifyVisa
 /**
  * This class is a command-line debugging tool. It parses JSON in GA4GH Passport format,
  * verifies signatures on Passport Visas (JWT tokens), and prints them in human-readable format.
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class GA4GHTokenParser {
 

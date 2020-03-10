@@ -52,9 +52,9 @@ import java.util.stream.Collectors;
 /**
  * Connects to Perun via RPC.
  *
- * @author Martin Kuba makub@ics.muni.cz
- * @author Dominik František Bučík bucik@ics.muni.cz
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
+ * @author Dominik František Bučík <bucik@ics.muni.cz>
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public class PerunConnectorRpc implements PerunConnector {
 

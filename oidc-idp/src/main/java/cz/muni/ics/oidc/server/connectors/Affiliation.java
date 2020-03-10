@@ -1,5 +1,10 @@
 package cz.muni.ics.oidc.server.connectors;
 
+/**
+ * Model representing affilitation of user.
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
+ */
 public class Affiliation {
 
 	private String source;

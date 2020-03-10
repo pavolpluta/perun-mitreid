@@ -17,7 +17,7 @@ import java.util.Set;
  * org.mitre.openid.connect.service.impl.DefaultScopeClaimTranslationService
  * which for some reason is not accessible in this project, and extended.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunScopeClaimTranslationService implements ScopeClaimTranslationService {
 

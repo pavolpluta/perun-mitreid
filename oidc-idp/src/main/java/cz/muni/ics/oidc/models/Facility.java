@@ -3,7 +3,7 @@ package cz.muni.ics.oidc.models;
 /**
  * Facility object model.
  *
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public class Facility extends Model {
 

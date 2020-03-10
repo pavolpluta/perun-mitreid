@@ -8,6 +8,17 @@ import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Claim source which takes value from two attributes from Perun.
+ *
+ * Configuration (replace [claimName] with the name of the claim):
+ * <ul>
+ *     <li><b>custom.claim.[claimName].source.attribute1</b> - name of the first attribute in Perun</li>
+ *     <li><b>custom.claim.[claimName].source.attribute2</b> - name of the second attribute in Perun</li>
+ * </ul>
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
+ */
 @SuppressWarnings("unused")
 public class TwoArrayAttributesClaimSource extends ClaimSource {
 

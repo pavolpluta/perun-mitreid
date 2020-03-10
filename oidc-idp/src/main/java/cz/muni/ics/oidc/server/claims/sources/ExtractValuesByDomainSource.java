@@ -10,7 +10,13 @@ import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 /**
  * This source extract attribute values for given scope
  *
- * @author Dominik Baránek 0Baranek.dominik0@gmail.com
+ * Configuration (replace [claimName] with the name of the claim):
+ * <ul>
+ *     <li><b>custom.claim.[claimName].source.extractByDomain</b> - domain which should be matched</li>
+ *     <li><b>custom.claim.[claimName].source.attributeName</b> - attribute in which the lookup should be performed</li>
+ * </ul>
+ *
+ * @author Dominik Baránek <baranek@ics.muni.cz>
  */
 public class ExtractValuesByDomainSource extends ClaimSource {
 

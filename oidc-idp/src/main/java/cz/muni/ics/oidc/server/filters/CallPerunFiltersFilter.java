@@ -18,7 +18,7 @@ import java.util.Properties;
 /**
  * This filter calls other Perun filters saved in the PerunFiltersContext
  *
- * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baranek <baranek@ics.muni.cz>
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class CallPerunFiltersFilter extends GenericFilterBean {

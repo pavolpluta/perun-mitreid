@@ -36,17 +36,21 @@ import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_CLIENT_
 /**
  * Filter for collecting data about login.
  *
- * Configuration (replace "name" part with name defined for filter):
- * - filter.name.idpNameAttributeName - Mapping to Request attribute containing name of used Identity Provider
- * - filter.name.idpEntityIdAttributeName - Mapping to Request attribute containing entity_id of used Identity Provider
- * - filter.name.statisticsTableName - Name of the table where to store data
- * 		(depends on DataSource bean mitreIdStats)
- * - filter.name.identityProvidersMapTableName - Name of the table with mapping of entity_id (IDP) to idp name
- * 		(depends on DataSource bean mitreIdStats)
- * - filter.name.serviceProvidersMapTableName - Name of the table with mapping of client_id (SP) to client name
- * 		(depends on DataSource bean mitreIdStats)
+ * Configuration (replace [name] part with the name defined for the filter):
+ * <ul>
+ *     <li><b>filter.[name].idpNameAttributeName</b> - Mapping to Request attribute containing name of used
+ *         Identity Provider</li>
+ *     <li><b>filter.[name].idpEntityIdAttributeName</b> - Mapping to Request attribute containing entity_id of used
+ *         Identity Provider</li>
+ *     <li><b>filter.[name].statisticsTableName</b> - Name of the table where to store data
+ *         (depends on DataSource bean mitreIdStats)</li>
+ *     <li><b>filter.[name].identityProvidersMapTableName</b> - Name of the table with mapping of entity_id (IDP)
+ *         to idp name (depends on DataSource bean mitreIdStats)
+ *     <li><b>filter.[name].serviceProvidersMapTableName</b> - Name of the table with mapping of client_id (SP)
+ *         to client name (depends on DataSource bean mitreIdStats)</li>
+ * </ul>
  *
- * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baránek <baranek@ics.muni.cz>
  */
 @SuppressWarnings("SqlResolve")
 public class ProxyStatisticsFilter extends PerunRequestFilter {

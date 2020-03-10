@@ -13,7 +13,7 @@ import java.util.Properties;
 /**
  * Context for UserInfoModifiers.
  *
- * @author Dominik Baránek 0Baranek.dominik0@gmail.com
+ * @author Dominik Baránek <baranek@ics.muni.cz>
  */
 public class UserInfoModifierContext {
 

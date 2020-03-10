@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * Implements UserInfo by inheriting from DefaultUserInfo and adding more claims.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunUserInfo extends DefaultUserInfo {
 

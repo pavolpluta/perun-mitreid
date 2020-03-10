@@ -1,5 +1,10 @@
 package cz.muni.ics.oidc.models.exceptions;
 
+/**
+ * Exception represents state when value of an attribute cannot be converted into desired type.
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 public class InconvertibleValueException extends RuntimeException {
 
 	public InconvertibleValueException() {

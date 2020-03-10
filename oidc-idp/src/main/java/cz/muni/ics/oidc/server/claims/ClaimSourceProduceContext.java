@@ -4,6 +4,11 @@ import cz.muni.ics.oidc.models.RichUser;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 
+/**
+ * Context in which the value of the claim is produced.
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
+ */
 public class ClaimSourceProduceContext {
 
 	private final long perunUserId;

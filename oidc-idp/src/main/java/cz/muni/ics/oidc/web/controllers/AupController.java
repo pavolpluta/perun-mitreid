@@ -32,7 +32,7 @@ import java.util.Map;
 /**
  * Controller of the AUP page
  *
- * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baranek <baranek@ics.muni.cz>
  */
 @Controller
 public class AupController {

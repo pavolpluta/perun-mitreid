@@ -16,7 +16,7 @@ import static org.mitre.openid.connect.web.AuthenticationTimeStamper.AUTH_TIMEST
 /**
  * Authentication success handler. Performs operation when authentication has been successful.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
 

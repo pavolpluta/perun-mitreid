@@ -37,7 +37,7 @@ import static org.mitre.oauth2.service.IntrospectionResultAssembler.SCOPE_SEPARA
 /**
  * Copy of ConnectTokenEnhancer.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunAccessTokenEnhancer implements TokenEnhancer {
 

@@ -18,14 +18,23 @@ import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.AUTHORIZE_REQ
 /**
  * Abstract class for Perun filters. All filters called in CallPerunFiltersFilter has to extend this.
  *
- * configuration:
- * filter.filterName.class=cz.muni.ics.oidc.server.filters.ClassName - Class the filter instantiates
- * filter.subs=sub1,sub2,... - execution of filter will be skipped if user SUB is in the list
- * filter.clientIds=cid1,cid2,... - execution of filter will be skipped if client_id is in the list
+ * Configuration of filter names:
+ * <ul>
+ *     <li><b>filter.names</b> - comma separated list of names of the request filters</li>
+ * </ul>
+ *
+ * Configuration of filter (replace [name] part with the name defined for the filter):
+ * <ul>
+ *     <li><b>filter.[name].class</b> - Class the filter instantiates</li>
+ *     <li><b>filter.[name].subs</b> - comma separated list of sub values for which execution of filter will be skipped
+ *         if user's SUB is in the list</li>
+ *     <li><b>filter.[name].clientIds</b> - comma separated list of client_id values for which execution of filter
+ *         will be skipped if client_id is in the list</li>
+ * </ul>
  *
  * @see cz.muni.ics.oidc.server.filters.impl package for specific filters and their configuration
  *
- * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baranek <baranek@ics.muni.cz>
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public abstract class PerunRequestFilter {

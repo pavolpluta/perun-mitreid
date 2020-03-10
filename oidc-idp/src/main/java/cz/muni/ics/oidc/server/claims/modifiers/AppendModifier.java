@@ -6,7 +6,12 @@ import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
 /**
  * Appending modifier. Appends the given text to the claim value.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * Configuration (replace [claimName] with the name of the claim):
+ * <ul>
+ *     <li><b>custom.claim.[claimName].modifier.append</b> - string to be appended to the value</li>
+ * </ul>
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 @SuppressWarnings("unused")
 public class AppendModifier extends ClaimModifier {

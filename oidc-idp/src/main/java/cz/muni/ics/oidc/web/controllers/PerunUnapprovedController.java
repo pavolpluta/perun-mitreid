@@ -27,6 +27,11 @@ import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_REASON;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_TARGET;
 import static cz.muni.ics.oidc.web.controllers.ControllerUtils.LANG_PROPS_KEY;
 
+/**
+ * Ctonroller for the unapproved page.
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 @Controller
 public class PerunUnapprovedController {
 

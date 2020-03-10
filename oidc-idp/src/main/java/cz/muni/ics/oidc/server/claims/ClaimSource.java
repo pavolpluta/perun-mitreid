@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 /**
  * Interface for code that can produce claim values.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @see cz.muni.ics.oidc.server.claims.sources for different implementations of claim sources
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public abstract class ClaimSource {
 

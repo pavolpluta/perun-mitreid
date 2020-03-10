@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Service called from UserInfoEndpoint and other places to get UserInfo.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunUserInfoService implements UserInfoService {
 

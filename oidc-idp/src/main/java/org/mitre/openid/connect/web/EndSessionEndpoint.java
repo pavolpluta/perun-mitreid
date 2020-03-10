@@ -52,6 +52,8 @@ import java.text.ParseException;
  * <p>
  * This is a copy of the original file with modification at the end of processLogout().
  * </p>
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 @Controller
 public class EndSessionEndpoint {

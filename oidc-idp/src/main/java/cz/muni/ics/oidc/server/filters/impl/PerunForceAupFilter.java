@@ -39,16 +39,18 @@ import java.util.Map;
 /**
  * AUP filter checks if there are new AUPs which user hasn't accepted yet and forces him to do that.
  *
- * Configuration (replace "name" part with name defined for filter):
- * - filter.name.orgAupsAttrName - Mapping to Perun entityless attribute containing organization AUPs
- * - filter.name.userAupsAttrName - Mapping to Perun user attribute containing list of AUPS approved by user
- * - filter.name.voAupAttrName - Mapping to Perun VO attribute containing AUP specific for VO
- * - filter.name.facilityRequestedAupsAttrName - Mapping to Perun facility attribute containing list of AUPs requested
- * by the service. Contains only keys for those AUPs
- * - filter.name.voShortNamesAttrName - Mapping to Perun facility attribute containing list of short names for VOs
- * that have a resource assigned to the facility
+ * Configuration (replace [name] part with the name defined for the filter):
+ * <ul>
+ *     <li><b>filter.[name].orgAupsAttrName</b> - Mapping to Perun entityless attribute containing organization AUPs</li>
+ *     <li><b>filter.[name].userAupsAttrName</b> - Mapping to Perun user attribute containing list of AUPS approved by user</li>
+ *     <li><b>filter.[name].voAupAttrName</b> - Mapping to Perun VO attribute containing AUP specific for VO</li>
+ *     <li><b>filter.[name].facilityRequestedAupsAttrName</b> - Mapping to Perun facility attribute containing list of AUPs requested
+ *         by the service. Contains only keys for those AUPs</li>
+ *     <li><b>filter.[name].voShortNamesAttrName</b> - Mapping to Perun facility attribute containing list of short names for VOs
+ *         that have a resource assigned to the facility</li>
+ * </ul>
  *
- * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baranek <baranek@ics.muni.cz>
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class PerunForceAupFilter extends PerunRequestFilter {
