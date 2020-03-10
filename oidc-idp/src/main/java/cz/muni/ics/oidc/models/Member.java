@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Member object model.
  *
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public class Member extends Model {
 

@@ -24,6 +24,8 @@ import java.util.Set;
 
 /**
  * Modifies ID Token.
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 

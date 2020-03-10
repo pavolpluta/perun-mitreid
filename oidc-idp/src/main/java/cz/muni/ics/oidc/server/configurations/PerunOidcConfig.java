@@ -19,7 +19,7 @@ import java.util.Set;
  * Configuration of OIDC server in context of Perun.
  * Logs some interesting facts.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunOidcConfig {
 	private final static Logger log = LoggerFactory.getLogger(PerunOidcConfig.class);

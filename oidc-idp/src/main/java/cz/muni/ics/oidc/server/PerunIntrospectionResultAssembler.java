@@ -17,7 +17,7 @@ import java.util.Set;
  * Assembler of result obtained from introspection endpoint.
  * Adds "iss" to identify issuer in response from Introspection endpoint to Resource Server.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunIntrospectionResultAssembler extends DefaultIntrospectionResultAssembler {
 

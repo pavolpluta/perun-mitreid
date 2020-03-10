@@ -2,14 +2,24 @@ package cz.muni.ics.oidc.server.claims;
 
 /**
  * Keeps definition of a custom user claim.
+ *
+ * Configuration declaring custom claims:
  * <ul>
- *     <li><b>scope</b> - which scope must be granted to include the claim</li>
- *     <li><b>claim</b> - name of the claim</li>
- *     <li><b>claimSource</b> - instance of a class implementing {@link ClaimSource}</li>
- *     <li><b>claimModifier</b> - instance of a class implementing {@link ClaimModifier}</li>
+ *     <li><b>custom.claims</b> - coma separated list of names of the claims</li>
  * </ul>
+ *
+ * Configuration for claim(replace [claimName] with name of the claim): *
+ * <ul>
+ *     <li><b>custom.claim.[claimName].claim</b> - name of the claim</li>
+ *     <li><b>custom.claim.[claimName].scope</b> - scope that needs to be granted to include the claim</li>
+ *     <li><b>custom.claim.[claimName].source.class</b> instance of a class implementing {@link ClaimSource}</li>
+ *     <li><b>custom.claim.[claimName].modifier.class</b> instance of a class implementing {@link ClaimModifier}</li>
+ * </ul>
+ *
+ *
+ * @see ClaimSource
  * @see ClaimModifier
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunCustomClaimDefinition {
 

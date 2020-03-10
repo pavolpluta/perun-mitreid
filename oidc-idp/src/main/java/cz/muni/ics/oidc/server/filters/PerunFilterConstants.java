@@ -3,7 +3,7 @@ package cz.muni.ics.oidc.server.filters;
 /**
  * Class containing common constants used by Perun request filters.
  *
- * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baranek <baranek@ics.muni.cz>
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class PerunFilterConstants {

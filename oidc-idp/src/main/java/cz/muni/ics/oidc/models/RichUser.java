@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * RichUser object model.
  *
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public class RichUser extends Model {
 

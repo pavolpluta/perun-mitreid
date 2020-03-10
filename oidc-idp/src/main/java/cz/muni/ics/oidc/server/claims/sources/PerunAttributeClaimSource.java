@@ -5,6 +5,16 @@ import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 
+/**
+ * Source for claim which get value of attribute from Perun.
+ *
+ * Configuration (replace [claimName] with the name of the claim):
+ * <ul>
+ *     <li><b>custom.claim.[claimName].source.attribute</b> - name of the attribute in Perun</li>
+ * </ul>
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
+ */
 @SuppressWarnings("unused")
 public class PerunAttributeClaimSource extends ClaimSource {
 

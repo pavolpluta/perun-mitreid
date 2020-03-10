@@ -19,7 +19,7 @@ import java.util.Map;
 /**
  * This class is mapping JsonNodes to object models.
  *
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public class Mapper {
 

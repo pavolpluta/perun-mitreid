@@ -5,6 +5,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
 
+/**
+ * Utility class for working with beans.
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 @Service
 public class BeanUtil implements ApplicationContextAware {
 

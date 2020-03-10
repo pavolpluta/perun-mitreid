@@ -13,6 +13,11 @@ import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import java.time.Instant;
 
+/**
+ * Repository class for ACR model.
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 @Repository
 @Transactional(value="defaultTransactionManager")
 public class PerunAcrRepository {

@@ -8,7 +8,7 @@ import java.util.Properties;
 /**
  * Context for initializing ClaimValueSources.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class ClaimSourceInitContext {
 

@@ -14,6 +14,11 @@ import static org.mitre.openid.connect.models.Acr.PARAM_ACR;
 import static org.mitre.openid.connect.models.Acr.PARAM_EXPIRES_AT;
 import static org.mitre.openid.connect.models.Acr.PARAM_SUB;
 
+/**
+ * Model of ACR.
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 @Entity
 @Table(name = "acrs")
 @NamedQueries({

@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * AUP object model.
  *
- * @author Dominik Baranek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baranek <baranek@ics.muni.cz>
  */
 public class Aup {
 

@@ -5,7 +5,7 @@ import java.util.Properties;
 /**
  * Context for initializing ClaimModifiers.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class ClaimModifierInitContext {
 

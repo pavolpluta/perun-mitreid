@@ -41,8 +41,8 @@ import java.util.Set;
  * Controller of the pages where user accepts that information
  * about him will be sent to the client.
  *
- * @author Dominik František Bučík bucik@ics.muni.cz
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Dominik František Bučík <bucik@ics.muni.cz>
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 @Controller
 @SessionAttributes("authorizationRequest")

@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Group object model.
  *
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public class Group extends Model {
 

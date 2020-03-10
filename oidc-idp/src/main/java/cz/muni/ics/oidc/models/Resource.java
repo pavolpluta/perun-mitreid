@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Resource object model.
  *
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public class Resource extends Model {
 

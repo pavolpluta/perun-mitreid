@@ -30,6 +30,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controller for the unapproved page which offers registration.
+ *
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ */
 @Controller
 public class PerunUnapprovedRegistrationController {
 

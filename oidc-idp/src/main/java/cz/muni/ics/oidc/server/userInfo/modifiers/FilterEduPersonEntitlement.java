@@ -22,14 +22,14 @@ import java.util.stream.Collectors;
  * Group names are in AARC format from EduPersonEntitlement attribute.
  * Do not use on other than EduPersonEntitlement attribute (scope).
  *
- * Configuration (replace [modName] with the actual name of modifier specified in modifier list)
+ * Configuration (replace [name] with the actual name of modifier specified in modifier list)
  * <ul>
- *     <li>userInfo.modifier.[modName].scope - scope for which the modifier should be executed</li>
- *     <li>userInfo.modifier.[modName].prefix - prefix of entitlement used for matching</li>
- *     <li>userInfo.modifier.[modName].authority - suffix of entitlement (who has released it) used for matching</li>
+ *     <li>userInfo.modifier.[name].scope - claim for which the modifier should be executed</li>
+ *     <li>userInfo.modifier.[name].prefix - prefix of entitlement used for matching</li>
+ *     <li>userInfo.modifier.[name].authority - suffix of entitlement (who has released it) used for matching</li>
  * </ul>
  *
- * @author Dominik Baránek <0Baranek.dominik0@gmail.com>
+ * @author Dominik Baránek <baranek@ics.muni.cz>
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class FilterEduPersonEntitlement implements UserInfoModifier {

@@ -7,6 +7,12 @@ import org.springframework.http.client.ClientHttpResponse;
 
 import java.io.IOException;
 
+/**
+ * HTTP Request Interceptor which adds a specific header to the request.
+ * Name of the header and value are passed in constructor.
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
+ */
 class AddHeaderInterceptor implements ClientHttpRequestInterceptor {
 
 	private final String header;

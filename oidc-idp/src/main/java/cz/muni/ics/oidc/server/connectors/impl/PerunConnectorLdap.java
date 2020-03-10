@@ -36,7 +36,7 @@ import static org.apache.directory.ldap.client.api.search.FilterBuilder.equal;
 /**
  * Connects to Perun using LDAP.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 

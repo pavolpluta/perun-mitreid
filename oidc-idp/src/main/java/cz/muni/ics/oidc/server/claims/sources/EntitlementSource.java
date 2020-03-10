@@ -11,16 +11,21 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * This source converts groupNames and resource capabilities to AARC format and joins them with eduPersonEntitlement
- * Configuration (replace [claimName] with claimName defined for the source):
- * - custom.claim.[claimName].groupNames - groupNames attribute name
- * - custom.claim.[claimName].forwardedEntitlements - forwardedEntitlements attribute name, if not specified, the forwarded
- * entitlements will not be added to the list
- * - custom.claim.[claimName].capabilities - capabilities attribute name
- * - custom.claim.[claimName].prefix - prefix added before name of group
- * - custom.claim.[claimName].authority - source of claim
+ * This source converts groupNames and resource capabilities to AARC format and joins them with eduPersonEntitlement.
  *
- * @author Dominik Baránek baranek@ics.muni.cz
+ * Configuration (replace [claimName] with the name of the claim):
+ * <ul>
+ *     <li><b>custom.claim.[claimName].source.groupNames</b> - groupNames attribute name</li>
+ *     <li><b>>custom.claim.[claimName].source.forwardedEntitlements</b> - forwardedEntitlements attribute name, if not specified, the forwarded
+ *         entitlements will not be added to the list</li>
+ *     <li><b>custom.claim.[claimName].source.capabilities</b> - capabilities attribute name</li>
+ *     <li><b>custom.claim.[claimName].source.prefix</b> - string to be prepended to the value,</li>
+ *     <li><b>custom.claim.[claimName].source.authority</b> - string to be appended to the value, represents authority
+ *         who has released the value
+ *     </li>
+ * </ul>
+ *
+ * @author Dominik Baránek <baranek@ics.muni.cz>
  */
 public class EntitlementSource extends ClaimSource {
 

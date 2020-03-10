@@ -16,9 +16,9 @@ import java.util.Set;
  * Connects to Perun and obtains information.
  * Used for fetching necessary data about users, services etc.
  *
- * @author Martin Kuba makub@ics.muni.czc
- * @author Dominik František Bučík bucik@ics.muni.cz
- * @author Peter Jancus jancus@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
+ * @author Dominik František Bučík <bucik@ics.muni.cz>
+ * @author Peter Jancus <jancus@ics.muni.cz>
  */
 public interface PerunConnector {
 

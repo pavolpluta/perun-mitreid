@@ -7,9 +7,13 @@ import java.util.regex.Pattern;
 
 /**
  * Replace regex modifier. Replaces parts matched by regex with string using backreferences to groups.
+ * <ul>
+ *     <li><b>custom.claim.[claimName].modifier.find</b> - string to be replaced, can be a regex</li>
+ *     <li><b>custom.claim.[claimName].modifier.append</b> - string to be used as replacement</li>
+ * </ul>
  *
  * @see java.util.regex.Matcher#replaceAll(String)
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 @SuppressWarnings("unused")
 public class RegexReplaceModifier extends ClaimModifier {

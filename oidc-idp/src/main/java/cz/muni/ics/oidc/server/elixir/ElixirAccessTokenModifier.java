@@ -15,7 +15,7 @@ import java.util.Set;
 /**
  * Implements changes required by GA4GH specification followed by the ELIXIR AAI.
  *
- * @author Martin Kuba makub@ics.muni.cz
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
 @SuppressWarnings("unused")
 public class ElixirAccessTokenModifier implements PerunAccessTokenEnhancer.AccessTokenClaimsModifier {

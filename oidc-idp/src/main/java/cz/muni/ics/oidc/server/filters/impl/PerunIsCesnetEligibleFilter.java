@@ -37,11 +37,12 @@ import static cz.muni.ics.oidc.web.controllers.PerunUnapprovedController.REASON_
  * In case the value is older, denies access to the service and forces user to use verified identity.
  * Otherwise, user can to access the service.
  *
- * Configuration (replace "name" part with a name defined for the filter):
- * - filter.name.isCesnetEligibleAttr - mapping to isCesnetEligible attribute
- * - filter.name.validityPeriod - specify in months, how long the value can be old, if no value or invalid value
- * provided, defaults to 12 months
- *
+ * Configuration (replace [name] part with the name defined for the filter):
+ * <ul>
+ *     <li><b>filter.[name].isCesnetEligibleAttr</b> - mapping to isCesnetEligible attribute</li>
+ *     <li><b>filter.[name].validityPeriod</b> - specify in months, how long the value can be old, if no value
+ *         or invalid value has been provided, defaults to 12 months</li>
+ * </ul>
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
