@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.common.OAuth2AccessToken;
 import org.springframework.security.oauth2.provider.OAuth2Authentication;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 

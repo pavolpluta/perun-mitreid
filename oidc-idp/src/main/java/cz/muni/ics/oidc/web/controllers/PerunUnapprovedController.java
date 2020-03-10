@@ -20,9 +20,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Properties;
 
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_CLIENT_ID;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_HEADER;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_MESSAGE;
-import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_CLIENT_ID;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_REASON;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_TARGET;
 import static cz.muni.ics.oidc.web.controllers.ControllerUtils.LANG_PROPS_KEY;

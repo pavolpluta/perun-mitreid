@@ -7,6 +7,7 @@ import com.google.common.net.UrlEscapers;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
+
 import java.util.HashSet;
 import java.util.Set;
 
