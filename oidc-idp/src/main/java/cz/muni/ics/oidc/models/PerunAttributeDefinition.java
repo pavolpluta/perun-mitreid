@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Objects;
 
 /**

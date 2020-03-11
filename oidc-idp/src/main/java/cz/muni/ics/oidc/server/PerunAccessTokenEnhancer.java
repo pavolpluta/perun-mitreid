@@ -17,7 +17,6 @@ import org.mitre.openid.connect.config.ConfigurationPropertiesBean;
 import org.mitre.openid.connect.model.UserInfo;
 import org.mitre.openid.connect.service.OIDCTokenService;
 import org.mitre.openid.connect.service.UserInfoService;
-import org.mitre.openid.connect.web.JWKSetPublishingEndpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +26,6 @@ import org.springframework.security.oauth2.provider.OAuth2Authentication;
 import org.springframework.security.oauth2.provider.OAuth2Request;
 import org.springframework.security.oauth2.provider.token.TokenEnhancer;
 
-import java.net.URI;
 import java.util.Date;
 import java.util.UUID;
 

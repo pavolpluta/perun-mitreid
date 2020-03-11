@@ -2,14 +2,6 @@ package cz.muni.ics.oidc.models;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cz.muni.ics.oidc.models.Facility;
-import cz.muni.ics.oidc.models.Group;
-import cz.muni.ics.oidc.models.Member;
-import cz.muni.ics.oidc.models.PerunAttribute;
-import cz.muni.ics.oidc.models.PerunUser;
-import cz.muni.ics.oidc.models.Resource;
-import cz.muni.ics.oidc.models.RichUser;
-import cz.muni.ics.oidc.models.Vo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
