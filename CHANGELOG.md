@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- Added service name to the consent header
 
 ## [v1.24.0]
 ### Added
