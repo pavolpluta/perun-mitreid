@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [v1.24.1]
 ### Added
 - Added service name to the consent header
 ### Changed
@@ -182,6 +184,7 @@ All notable changes to this project will be documented in this file.
 First release of modified MITREid server which uses Shibboleth for authentication and reads user data from Perun system. It also has support for new scopes and claims, for extension of released access tokens, and for releasing user claims from introspection endpoint.
 
 [Unreleased]: https://github.com/CESNET/perun-mitreid/tree/master
+[v1.24.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.1
 [v1.24.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.0
 [v1.23.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.23.0
 [v1.22.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.22.2
