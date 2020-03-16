@@ -16,9 +16,6 @@
                     <a href="http://www.cesnet.cz/">
                         <img src="${samlResourcesURL}/module.php/cesnet/res/img/logo-cesnet.png" alt="CESNET logo" style="width: 250px;">
                     </a>
-                    <a href="https://www.cerit-sc.cz">
-                        <img src="${samlResourcesURL}/module.php/cesnet/res/img/logo-cerit.png" alt="CERIT-SC Logo">
-                    </a>
                 </div>
                 <div class="col-md-8">
                     <div class="row">
@@ -45,7 +42,7 @@
             </div>
             <div class="row">
                 <div class="col col-sm-12 copyright">
-                    &copy; 1991–<fmt:formatDate value="${date}" pattern="yyyy" /> | CESNET, z. s. p. o. &amp; CERIT-SC
+                    &copy; 1991–<fmt:formatDate value="${date}" pattern="yyyy" /> | CESNET, z. s. p. o.
                 </div>
             </div>
         </div>

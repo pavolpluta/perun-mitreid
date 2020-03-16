@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Changed property names for specifying custom claims (see configuration template for required format)
 - UserInfo modifiers are now loaded only at the startup, previously were loaded for each modification separately
 - Changed EntitlementSource, if forwardedEntitlements attribute name is not specified, the forwarded entitlements will not be added to the list
+- Removed reference to CERIT-SC from CESNET footer
 ### Fixed
 - When used in clustered environment, running scheduled task caused DeadLocks to appear in DB
 - Fixed possible null pointer exceptions and wrong behavior for FilterEduPersonEntitlement UserInfo modifier
