@@ -1,6 +1,3 @@
-ALTER TABLE authentication_holder_request_parameter
-MODIFY COLUMN val TEXT;
-
 CREATE TABLE shedlock(
     name VARCHAR(64),
     lock_until TIMESTAMP(3) NULL,

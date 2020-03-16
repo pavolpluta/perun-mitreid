@@ -3,7 +3,6 @@ package cz.muni.ics.oidc.server;
 import org.mitre.openid.connect.models.Acr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -73,7 +72,6 @@ public class PerunAcrRepository {
 	}
 
 	@Transactional
-	@Scheduled(fixedDelay = 600000)
 	public void deleteExpired() {
 		log.trace("deleteExpired()");
 		Query query = manager.createNamedQuery(Acr.DELETE_EXPIRED);
