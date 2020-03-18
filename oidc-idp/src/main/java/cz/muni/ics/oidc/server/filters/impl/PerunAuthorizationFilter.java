@@ -146,12 +146,7 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 
 		// cannot register, redirect to unapproved
 		log.debug("redirect to unapproved");
-		String redirectUrl = ControllerUtils.createRedirectUrl(request, PerunFilterConstants.AUTHORIZE_REQ_PATTERN, PerunUnapprovedController.UNAPPROVED_MAPPING,
-				Collections.singletonMap("client_id", clientIdentifier));
-		response.reset();
-		response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-		response.setHeader("Location", redirectUrl);
-
+		FiltersUtils.redirectUnapproved(request, response, clientIdentifier);
 		return false;
 	}
 

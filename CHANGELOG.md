@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - Added support for ShedLock in scheduled tasks
 - Added DB table for ShedLock, see SQL scripts for the table definition that needs to be created
 - Added service name to the consent header
+- Added redirection of logged user to unapproved in case the user representation cannot be found in Perun
 ### Changed
 - Overridden calling of scheduled task from MitreID with our custom class
 - Changed property names for specifying custom claims (see configuration template for required format)
