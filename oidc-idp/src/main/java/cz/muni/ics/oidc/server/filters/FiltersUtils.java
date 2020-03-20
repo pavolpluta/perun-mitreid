@@ -5,6 +5,8 @@ import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.web.controllers.ControllerUtils;
+import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
@@ -14,9 +16,11 @@ import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -197,6 +201,22 @@ public class FiltersUtils {
 
 		log.trace("buildReturnUrl() returns: {}", returnURL);
 		return returnURL;
+	}
+
+	/**
+	 * Redirect user to the unapproved page.
+	 * @param request original request object
+	 * @param response response object
+	 * @param clientId identifier of the service
+	 */
+	public static void redirectUnapproved(HttpServletRequest request, HttpServletResponse response, String clientId) {
+		// cannot register, redirect to unapproved
+		log.debug("redirect to unapproved");
+		String redirectUrl = ControllerUtils.createRedirectUrl(request, PerunFilterConstants.AUTHORIZE_REQ_PATTERN,
+				PerunUnapprovedController.UNAPPROVED_MAPPING, Collections.singletonMap("client_id", clientId));
+		response.reset();
+		response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+		response.setHeader("Location", redirectUrl);
 	}
 
 	private static String removeForceAuthParam(String query) {

@@ -2,16 +2,19 @@ package cz.muni.ics.oidc.server.filters;
 
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.PerunAcrRepository;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
 import org.mitre.openid.connect.models.Acr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -53,6 +56,8 @@ import static org.mitre.oauth2.model.RegisteredClientFields.CLIENT_ID;
 public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessingFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthenticationFilter.class);
+
+	AntPathRequestMatcher matcher = new AntPathRequestMatcher(PerunUnapprovedController.UNAPPROVED_MAPPING);
 
 	@Autowired
 	private PerunConnector perunConnector;
@@ -97,10 +102,29 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			log.debug("Redirecting to URL: {}", redirectURL);
 			res.sendRedirect(redirectURL);
 		} else {
-			log.debug("User is logged in, store ACR and log login");
+			log.debug("User is logged in");
+			if (principal == null &&  !matcher.matches(req)) {
+				//user is logged in, but we cannot find him in Perun
+				log.debug("User logged in, no principal found");
+				FiltersUtils.redirectUnapproved(req, res, clientId);
+			} else {
+				PerunUser user;
+				try {
+					user = perunConnector.getPreauthenticatedUserId(principal);
+				} catch (RuntimeException e) {
+					//user is logged in, but we cannot find him in Perun
+					user = null;
+				}
 
-			if (principal != null && req.getParameter(Acr.PARAM_ACR) != null) {
-				storeAcr(principal, req);
+				if (user == null && !matcher.matches(req)) {
+					log.debug("User logged in, no user found in Perun for principal {}", principal);
+					FiltersUtils.redirectUnapproved(req, res, clientId);
+					return;
+				}
+
+				if (principal != null && req.getParameter(Acr.PARAM_ACR) != null) {
+					storeAcr(principal, req);
+				}
 			}
 
 			super.doFilter(request, response, chain);
