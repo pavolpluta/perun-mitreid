@@ -16,21 +16,23 @@ import java.util.Set;
  *
  * Configuration (replace [claimName] with the name of the claim):
  * <ul>
- *     <li><b>custom.claim.[claimName].source.groupNames</b> - groupNames attribute name</li>
- *     <li><b>>custom.claim.[claimName].source.forwardedEntitlements</b> - forwardedEntitlements attribute name, if not specified, the forwarded
- *         entitlements will not be added to the list</li>
+ *     <li>
+ *         <b>custom.claim.[claimName].source.forwardedEntitlements</b> - forwardedEntitlements attribute name,
+ *         if not specified, the forwarded entitlements will not be added to the list
+ *     </li>
  *     <li><b>custom.claim.[claimName].source.capabilities</b> - capabilities attribute name</li>
  *     <li><b>custom.claim.[claimName].source.prefix</b> - string to be prepended to the value,</li>
- *     <li><b>custom.claim.[claimName].source.authority</b> - string to be appended to the value, represents authority
+ *     <li>
+ *         <b>custom.claim.[claimName].source.authority</b> - string to be appended to the value, represents authority
  *         who has released the value
  *     </li>
  * </ul>
  *
  * @author Dominik Baránek <baranek@ics.muni.cz>
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
-public class EntitlementSource extends ClaimSource {
+public class EntitlementSource extends GroupNamesSource {
 
-	private String groupNames;
 	private String eduPersonEntitlement;
 	private String capabilities;
 	private String prefix;
@@ -38,7 +40,6 @@ public class EntitlementSource extends ClaimSource {
 
 	public EntitlementSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		groupNames = ctx.getProperty("groupNames", null);
 		eduPersonEntitlement = ctx.getProperty("forwardedEntitlements", null);
 		capabilities = ctx.getProperty("capabilities", null);
 		prefix = ctx.getProperty("prefix", null);
@@ -47,8 +48,7 @@ public class EntitlementSource extends ClaimSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-
-		JsonNode groupNamesJson = pctx.getRichUser().getJson(groupNames);
+		JsonNode groupNamesJson = super.produceValue(pctx);
 
 		JsonNodeFactory factory = JsonNodeFactory.instance;
 		ArrayNode result = new ArrayNode(factory);

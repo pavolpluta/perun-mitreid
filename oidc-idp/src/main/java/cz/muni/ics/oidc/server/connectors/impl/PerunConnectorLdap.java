@@ -293,4 +293,13 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 		log.trace("getResourceCapabilities({}, {}, {}) returns: {}", clientId, groupNames, capabilitiesAttrName, capabilities);
 		return capabilities;
 	}
+
+	@Override
+	public Set<Group> getGroupsWhereUserIsActiveWithUniqueNames(Long facilityId, Long userId) {
+		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {})", facilityId, userId);
+		Set<Group> groups = fallbackConnector.getGroupsWhereUserIsActiveWithUniqueNames(facilityId, userId);
+
+		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {}) returns: {}", facilityId, userId, groups);
+		return groups;
+	}
 }
