@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - When used in clustered environment, running scheduled task caused DeadLocks to appear in DB
 - Fixed possible null pointer exceptions and wrong behavior for FilterEduPersonEntitlement UserInfo modifier
+- Fixed typo in database table for Shedlock (column 'ocked_at' changed to 'locked_at')
 
 ## [v1.24.0]
 ### Added
