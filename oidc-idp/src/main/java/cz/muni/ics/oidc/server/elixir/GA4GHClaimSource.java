@@ -58,8 +58,15 @@ import java.util.UUID;
 /**
  * Class producing GA4GH Passport claim. The claim is specified in
  * https://bit.ly/ga4gh-passport-v1
+ *
+ * Configuration (replace [claimName] with the name of the claim):
+ * <ul>
+ *     <li><b>custom.claim.[claimName].config_file</b> - full path to the configuration file for this claim. See
+ *     configuration templates for such a file.</li>
+ * </ul>
+ *
+ * @author Martin Kuba <makub@ics.muni.cz>
  */
-@SuppressWarnings("unused")
 public class GA4GHClaimSource extends ClaimSource {
 
 	static final String GA4GH_SCOPE = "ga4gh_passport_v1";
