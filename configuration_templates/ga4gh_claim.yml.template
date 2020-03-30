@@ -1,0 +1,21 @@
+---
+repos:
+  - name: REMS
+    url: https://jwt-elixir-rems-proxy.rahtiapp.fi/permissions/{elixir_id}
+    auth_header: "Permissions-Api-Key"
+    auth_value: "XYZ123"
+  - name: REMS2
+    url:  https://permissions-sds.rahtiapp.fi/permissions/{elixir_id}
+    auth_header: "HeaderName"
+    auth_value: "XYZ123"
+  - name: EGA
+    url: https://ega.ebi.ac.uk:8053/ega-openid-connect-server/user/{elixir_id}/permissions/ga4gh
+    auth_header: Authorization
+    auth_value: "basic someCrredentialsEncodedHere"
+signers:
+  - name: REMS
+    jwks: https://jwt-elixir-rems-proxy.rahtiapp.fi/jwks.json
+  - name: ELIXIR
+    jwks: https://login.elixir-czech.org/oidc/jwk
+  - name: EGA
+    jwks: https://ega.ebi.ac.uk:8053/ega-openid-connect-server/jwk
