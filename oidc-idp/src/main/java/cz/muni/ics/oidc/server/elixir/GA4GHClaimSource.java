@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -29,10 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.InterceptingClientHttpRequestFactory;
-import org.springframework.http.client.support.BasicAuthorizationInterceptor;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -44,6 +45,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -71,47 +73,62 @@ public class GA4GHClaimSource extends ClaimSource {
 	private static final String ELIXIR_ORG_URL = "https://elixir-europe.org/";
 	private static final String ELIXIR_ID = "elixir_id";
 
-	private RestTemplate remsRestTemplate;
-	private String remsUrl;
-	private RestTemplate egaRestTemplate;
-	private String egaUrl;
 	private final JWTSigningAndValidationService jwtService;
 	private final URI jku;
 	private final String issuer;
+	private static final List<ClaimRepository> claimRepositories = new ArrayList<>();
+	private static final Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
+	private static final Map<URI, String> signers = new HashMap<>();
 
 	public GA4GHClaimSource(ClaimSourceInitContext ctx) throws URISyntaxException {
 		super(ctx);
+		log.debug("initializing");
 		//remember context
 		jwtService = ctx.getJwtService();
 		issuer = ctx.getPerunOidcConfig().getConfigBean().getIssuer();
 		jku = new URI(issuer + JWKSetPublishingEndpoint.URL);
-		//prepare remsRestTemplate for calling REMS
-		remsUrl = ctx.getProperty("rems.url", null);
-		String remsHeader = ctx.getProperty("rems.header", null);
-		String remsHeaderValue = ctx.getProperty("rems.key", null);
-		if (remsUrl == null || remsHeader == null || remsHeaderValue == null) {
-			log.warn("REMS not configured, will not read its permissions!");
-		} else {
-			remsRestTemplate = new RestTemplate();
-			remsRestTemplate.setRequestFactory(
-					new InterceptingClientHttpRequestFactory(remsRestTemplate.getRequestFactory(),
-							Collections.singletonList(new AddHeaderInterceptor(remsHeader, remsHeaderValue)))
-			);
-			log.info("REMS Permissions API configured at {}", remsUrl);
-		}
-		//prepare egaRestTemplate for calling EGA
-		egaUrl = ctx.getProperty("ega.url", null);
-		String egaUser = ctx.getProperty("ega.user", null);
-		String egaPassword = ctx.getProperty("ega.password", null);
-		if (egaUrl == null || egaUser == null || egaPassword == null) {
-			log.warn("EGA not configured, will not read its permissions!");
-		} else {
-			egaRestTemplate = new RestTemplate();
-			egaRestTemplate.setRequestFactory(
-					new InterceptingClientHttpRequestFactory(egaRestTemplate.getRequestFactory(),
-							Collections.singletonList(new BasicAuthorizationInterceptor(egaUser, egaPassword)))
-			);
-			log.info("EGA Permissions API configured at {}", egaUrl);
+		// load config file
+		parseConfigFile(ctx.getProperty("config_file", "/etc/mitreid/elixir/ga4gh_config.yml"));
+	}
+
+	static void parseConfigFile(String file) {
+		log.debug("loading config file {}", file);
+		YAMLMapper mapper = new YAMLMapper();
+		try {
+			JsonNode root = mapper.readValue(new File(file), JsonNode.class);
+			// prepare claim repositories
+			for (JsonNode repo : root.path("repos")) {
+				String name = repo.path("name").asText();
+				String actionURL = repo.path("url").asText();
+				String authHeader = repo.path("auth_header").asText();
+				String authValue = repo.path("auth_value").asText();
+				if (actionURL == null || authHeader == null || authValue == null) {
+					log.error("claim repository " + repo + " not defined with url|auth_header|auth_value ");
+					continue;
+				}
+				RestTemplate restTemplate = new RestTemplate();
+				restTemplate.setRequestFactory(
+						new InterceptingClientHttpRequestFactory(restTemplate.getRequestFactory(),
+								Collections.singletonList(new AddHeaderInterceptor(authHeader, authValue)))
+				);
+				claimRepositories.add(new ClaimRepository(name, restTemplate, actionURL));
+				log.info("GA4GH Claims Repository " + name + " configured at " + actionURL);
+			}
+			// prepare claim signers
+			for (JsonNode signer : root.path("signers")) {
+				String name = signer.path("name").asText();
+				String jwks = signer.path("jwks").asText();
+				try {
+					URL jku = new URL(jwks);
+					remoteJwkSets.put(jku, new RemoteJWKSet<>(jku));
+					signers.put(jku.toURI(), name);
+					log.info("JWKS Signer " + name + " added with keys " + jwks);
+				} catch (MalformedURLException | URISyntaxException e) {
+					log.error("cannot add to RemoteJWKSet map: " + name + " " + jwks, e);
+				}
+			}
+		} catch (IOException ex) {
+			log.error("cannot read GA4GH config file", ex);
 		}
 	}
 
@@ -230,12 +247,8 @@ public class GA4GHClaimSource extends ClaimSource {
 	private void addControlledAccessGrants(ClaimSourceProduceContext pctx, ArrayNode passport) {
 		Set<String> linkedIdentities = new HashSet<>();
 		//call Resource Entitlement Management System
-		if (remsRestTemplate != null) {
-			callPermissionsJwtAPI(remsRestTemplate, remsUrl,  Collections.singletonMap(ELIXIR_ID, pctx.getSub()), pctx, passport, linkedIdentities);
-		}
-		//call European Genome Archive
-		if (egaRestTemplate != null) {
-			callPermissionsJwtAPI(egaRestTemplate, egaUrl, Collections.singletonMap(ELIXIR_ID, pctx.getSub()), pctx, passport, linkedIdentities);
+		for (ClaimRepository repo : claimRepositories) {
+			callPermissionsJwtAPI(repo, Collections.singletonMap(ELIXIR_ID, pctx.getSub()), pctx, passport, linkedIdentities);
 		}
 		if (!linkedIdentities.isEmpty()) {
 			long now = Instant.now().getEpochSecond();
@@ -245,8 +258,8 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 	}
 
-	private void callPermissionsJwtAPI(RestTemplate restTemplate, String actionURL, Map<String,String> uriVariables, ClaimSourceProduceContext pctx, ArrayNode passport, Set<String> linkedIdentities) {
-		JsonNode response = callHttpJsonAPI(restTemplate, actionURL, uriVariables);
+	private void callPermissionsJwtAPI(ClaimRepository repo, Map<String, String> uriVariables, ClaimSourceProduceContext pctx, ArrayNode passport, Set<String> linkedIdentities) {
+		JsonNode response = callHttpJsonAPI(repo, uriVariables);
 		if (response != null) {
 			JsonNode visas = response.path(GA4GH_CLAIM);
 			if (visas.isArray()) {
@@ -270,24 +283,6 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 	}
 
-	private static final Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
-	private static final Map<URI, String> signers = new HashMap<>();
-
-	private static void createTrustedJwksUrl(String url, String signer) {
-		try {
-			URL jku = new URL(url);
-			remoteJwkSets.put(jku, new RemoteJWKSet<>(jku));
-			signers.put(jku.toURI(), signer);
-		} catch (MalformedURLException | URISyntaxException e) {
-			log.error("cannot initialize RemoteJWKSet map");
-		}
-	}
-
-	static {
-		createTrustedJwksUrl("https://jwt-elixir-rems-proxy.rahtiapp.fi/jwks.json", "REMS");
-		createTrustedJwksUrl("https://login.elixir-czech.org/oidc/jwk", "ELIXIR");
-		createTrustedJwksUrl("https://ega.ebi.ac.uk:8053/ega-openid-connect-server/jwk", "EGA");
-	}
 
 	public static PassportVisa parseAndVerifyVisa(String jwtString) {
 		PassportVisa visa = new PassportVisa(jwtString);
@@ -338,7 +333,7 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 		visa.setLinkedIdentity(URLEncoder.encode(doc.get("sub").asText(), "utf-8") + "," + URLEncoder.encode(doc.get("iss").asText(), "utf-8"));
 		visa.setPrettyPayload(
-				visa_v1.get("type").asText() +":  \"" + visa_v1.get("value").asText() + "\" asserted " + isoDate(visa_v1.get("asserted").asLong())
+				visa_v1.get("type").asText() + ":  \"" + visa_v1.get("value").asText() + "\" asserted " + isoDate(visa_v1.get("asserted").asLong())
 		);
 	}
 
@@ -348,31 +343,39 @@ public class GA4GHClaimSource extends ClaimSource {
 			visa.setVerified(false);
 		} else {
 			switch (key) {
-				case "sub": visa.setSub(jsonNode.path(key).asText()); break;
-				case "iss": visa.setIss(jsonNode.path(key).asText()); break;
-				case "type": visa.setType(jsonNode.path(key).asText()); break;
-				case "value": visa.setValue(jsonNode.path(key).asText()); break;
+				case "sub":
+					visa.setSub(jsonNode.path(key).asText());
+					break;
+				case "iss":
+					visa.setIss(jsonNode.path(key).asText());
+					break;
+				case "type":
+					visa.setType(jsonNode.path(key).asText());
+					break;
+				case "value":
+					visa.setValue(jsonNode.path(key).asText());
+					break;
 			}
 		}
 	}
 
 	@SuppressWarnings("Duplicates")
-	private static JsonNode callHttpJsonAPI(RestTemplate rt, String actionUrl, Map<String,String> uriVariables) {
+	private static JsonNode callHttpJsonAPI(ClaimRepository repo, Map<String, String> uriVariables) {
 		//get permissions data
 		try {
 			JsonNode result;
 			//make the call
 			try {
-				if(log.isDebugEnabled()) {
-					log.debug("calling Permissions API at {}", rt.getUriTemplateHandler().expand(actionUrl, uriVariables));
+				if (log.isDebugEnabled()) {
+					log.debug("calling Permissions API at {}", repo.getRestTemplate().getUriTemplateHandler().expand(repo.getActionURL(), uriVariables));
 				}
-				result = rt.getForObject(actionUrl, JsonNode.class, uriVariables);
+				result = repo.getRestTemplate().getForObject(repo.getActionURL(), JsonNode.class, uriVariables);
 			} catch (HttpClientErrorException ex) {
 				MediaType contentType = ex.getResponseHeaders().getContentType();
 				String body = ex.getResponseBodyAsString();
-				log.error("HTTP ERROR " + ex.getRawStatusCode() + " URL " + actionUrl + " Content-Type: " + contentType);
+				log.error("HTTP ERROR " + ex.getRawStatusCode() + " URL " + repo.getActionURL() + " Content-Type: " + contentType);
 				if (ex.getRawStatusCode() == 404) {
-					log.warn("Got status 404 from Permissions endpoint {}, ELIXIR AAI user is not linked to user at Permissions API", actionUrl);
+					log.warn("Got status 404 from Permissions endpoint {}, ELIXIR AAI user is not linked to user at Permissions API", repo.getActionURL());
 					return null;
 				}
 				if ("json".equals(contentType.getSubtype())) {
@@ -487,5 +490,28 @@ public class GA4GHClaimSource extends ClaimSource {
 		}
 	}
 
+	public static class ClaimRepository {
+		private String name;
+		private RestTemplate restTemplate;
+		private String actionURL;
+
+		public ClaimRepository(String name, RestTemplate restTemplate, String actionURL) {
+			this.name = name;
+			this.restTemplate = restTemplate;
+			this.actionURL = actionURL;
+		}
+
+		public RestTemplate getRestTemplate() {
+			return restTemplate;
+		}
+
+		public String getActionURL() {
+			return actionURL;
+		}
+
+		public String getName() {
+			return name;
+		}
+	}
 
 }
