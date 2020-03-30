@@ -45,6 +45,7 @@ public class GA4GHTokenParser {
 	static ObjectMapper jsonMapper = new ObjectMapper();
 
 	public static void main(String[] args) throws IOException, ParseException, JOSEException {
+		GA4GHClaimSource.parseConfigFile("ga4gh_config.yml");
 		String userinfo = "/tmp/ga4gh.json";
 		JsonNode doc = jsonMapper.readValue(new File(userinfo), JsonNode.class);
 		JsonNode ga4gh = doc.get("ga4gh_passport_v1");
