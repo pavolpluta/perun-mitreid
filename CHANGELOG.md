@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- added support for MDC (MessageDiagnosticContext) logging
+### Changed
+- Changed format of log messages to include session ID instead of thread ID
 ### Fixed
 - Fixed bug for two different URLs to be equal in HashMap (ga4gh scope configuration)
 
