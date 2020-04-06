@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - Added service name to the consent header
 - Added claim source producing groupNames
 - Added redirection of logged user to unapproved in case the user representation cannot be found in Perun
+- Added logging to the specified file, rolling_file or syslog
 ### Changed
 - Overridden calling of scheduled task from MitreID with our custom class
 - Changed property names for specifying custom claims (see configuration template for required format)
@@ -15,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - Changed EntitlementSource, if forwardedEntitlements attribute name is not specified, the forwarded entitlements will not be added to the list
 - Modified EntitlementSource to extend GroupNamesSource, removed groupNames attribute from its' configuration options
 - Removed reference to CERIT-SC from CESNET footer
+- Changed logging destinations
 ### Fixed
 - When used in clustered environment, running scheduled task caused DeadLocks to appear in DB
 - Fixed possible null pointer exceptions and wrong behavior for FilterEduPersonEntitlement UserInfo modifier

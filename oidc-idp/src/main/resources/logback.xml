@@ -1,26 +1,23 @@
 <configuration packagingData="true" debug="false" scan="false" scanPeriod="30 seconds">
 	<contextName>${log.contextName}</contextName>
 
-	<if condition='isDefined("catalina.base")'>
-		<then>
-			<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-				<file>${catalina.base}/logs/${CONTEXT_NAME}.log</file>
-				<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-					<fileNamePattern>${catalina.base}/logs/${CONTEXT_NAME}.log.%d{yyyy-MM-dd}</fileNamePattern>
-				</rollingPolicy>
-				<encoder>
-					<pattern>%d %-5level %logger - %msg%n</pattern>
-				</encoder>
-			</appender>
-		</then>
-		<else>
-			<appender name="FILE" class="ch.qos.logback.core.ConsoleAppender">
-				<encoder>
-					<pattern>%d [%thread] %-5level %logger{120} - %msg%n</pattern>
-				</encoder>
-			</appender>
-		</else>
-	</if>
+	<appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${log.rolling-file.path}</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.rolling-file.path}.%d{yyyy-MM-dd}</fileNamePattern>
+		</rollingPolicy>
+		<encoder>
+			<pattern>[%thread] %cn : %-5level %logger{40} - %m%n%xException</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+		<file>${log.file.path}</file>
+		<encoder>
+			<pattern>[%thread] %cn : %-5level %logger{40} - %m%n%xException</pattern>
+		</encoder>
+	</appender>
+
 	<appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
 		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 		<facility>${log.facility}</facility>
