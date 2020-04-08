@@ -285,12 +285,22 @@ public class PerunConnectorLdap implements PerunConnector, DisposableBean {
 	}
 
 	@Override
-	public Set<String> getResourceCapabilities(String clientId, Set<String> groupNames, String capabilitiesAttrName) {
+	public Set<String> getResourceCapabilities(Facility facility, Set<String> groupNames, String capabilitiesAttrName) {
 		//TODO implement
-		log.trace("getResourceCapabilities({}, {}, {})", clientId, groupNames, capabilitiesAttrName);
-		Set<String> capabilities = fallbackConnector.getResourceCapabilities(clientId, groupNames, capabilitiesAttrName);
+		log.trace("getResourceCapabilities({}, {}, {})", facility, groupNames, capabilitiesAttrName);
+		Set<String> capabilities = fallbackConnector.getResourceCapabilities(facility, groupNames, capabilitiesAttrName);
 
-		log.trace("getResourceCapabilities({}, {}, {}) returns: {}", clientId, groupNames, capabilitiesAttrName, capabilities);
+		log.trace("getResourceCapabilities({}, {}, {}) returns: {}", facility, groupNames, capabilitiesAttrName, capabilities);
+		return capabilities;
+	}
+
+	@Override
+	public Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
+		//TODO implement
+		log.trace("getFacilityCapabilities({}, {})", facility, capabilitiesAttrName);
+		Set<String> capabilities = fallbackConnector.getFacilityCapabilities(facility, capabilitiesAttrName);
+
+		log.trace("getFacilityCapabilities({}, {}) returns: {}", facility, capabilitiesAttrName, capabilities);
 		return capabilities;
 	}
 

@@ -159,12 +159,19 @@ public interface PerunConnector {
 
 	/**
 	 * Gets the resource capabilities
-	 * @param clientId String client id
-	 * @param groupNames Set<String> of group names
+	 * @param facility Facility representing client
 	 * @param capabilitiesAttrName String name of attribute
-	 * @return set of resource capabilities
+	 * @return set of resource capabilities assigned on resources
 	 */
-	Set<String> getResourceCapabilities(String clientId, Set<String> groupNames, String capabilitiesAttrName);
+	Set<String> getResourceCapabilities(Facility facility, Set<String> groupNames, String capabilitiesAttrName);
+
+	/**
+	 * Gets the facility capabilities
+	 * @param facility Facility representing client
+	 * @param capabilitiesAttrName String name of attribute
+	 * @return set of resource capabilities assigned on facility
+	 */
+	Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName);
 
 	/**
 	 * Get groups where user is active (also in VO in which group exists) and are assigned to the resources of facility.
