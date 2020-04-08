@@ -2,10 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [v1.25.0]
 ### Added
 - Added support for ShedLock in scheduled tasks
 - Added DB table for ShedLock, see SQL scripts for the table definition that needs to be created
-- Added service name to the consent header
 - Added claim source producing groupNames
 - Added redirection of logged user to unapproved in case the user representation cannot be found in Perun
 - Added logging to the specified file, rolling_file or syslog
@@ -16,13 +17,22 @@ All notable changes to this project will be documented in this file.
 - UserInfo modifiers are now loaded only at the startup, previously were loaded for each modification separately
 - Changed EntitlementSource, if forwardedEntitlements attribute name is not specified, the forwarded entitlements will not be added to the list
 - Modified EntitlementSource to extend GroupNamesSource, removed groupNames attribute from its' configuration options
-- Removed reference to CERIT-SC from CESNET footer
 - Changed logging destinations
 - Optimized Entitlement source
 ### Fixed
 - When used in clustered environment, running scheduled task caused DeadLocks to appear in DB
 - Fixed possible null pointer exceptions and wrong behavior for FilterEduPersonEntitlement UserInfo modifier
 - Fixed typo in database table for Shedlock (column 'ocked_at' changed to 'locked_at')
+
+## [v1.24.2]
+### Changed
+- GA4GH configuration for signers and repositories from specific YAML file. See configuration templates for such file
+
+## [v1.24.1]
+### Added
+- Added service name to the consent header
+### Changed
+- Removed reference to CERIT-SC from CESNET footer
 
 ## [v1.24.0]
 ### Added
@@ -200,6 +210,9 @@ All notable changes to this project will be documented in this file.
 First release of modified MITREid server which uses Shibboleth for authentication and reads user data from Perun system. It also has support for new scopes and claims, for extension of released access tokens, and for releasing user claims from introspection endpoint.
 
 [Unreleased]: https://github.com/CESNET/perun-mitreid/tree/master
+[v1.25.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.0
+[v1.24.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.2
+[v1.24.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.1
 [v1.24.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.0
 [v1.23.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.23.0
 [v1.22.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.22.2
