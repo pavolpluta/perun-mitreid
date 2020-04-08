@@ -158,11 +158,14 @@ public class PerunConnectorRpc implements PerunConnector {
 	@Override
 	public Facility getFacilityByClientId(String clientId) {
 		Map<String, Object> map = new LinkedHashMap<>();
-		map.put("attributeName", oidcClientIdAttr);
-		map.put("attributeValue", clientId);
-		JsonNode jsonNode = makeRpcCall("/facilitiesManager/getFacilitiesByAttribute", map);
+		Facility facility = null;
+		if (clientId != null) {
+			map.put("attributeName", oidcClientIdAttr);
+			map.put("attributeValue", clientId);
+			JsonNode jsonNode = makeRpcCall("/facilitiesManager/getFacilitiesByAttribute", map);
 
-		Facility facility = (jsonNode.size() > 0) ? Mapper.mapFacility(jsonNode.get(0)) : null;
+			facility = (jsonNode.size() > 0) ? Mapper.mapFacility(jsonNode.get(0)) : null;
+		}
 		log.trace("getFacilitiesByClientId({}) returns {}", clientId, facility);
 		return facility;
 	}
@@ -439,13 +442,12 @@ public class PerunConnectorRpc implements PerunConnector {
 	}
 
 	@Override
-	public Set<String> getResourceCapabilities(String clientId, Set<String> groupNames, String capabilitiesAttrName) {
-		log.trace("getResourceCapabilities({}, {}, {})", clientId, groupNames, capabilitiesAttrName);
+	public Set<String> getResourceCapabilities(Facility facility, Set<String> groupNames, String capabilitiesAttrName) {
+		log.trace("getResourceCapabilities({}, {}, {})", facility, groupNames, capabilitiesAttrName);
 
-		Facility facility = getFacilityByClientId(clientId);
 		if (facility == null) {
-		    return new LinkedHashSet<>();
-        }
+			return new LinkedHashSet<>();
+		}
 
 		List<Resource> resources = getAssignedResources(facility);
 		Set<String> capabilities = new LinkedHashSet<>();
@@ -480,7 +482,23 @@ public class PerunConnectorRpc implements PerunConnector {
 			}
 		}
 
-		log.trace("getResourceCapabilities({}, {}, {}) returns {})", clientId, groupNames, capabilitiesAttrName, capabilities);
+		log.trace("getResourceCapabilities({}, {}, {}) returns {})", facility, groupNames, capabilitiesAttrName, capabilities);
+		return capabilities;
+	}
+
+	@Override
+	public Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
+		log.trace("getFacilityCapabilities({}, {})", facility, capabilitiesAttrName);
+
+		Set<String> capabilities = new HashSet<>();
+		if (facility != null) {
+			PerunAttribute attr = getFacilityAttribute(facility, capabilitiesAttrName);
+			if (attr != null && attr.valueAsList() != null) {
+				capabilities = new HashSet<>(attr.valueAsList());
+			}
+		}
+
+		log.trace("getFacilityCapabilities({}, {}) returns: {}", facility, capabilitiesAttrName, capabilities);
 		return capabilities;
 	}
 
