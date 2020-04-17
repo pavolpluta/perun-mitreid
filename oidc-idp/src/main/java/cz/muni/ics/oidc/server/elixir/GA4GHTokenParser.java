@@ -2,6 +2,7 @@ package cz.muni.ics.oidc.server.elixir;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jwt.JWTParser;
 import com.nimbusds.jwt.SignedJWT;
@@ -44,8 +45,14 @@ public class GA4GHTokenParser {
 			} else {
 				System.out.println("OK: "+visa.getPrettyString());
 			}
-			JsonNode visadoc = jsonMapper.readValue(((SignedJWT) JWTParser.parse(visa.getJwt())).getPayload().toString(), JsonNode.class);
-			System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(visadoc));
+			SignedJWT jwt = (SignedJWT) JWTParser.parse(s);
+			ObjectWriter prettyPrinter = jsonMapper.writerWithDefaultPrettyPrinter();
+
+			JsonNode visaHeader = jsonMapper.readValue(jwt.getHeader().toString(), JsonNode.class);
+			System.out.println(prettyPrinter.writeValueAsString(visaHeader));
+
+			JsonNode visaPayload = jsonMapper.readValue(jwt.getPayload().toString(), JsonNode.class);
+			System.out.println(prettyPrinter.writeValueAsString(visaPayload));
 		}
 		long endx = System.currentTimeMillis();
 		System.out.println("signature verification time: " + (endx - startx));
