@@ -82,7 +82,7 @@ public class GA4GHClaimSource extends ClaimSource {
 	private final URI jku;
 	private final String issuer;
 	private static final List<ClaimRepository> claimRepositories = new ArrayList<>();
-	private static final Map<URL, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
+	private static final Map<URI, RemoteJWKSet<SecurityContext>> remoteJwkSets = new HashMap<>();
 	private static final Map<URI, String> signers = new HashMap<>();
 
 	public GA4GHClaimSource(ClaimSourceInitContext ctx) throws URISyntaxException {
@@ -125,7 +125,7 @@ public class GA4GHClaimSource extends ClaimSource {
 				String jwks = signer.path("jwks").asText();
 				try {
 					URL jku = new URL(jwks);
-					remoteJwkSets.put(jku, new RemoteJWKSet<>(jku));
+					remoteJwkSets.put(jku.toURI(), new RemoteJWKSet<>(jku));
 					signers.put(jku.toURI(), name);
 					log.info("JWKS Signer " + name + " added with keys " + jwks);
 				} catch (MalformedURLException | URISyntaxException e) {
@@ -299,7 +299,7 @@ public class GA4GHClaimSource extends ClaimSource {
 				return visa;
 			}
 			visa.setSigner(signers.get(jku));
-			RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.get(jku.toURL());
+			RemoteJWKSet<SecurityContext> remoteJWKSet = remoteJwkSets.get(jku);
 			if (remoteJWKSet == null) {
 				log.error("JKU {} is not among trusted key sets", jku);
 				return visa;
