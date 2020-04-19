@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Fixed
+- Fixed bug for two different URLs to be equal in HashMap (ga4gh scope configuration)
 
 ## [v1.25.0]
 ### Added
