@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [v1.25.1]
 ### Fixed
 - Fixed bug for two different URLs to be equal in HashMap (ga4gh scope configuration)
 
@@ -212,6 +214,7 @@ All notable changes to this project will be documented in this file.
 First release of modified MITREid server which uses Shibboleth for authentication and reads user data from Perun system. It also has support for new scopes and claims, for extension of released access tokens, and for releasing user claims from introspection endpoint.
 
 [Unreleased]: https://github.com/CESNET/perun-mitreid/tree/master
+[v1.25.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.1
 [v1.25.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.0
 [v1.24.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.2
 [v1.24.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.1
