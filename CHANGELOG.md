@@ -2,6 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- added support for MDC (MessageDiagnosticContext) logging
+### Changed
+- Changed format of log messages to include session ID instead of thread ID
 
 ## [v1.25.1]
 ### Fixed

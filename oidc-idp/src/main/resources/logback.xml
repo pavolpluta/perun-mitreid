@@ -7,14 +7,14 @@
 			<fileNamePattern>${log.rolling-file.path}.%d{yyyy-MM-dd}</fileNamePattern>
 		</rollingPolicy>
 		<encoder>
-			<pattern>[%thread] %cn : %-5level %logger{40} - %m%n%xException</pattern>
+			<pattern>[%X{sessionID}] %cn : %-5level %logger{40} - %m%n%xException</pattern>
 		</encoder>
 	</appender>
 
 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
 		<file>${log.file.path}</file>
 		<encoder>
-			<pattern>[%thread] %cn : %-5level %logger{40} - %m%n%xException</pattern>
+			<pattern>[%X{sessionID}] %cn : %-5level %logger{40} - %m%n%xException</pattern>
 		</encoder>
 	</appender>
 
@@ -22,7 +22,7 @@
 		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 		<facility>${log.facility}</facility>
 		<throwableExcluded>true</throwableExcluded>
-		<suffixPattern>[%thread] %cn : %-5level %logger{40} - %m%n%xException</suffixPattern>
+		<suffixPattern>[%X{sessionID}] %cn : %-5level %logger{40} - %m%n%xException</suffixPattern>
 	</appender>
 
 	<root level="info">
