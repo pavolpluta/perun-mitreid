@@ -11,6 +11,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * This source converts groupNames and resource capabilities to AARC format and joins them with eduPersonEntitlement.
@@ -54,8 +55,7 @@ public class EntitlementSource extends GroupNamesSource {
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
 		JsonNode groupNamesJson = super.produceValue(pctx);
 
-		JsonNodeFactory factory = JsonNodeFactory.instance;
-		ArrayNode result = new ArrayNode(factory);
+		Set<String> entitlements = new TreeSet<>();
 
 		Facility facility = null;
 		if (pctx.getClient() != null) {
@@ -69,7 +69,7 @@ public class EntitlementSource extends GroupNamesSource {
 			for (int i = 0; i < groupNamesArrayNode.size(); i++) {
 				String value = groupNamesArrayNode.get(i).textValue();
 				groupNames.add(value);
-				result.add(wrapGroupNameToAARC(value));
+				entitlements.add(wrapGroupNameToAARC(value));
 			}
 
 			if (facility != null && !StringUtils.isEmpty(this.resourceCapabilities)) {
@@ -77,7 +77,7 @@ public class EntitlementSource extends GroupNamesSource {
 						.getResourceCapabilities(facility, groupNames, resourceCapabilities);
 
 				for (String capability : resultCapabilities) {
-					result.add(wrapCapabilityToAARC(capability));
+					entitlements.add(wrapCapabilityToAARC(capability));
 				}
 			}
 		}
@@ -86,7 +86,7 @@ public class EntitlementSource extends GroupNamesSource {
 			Set<String> resultCapabilities = pctx.getPerunConnector()
 					.getFacilityCapabilities(facility, facilityCapabilities);
 			for (String capability : resultCapabilities) {
-				result.add(wrapCapabilityToAARC(capability));
+				entitlements.add(wrapCapabilityToAARC(capability));
 			}
 		}
 
@@ -94,9 +94,15 @@ public class EntitlementSource extends GroupNamesSource {
 			JsonNode eduPersonEntitlementJson = pctx.getRichUser().getJson(eduPersonEntitlement);
 
 			if (eduPersonEntitlementJson != null) {
-				ArrayNode eduPersonEntitlementArrayNode = (ArrayNode) eduPersonEntitlementJson;
-				result.addAll(eduPersonEntitlementArrayNode);
+				for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
+					entitlements.add(eduPersonEntitlementJson.get(i).asText());
+				}
 			}
+		}
+
+		ArrayNode result = JsonNodeFactory.instance.arrayNode();
+		for (String entitlement: entitlements) {
+			result.add(entitlement);
 		}
 
 		return result;
