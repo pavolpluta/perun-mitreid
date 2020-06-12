@@ -13,6 +13,7 @@ import org.mitre.oauth2.model.ClientDetailsEntity;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Source fetches all unique group names in context of user and facility. If no facility exists for the client, empty
@@ -42,7 +43,7 @@ public class GroupNamesSource extends ClaimSource {
 			userGroups = perunConnector.getGroupsWhereUserIsActiveWithUniqueNames(facility.getId(), pctx.getRichUser().getId());
 		}
 
-		ArrayNode resultNode = JsonNodeFactory.instance.arrayNode();
+		Set<String> groups = new TreeSet<>();
 		userGroups.forEach(g -> {
 			String uniqueName = g.getUniqueGroupName();
 			if (uniqueName != null && !uniqueName.trim().isEmpty()
@@ -51,10 +52,15 @@ public class GroupNamesSource extends ClaimSource {
 				g.setUniqueGroupName(uniqueName);
 			}
 
-			resultNode.add(g.getUniqueGroupName());
+			groups.add(g.getUniqueGroupName());
 		});
 
-		return resultNode;
+		ArrayNode result = JsonNodeFactory.instance.arrayNode();
+		for (String entitlement: groups) {
+			result.add(entitlement);
+		}
+
+		return result;
 	}
 
 }
