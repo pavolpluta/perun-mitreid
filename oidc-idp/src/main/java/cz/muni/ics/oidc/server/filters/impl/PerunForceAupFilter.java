@@ -5,9 +5,10 @@ import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.models.Aup;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
@@ -35,6 +36,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static cz.muni.ics.oidc.web.controllers.AupController.APPROVED;
 
 /**
  * AUP filter checks if there are new AUPs which user hasn't accepted yet and forces him to do that.
@@ -77,7 +80,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
     private final OAuth2RequestFactory authRequestFactory;
     private final ClientDetailsEntityService clientService;
-    private final PerunConnector perunConnector;
+    private final PerunAdapter perunAdapter;
     private final PerunOidcConfig perunOidcConfig;
 
     public PerunForceAupFilter(PerunRequestFilterParams params) {
@@ -87,7 +90,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
         this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
         this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
-        this.perunConnector = beanUtil.getBean(PerunConnector.class);
+        this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
         this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
 
         this.perunOrgAupsAttrName = params.getProperty(ORG_AUPS_ATTR_NAME);
@@ -102,6 +105,13 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
+        if (request.getSession() != null && request.getSession().getAttribute(APPROVED) != null) {
+            request.getSession().removeAttribute(APPROVED);
+            log.info("Aups already approved, check at next access to the service due to delayed propagation to LDAP");
+            log.debug("Skipping to next filter");
+            return true;
+        }
+
         ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
         if (client == null) {
             log.warn("Could not extract client");
@@ -111,7 +121,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
         String clientIdentifier = client.getClientId();
 
-        Facility facility = perunConnector.getFacilityByClientId(clientIdentifier);
+        Facility facility = perunAdapter.getFacilityByClientId(clientIdentifier);
         if (facility == null) {
             log.warn("Could not find facility with clientID: {}", clientIdentifier);
             log.debug("Skipping to next filter");
@@ -119,7 +129,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         }
 
         List<String> attrsToFetch = new ArrayList<>(Arrays.asList(perunFacilityRequestedAupsAttrName, perunFacilityVoShortNamesAttrName));
-        Map<String, PerunAttribute> facilityAttributes = perunConnector.getFacilityAttributes(facility, attrsToFetch);
+        Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(facility, attrsToFetch);
 
         if (facilityAttributes == null) {
             log.warn("Could not fetch attributes {} for facility {}", attrsToFetch, facility);
@@ -133,7 +143,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             return true;
         }
 
-        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunConnector);
+        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
 
         Map<String, Aup> newAups;
 
@@ -162,24 +172,27 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         return true;
     }
 
-    private Map<String, Aup> getAupsToApprove(PerunUser user, Map<String, PerunAttribute> facilityAttributes) throws ParseException, IOException {
+    private Map<String, Aup> getAupsToApprove(PerunUser user, Map<String, PerunAttributeValue> facilityAttributes) throws ParseException, IOException {
         log.trace("getAupsToApprove({}, {})", user, facilityAttributes);
         Map<String, Aup> aupsToApprove= new LinkedHashMap<>();
 
-        PerunAttribute userAupsAttr = perunConnector.getUserAttribute(user.getId(), perunUserAupsAttrName);
+        PerunAttributeValue userAupsAttr = perunAdapter.getUserAttributeValue(user.getId(), perunUserAupsAttrName);
+        if (perunOidcConfig.isFillMissingUserAttrs() && PerunAttributeValue.NULL.equals(userAupsAttr)) {
+            userAupsAttr = perunAdapter.getAdapterFallback().getUserAttributeValue(user.getId(), perunUserAupsAttrName);
+        }
         Map<String, List<Aup>> userAups = convertToMapKeyToListOfAups(userAupsAttr.valueAsMap());
 
-        PerunAttribute requestedAupsAttr = facilityAttributes.get(perunFacilityRequestedAupsAttrName);
-        PerunAttribute facilityVoShortNamesAttr = facilityAttributes.get(perunFacilityVoShortNamesAttrName);
+        PerunAttributeValue requestedAupsAttr = facilityAttributes.get(perunFacilityRequestedAupsAttrName);
+        PerunAttributeValue facilityVoShortNamesAttr = facilityAttributes.get(perunFacilityVoShortNamesAttrName);
 
-        if (requestedAupsAttr != null && requestedAupsAttr.valueAsList() != null
-                && !requestedAupsAttr.valueAsList().isEmpty()) {
+        if (requestedAupsAttr != null && !PerunAttributeValue.NULL.equals(requestedAupsAttr)
+                && requestedAupsAttr.valueAsList() != null && !requestedAupsAttr.valueAsList().isEmpty()) {
             Map<String, Aup> orgAupsToApprove = getOrgAupsToApprove(requestedAupsAttr.valueAsList(), userAups);
             mergeAupMaps(aupsToApprove, orgAupsToApprove);
         }
 
-        if (facilityVoShortNamesAttr != null && facilityVoShortNamesAttr.valueAsList() != null
-                && !facilityVoShortNamesAttr.valueAsList().isEmpty()) {
+        if (facilityVoShortNamesAttr != null && !PerunAttributeValue.NULL.equals(facilityVoShortNamesAttr)
+                && facilityVoShortNamesAttr.valueAsList() != null && !facilityVoShortNamesAttr.valueAsList().isEmpty()) {
             Map<String, Aup> voAupsToApprove = getVoAupsToApprove(facilityVoShortNamesAttr.valueAsList(), userAups);
             mergeAupMaps(aupsToApprove, voAupsToApprove);
         }
@@ -236,11 +249,11 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         Map<String, Aup> aupsToApprove = new LinkedHashMap<>();
         Map<String, List<Aup>> orgAups = new HashMap<>();
 
-        Map<String, PerunAttribute> orgAupsAttr = perunConnector.getEntitylessAttributes(perunOrgAupsAttrName);
+        Map<String, PerunAttribute> orgAupsAttr = perunAdapter.getAdapterRpc().getEntitylessAttributes(perunOrgAupsAttrName);
 
         if (orgAupsAttr != null && !orgAupsAttr.isEmpty()) {
             for (Map.Entry<String, PerunAttribute> entry : orgAupsAttr.entrySet()) {
-                List<Aup> aups = Arrays.asList(mapper.readValue(entry.getValue().valueAsString(), Aup[].class));
+                List<Aup> aups = Arrays.asList(mapper.readValue(entry.getValue().getValue().valueAsString(), Aup[].class));
                 orgAups.put(entry.getKey(), aups);
             }
         }
@@ -275,9 +288,9 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
         if (voShortNames != null && !voShortNames.isEmpty()) {
             for (String voShortName : voShortNames) {
-                Long voId = perunConnector.getVoByShortName(voShortName).getId();
+                Long voId = perunAdapter.getVoByShortName(voShortName).getId();
 
-                PerunAttribute voAupAttr = perunConnector.getVoAttribute(voId, perunVoAupAttrName);
+                PerunAttributeValue voAupAttr = perunAdapter.getVoAttributeValue(voId, perunVoAupAttrName);
                 if (voAupAttr.getValue() == null) {
                     continue;
                 }

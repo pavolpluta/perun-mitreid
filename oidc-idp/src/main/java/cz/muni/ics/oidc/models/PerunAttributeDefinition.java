@@ -1,6 +1,10 @@
 package cz.muni.ics.oidc.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Strings;
+import org.codehaus.jackson.JsonNode;
 
 import java.util.Objects;
 
@@ -29,16 +33,16 @@ public class PerunAttributeDefinition extends Model {
 									String displayName, boolean writable, boolean unique, String entity,
 									String baseFriendlyName, String friendlyNameParameter) {
 		super(id);
-		this.friendlyName = friendlyName;
-		this.namespace = namespace;
-		this.description = description;
-		this.type = type;
-		this.displayName = displayName;
-		this.writable = writable;
-		this.unique = unique;
-		this.entity = entity;
-		this.baseFriendlyName = baseFriendlyName;
-		this.friendlyNameParameter = friendlyNameParameter;
+		this.setFriendlyName(friendlyName);
+		this.setNamespace(namespace);
+		this.setDescription(description);
+		this.setType(type);
+		this.setDisplayName(displayName);
+		this.setWritable(writable);
+		this.setUnique(unique);
+		this.setEntity(entity);
+		this.setBaseFriendlyName(baseFriendlyName);
+		this.setFriendlyNameParameter(friendlyNameParameter);
 	}
 
 	public String getFriendlyName() {
@@ -46,6 +50,10 @@ public class PerunAttributeDefinition extends Model {
 	}
 
 	public void setFriendlyName(String friendlyName) {
+		if (Strings.isNullOrEmpty(friendlyName)) {
+			throw new IllegalArgumentException("friendlyName can't be null or empty");
+		}
+
 		this.friendlyName = friendlyName;
 	}
 
@@ -54,6 +62,10 @@ public class PerunAttributeDefinition extends Model {
 	}
 
 	public void setNamespace(String namespace) {
+		if (Strings.isNullOrEmpty(namespace)) {
+			throw new IllegalArgumentException("namespace can't be null or empty");
+		}
+
 		this.namespace = namespace;
 	}
 
@@ -62,6 +74,10 @@ public class PerunAttributeDefinition extends Model {
 	}
 
 	public void setDescription(String description) {
+		if (description == null) {
+			throw new IllegalArgumentException("description can't be null");
+		}
+
 		this.description = description;
 	}
 
@@ -70,6 +86,10 @@ public class PerunAttributeDefinition extends Model {
 	}
 
 	public void setType(String type) {
+		if (Strings.isNullOrEmpty(type)) {
+			throw new IllegalArgumentException("type can't be null or empty");
+		}
+
 		this.type = type;
 	}
 
@@ -78,6 +98,10 @@ public class PerunAttributeDefinition extends Model {
 	}
 
 	public void setDisplayName(String displayName) {
+		if (Strings.isNullOrEmpty(displayName)) {
+			throw new IllegalArgumentException("displayName can't be null or empty");
+		}
+
 		this.displayName = displayName;
 	}
 
@@ -102,6 +126,10 @@ public class PerunAttributeDefinition extends Model {
 	}
 
 	public void setEntity(String entity) {
+		if (Strings.isNullOrEmpty(entity)) {
+			throw new IllegalArgumentException("entity can't be null or empty");
+		}
+
 		this.entity = entity;
 	}
 
@@ -114,6 +142,10 @@ public class PerunAttributeDefinition extends Model {
 	}
 
 	public void setBaseFriendlyName(String baseFriendlyName) {
+		if (Strings.isNullOrEmpty(baseFriendlyName)) {
+			throw new IllegalArgumentException("baseFriendlyName can't be null or empty");
+		}
+
 		this.baseFriendlyName = baseFriendlyName;
 	}
 
@@ -171,5 +203,24 @@ public class PerunAttributeDefinition extends Model {
 	public int hashCode() {
 		return Objects.hash(super.hashCode(), friendlyName, namespace, description, type, displayName, writable,
 				unique, entity, baseFriendlyName, friendlyNameParameter);
+	}
+
+	protected ObjectNode toJson() {
+		ObjectNode node = JsonNodeFactory.instance.objectNode();
+
+		node.put("id", super.getId());
+		node.put("friendlyName", friendlyName);
+		node.put("namespace", namespace);
+		node.put("type", type);
+		node.put("displayName", displayName);
+		node.put("writable", writable);
+		node.put("unique", unique);
+		node.put("entity", entity);
+		node.put("beanName", beanName);
+		node.put("baseFriendlyName", baseFriendlyName);
+		node.put("friendlyName", friendlyName);
+		node.put("friendlyNameParameter", friendlyNameParameter);
+
+		return node;
 	}
 }

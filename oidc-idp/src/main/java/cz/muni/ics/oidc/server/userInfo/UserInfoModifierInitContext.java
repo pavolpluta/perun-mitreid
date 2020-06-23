@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc.server.userInfo;
 
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
+
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 
 import java.util.Properties;
 
@@ -13,23 +14,23 @@ public class UserInfoModifierInitContext {
 
 	private final String propertyPrefix;
 	private final Properties properties;
-	private PerunConnector perunConnector;
+	private PerunAdapter perunAdapter;
 
-	public UserInfoModifierInitContext(String propertyPrefix, Properties properties, PerunConnector perunConnector) {
+	public UserInfoModifierInitContext(String propertyPrefix, Properties properties, PerunAdapter perunAdapter) {
 		this.propertyPrefix = propertyPrefix;
 		this.properties = properties;
-		this.perunConnector = perunConnector;
+		this.perunAdapter = perunAdapter;
 	}
 
 	public String getProperty(String suffix, String defaultValue) {
 		return properties.getProperty(propertyPrefix + "." + suffix, defaultValue);
 	}
 
-	public PerunConnector getPerunConnector() {
-		return perunConnector;
+	public PerunAdapter getPerunAdapter() {
+		return perunAdapter;
 	}
 
-	public void setPerunConnector(PerunConnector perunConnector) {
-		this.perunConnector = perunConnector;
+	public void setPerunAdapter(PerunAdapter perunAdapter) {
+		this.perunAdapter = perunAdapter;
 	}
 }

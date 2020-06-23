@@ -3,8 +3,8 @@ package cz.muni.ics.oidc.server.filters;
 import com.google.common.base.Strings;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.web.controllers.ControllerUtils;
 import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
 import org.mitre.oauth2.model.ClientDetailsEntity;
@@ -96,11 +96,11 @@ public class FiltersUtils {
 	 * Get Perun user based on extSourceName and extLogin from request
 	 * @param request Request object
 	 * @param perunOidcConfig OIDC Configuration
-	 * @param perunConnector Connector to Perun interface
+	 * @param perunAdapter Adapter of Perun interface
 	 * @return Found PerunUser
 	 */
 	public static PerunUser getPerunUser(HttpServletRequest request, PerunOidcConfig perunOidcConfig,
-								  PerunConnector perunConnector) {
+								  PerunAdapter perunAdapter) {
 		Principal p = request.getUserPrincipal();
 
 		String extSourceName = perunOidcConfig.getProxyExtSourceName();
@@ -109,7 +109,7 @@ public class FiltersUtils {
 		}
 
 		PerunPrincipal principal = new PerunPrincipal(p.getName(), extSourceName);
-		return perunConnector.getPreauthenticatedUserId(principal);
+		return perunAdapter.getPreauthenticatedUserId(principal);
 	}
 
 	/**

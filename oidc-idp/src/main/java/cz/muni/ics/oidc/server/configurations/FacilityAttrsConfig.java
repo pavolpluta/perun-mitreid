@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Configuration of Facility attributes
@@ -24,11 +24,16 @@ public class FacilityAttrsConfig {
 	private String wayfFilterAttr;
 	private String wayfEFilterAttr;
 
+	private Set<String> membershipAttrNames = new HashSet<>();
+	private Set<String> filterAttrNames = new HashSet<>();
+
 	public String getCheckGroupMembershipAttr() {
 		return checkGroupMembershipAttr;
 	}
 
 	public void setCheckGroupMembershipAttr(String checkGroupMembershipAttr) {
+		membershipAttrNames.remove(this.checkGroupMembershipAttr);
+		membershipAttrNames.add(checkGroupMembershipAttr);
 		this.checkGroupMembershipAttr = checkGroupMembershipAttr;
 	}
 
@@ -37,6 +42,8 @@ public class FacilityAttrsConfig {
 	}
 
 	public void setRegistrationURLAttr(String registrationURLAttr) {
+		membershipAttrNames.remove(this.registrationURLAttr);
+		membershipAttrNames.add(registrationURLAttr);
 		this.registrationURLAttr = registrationURLAttr;
 	}
 
@@ -45,6 +52,8 @@ public class FacilityAttrsConfig {
 	}
 
 	public void setAllowRegistrationAttr(String allowRegistrationAttr) {
+		membershipAttrNames.remove(this.allowRegistrationAttr);
+		membershipAttrNames.add(allowRegistrationAttr);
 		this.allowRegistrationAttr = allowRegistrationAttr;
 	}
 
@@ -53,6 +62,8 @@ public class FacilityAttrsConfig {
 	}
 
 	public void setDynamicRegistrationAttr(String dynamicRegistrationAttr) {
+		membershipAttrNames.remove(this.dynamicRegistrationAttr);
+		membershipAttrNames.add(dynamicRegistrationAttr);
 		this.dynamicRegistrationAttr = dynamicRegistrationAttr;
 	}
 
@@ -61,6 +72,8 @@ public class FacilityAttrsConfig {
 	}
 
 	public void setVoShortNamesAttr(String voShortNamesAttr) {
+		membershipAttrNames.remove(this.voShortNamesAttr);
+		membershipAttrNames.add(voShortNamesAttr);
 		this.voShortNamesAttr = voShortNamesAttr;
 	}
 
@@ -69,6 +82,8 @@ public class FacilityAttrsConfig {
 	}
 
 	public void setWayfFilterAttr(String wayfFilterAttr) {
+		filterAttrNames.remove(this.wayfFilterAttr);
+		filterAttrNames.add(wayfFilterAttr);
 		this.wayfFilterAttr = wayfFilterAttr;
 	}
 
@@ -77,28 +92,17 @@ public class FacilityAttrsConfig {
 	}
 
 	public void setWayfEFilterAttr(String wayfEFilterAttr) {
+		filterAttrNames.remove(this.wayfEFilterAttr);
+		filterAttrNames.add(wayfEFilterAttr);
 		this.wayfEFilterAttr = wayfEFilterAttr;
 	}
 
-	public List<String> getMembershipAttrsAsList() {
-		List<String> res = new ArrayList<>();
-		if (checkGroupMembershipAttr != null && !checkGroupMembershipAttr.isEmpty()) {
-			res.add(checkGroupMembershipAttr);
-		}
-		if (allowRegistrationAttr != null && !allowRegistrationAttr.isEmpty()) {
-			res.add(allowRegistrationAttr);
-		}
-		if (registrationURLAttr != null && !registrationURLAttr.isEmpty()) {
-			res.add(registrationURLAttr);
-		}
-		if (dynamicRegistrationAttr != null && !dynamicRegistrationAttr.isEmpty()) {
-			res.add(dynamicRegistrationAttr);
-		}
-		if (voShortNamesAttr != null && !voShortNamesAttr.isEmpty()) {
-			res.add(voShortNamesAttr);
-		}
+	public Set<String> getMembershipAttrNames() {
+		return membershipAttrNames;
+	}
 
-		return res;
+	public Set<String> getFilterAttrNames() {
+		return filterAttrNames;
 	}
 
 	@PostConstruct

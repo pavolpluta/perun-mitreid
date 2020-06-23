@@ -30,6 +30,6 @@ public class AppendModifier extends ClaimModifier {
 
 	@Override
 	public String toString() {
-		return "AppendModifier appending "+appendText;
+		return "AppendModifier appending " + appendText;
 	}
 }

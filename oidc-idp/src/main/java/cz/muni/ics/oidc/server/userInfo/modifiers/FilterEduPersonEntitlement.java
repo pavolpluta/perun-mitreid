@@ -3,9 +3,10 @@ package cz.muni.ics.oidc.server.userInfo.modifiers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.google.common.net.UrlEscapers;
 import cz.muni.ics.oidc.models.Facility;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.userInfo.PerunUserInfo;
 import cz.muni.ics.oidc.server.userInfo.UserInfoModifier;
 import cz.muni.ics.oidc.server.userInfo.UserInfoModifierInitContext;
@@ -40,17 +41,17 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 	private final String authority;
 	private final String scope;
 
-	private PerunConnector perunConnector;
+	private PerunAdapter perunAdapter;
 
 	public FilterEduPersonEntitlement(UserInfoModifierInitContext ctx) {
 		scope = ctx.getProperty("scope", null);
-		prefix = ctx.getProperty("prefix", null);
-		authority = ctx.getProperty("authority", null);
+		prefix = ctx.getProperty("prefix", "");
+		authority = ctx.getProperty("authority", "");
 		if (scope == null) {
 			throw new IllegalArgumentException("Scope must be defined");
 		}
 
-		perunConnector = ctx.getPerunConnector();
+		perunAdapter = ctx.getPerunAdapter();
 		log.trace("Initialized UserInfo modifier FilterGroups: {}", this.toString());
 	}
 
@@ -59,21 +60,22 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 		List<String> facilityGroups = new ArrayList<>();
 
 		if (clientId != null) {
-			Facility facility = perunConnector.getFacilityByClientId(clientId);
+			Facility facility = perunAdapter.getFacilityByClientId(clientId);
 			if (facility != null) {
-				facilityGroups = perunConnector.getGroupsAssignedToResourcesWithUniqueNames(facility);
+				facilityGroups = perunAdapter.getGroupsAssignedToResourcesWithUniqueNames(facility);
 			}
 		}
 
 		Set<String> facilityGroupNamesInAarcFormat = facilityGroups.stream()
-				.map(g -> getGroupNameInAarcFormat(prefix, g, authority))
+				.map(this::getGroupNameInAarcFormat)
 				.collect(Collectors.toSet());
 
 		JsonNode eduPersonEntitlementJson = perunUserInfo.getCustomClaims().get(scope);
 		JsonNodeFactory factory = JsonNodeFactory.instance;
 		ArrayNode result = new ArrayNode(factory);
 
-		if (eduPersonEntitlementJson != null) {
+		if (eduPersonEntitlementJson != null && !(eduPersonEntitlementJson instanceof NullNode)
+				&& !eduPersonEntitlementJson.isNull()) {
 			ArrayNode eduPersonEntitlementArrayNode = (ArrayNode) eduPersonEntitlementJson;
 			for (JsonNode jsonNode : eduPersonEntitlementArrayNode) {
 				String value = jsonNode.textValue();
@@ -101,7 +103,7 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 				'}';
 	}
 
-	private String getGroupNameInAarcFormat(String prefix, String uniqueGroupName, String authority) {
+	private String getGroupNameInAarcFormat(String uniqueGroupName) {
 		if (uniqueGroupName.matches("^[^:]*:members$")) {
 			uniqueGroupName = uniqueGroupName.replace(":members", "");
 		}

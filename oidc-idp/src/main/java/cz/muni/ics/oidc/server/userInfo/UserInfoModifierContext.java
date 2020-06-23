@@ -1,6 +1,6 @@
 package cz.muni.ics.oidc.server.userInfo;
 
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,12 +22,12 @@ public class UserInfoModifierContext {
 	private static final String MODIFIER_CLASS = ".class";
 
 	private Properties properties;
-	private PerunConnector perunConnector;
+	private PerunAdapter perunAdapter;
 	private List<UserInfoModifier> modifiers;
 
-	public UserInfoModifierContext(Properties properties, PerunConnector perunConnector) {
+	public UserInfoModifierContext(Properties properties, PerunAdapter perunAdapter) {
 		this.properties = properties;
-		this.perunConnector = perunConnector;
+		this.perunAdapter = perunAdapter;
 		this.modifiers = new LinkedList<>();
 
 		String modifierNamesProperty = properties.getProperty("userInfo.modifiers");
@@ -66,7 +66,7 @@ public class UserInfoModifierContext {
 			}
 			@SuppressWarnings("unchecked") Class<UserInfoModifier> clazz = (Class<UserInfoModifier>) rawClazz;
 			Constructor<UserInfoModifier> constructor = clazz.getConstructor(UserInfoModifierInitContext.class);
-			UserInfoModifierInitContext ctx = new UserInfoModifierInitContext(propertyPrefix, properties, perunConnector);
+			UserInfoModifierInitContext ctx = new UserInfoModifierInitContext(propertyPrefix, properties, perunAdapter);
 			UserInfoModifier userInfoModifier = constructor.newInstance(ctx);
 			log.info("loaded a modifier '{}' for {}", userInfoModifier, propertyPrefix);
 			return userInfoModifier;

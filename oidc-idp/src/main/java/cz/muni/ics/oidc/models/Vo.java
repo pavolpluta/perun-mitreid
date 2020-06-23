@@ -1,5 +1,7 @@
 package cz.muni.ics.oidc.models;
 
+import com.google.common.base.Strings;
+
 import java.util.Objects;
 
 /**
@@ -16,8 +18,8 @@ public class Vo extends Model {
 
 	public Vo(Long id, String name, String shortName) {
 		super(id);
-		this.name = name;
-		this.shortName = shortName;
+		this.setName(name);
+		this.setShortName(shortName);
 	}
 
 	public String getName() {
@@ -25,6 +27,10 @@ public class Vo extends Model {
 	}
 
 	public void setName(String name) {
+		if (Strings.isNullOrEmpty(name)) {
+			throw new IllegalArgumentException("name can't be null or empty");
+		}
+
 		this.name = name;
 	}
 
@@ -33,6 +39,10 @@ public class Vo extends Model {
 	}
 
 	public void setShortName(String shortName) {
+		if (Strings.isNullOrEmpty(shortName)) {
+			throw new IllegalArgumentException("shortName can't be null or empty");
+		}
+
 		this.shortName = shortName;
 	}
 

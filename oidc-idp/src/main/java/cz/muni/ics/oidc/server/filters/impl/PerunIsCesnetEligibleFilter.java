@@ -1,10 +1,10 @@
 package cz.muni.ics.oidc.server.filters.impl;
 
 import cz.muni.ics.oidc.BeanUtil;
-import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
@@ -60,7 +60,7 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
     private final int validityPeriod;
     /* END OF CONFIGURATION PROPERTIES */
 
-    private final PerunConnector perunConnector;
+    private final PerunAdapter perunAdapter;
     private final PerunOidcConfig perunOidcConfig;
 
     public PerunIsCesnetEligibleFilter(PerunRequestFilterParams params) {
@@ -68,7 +68,7 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
 
         BeanUtil beanUtil = params.getBeanUtil();
 
-        this.perunConnector = beanUtil.getBean(PerunConnector.class);
+        this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
         this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
 
         this.isCesnetEligibleAttrName = params.getProperty(IS_CESNET_ELIGIBLE_ATTR_NAME);
@@ -96,7 +96,7 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
             return true;
         }
 
-        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunConnector);
+        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
         if (user == null) {
             log.warn("Could not extract user from request, skip to the next filter");
             return true;
@@ -104,14 +104,14 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
 
         String reason;
 
-        PerunAttribute attribute = perunConnector.getUserAttribute(user.getId(), isCesnetEligibleAttrName);
-        if (attribute != null && attribute.getValue() != null && attribute.valueAsString() != null) {
+        PerunAttributeValue attrValue = perunAdapter.getUserAttributeValue(user.getId(), isCesnetEligibleAttrName);
+        if (attrValue != null) {
             LocalDateTime timeStamp;
             try {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
-                timeStamp = LocalDateTime.parse(attribute.valueAsString(), formatter);
+                timeStamp = LocalDateTime.parse(attrValue.valueAsString(), formatter);
             } catch (DateTimeParseException e) {
-                log.error("Could not parse {} value: {}", isCesnetEligibleAttrName, attribute.valueAsString());
+                log.error("Could not parse {} value: {}", isCesnetEligibleAttrName, attrValue.valueAsString());
                 return true;
             }
 

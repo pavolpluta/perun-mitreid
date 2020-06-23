@@ -1,19 +1,34 @@
-package cz.muni.ics.oidc.models;
+package cz.muni.ics.oidc.models.mappers;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cz.muni.ics.oidc.models.AttributeMapping;
+import cz.muni.ics.oidc.models.Aup;
+import cz.muni.ics.oidc.models.ExtSource;
+import cz.muni.ics.oidc.models.Facility;
+import cz.muni.ics.oidc.models.Group;
+import cz.muni.ics.oidc.models.Member;
+import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
+import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.models.Resource;
+import cz.muni.ics.oidc.models.UserExtSource;
+import cz.muni.ics.oidc.models.Vo;
+import cz.muni.ics.oidc.models.enums.MemberStatus;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This class is mapping JsonNodes to object models.
  *
  * @author Peter Jancus <jancus@ics.muni.cz>
  */
-public class Mapper {
+public class RpcMapper {
 
 	/**
 	 * Maps JsonNode to Facility model
@@ -33,6 +48,7 @@ public class Mapper {
 		long userId = jsonNode.path("id").asLong();
 		String firstName = jsonNode.path("firstName").asText();
 		String lastName = jsonNode.path("lastName").asText();
+
 		return new PerunUser(userId, firstName, lastName);
 	}
 
@@ -47,7 +63,8 @@ public class Mapper {
 		String name = jsonNode.get("name").asText();
 		String description = jsonNode.get("description").asText();
 		Long voId = jsonNode.get("voId").asLong();
-		return new Group(id, parentGroupId, name, description, voId);
+
+		return new Group(id, parentGroupId, name, description, null, voId);
 	}
 
 	/**
@@ -75,7 +92,7 @@ public class Mapper {
 		Long id = jsonNode.get("id").asLong();
 		Long userId = jsonNode.get("userId").asLong();
 		Long voId = jsonNode.get("voId").asLong();
-		String status = jsonNode.get("status").asText();
+		MemberStatus status = MemberStatus.fromString(jsonNode.get("status").asText());
 
 		return new Member(id, userId, voId, status);
 	}
@@ -118,48 +135,33 @@ public class Mapper {
 	}
 
 	/**
-	 * Mapps JsonNode to RichUser model
-	 *
-	 * @param jsonNode rich user in Json format to be mapped
-	 * @return RichUser mapped from JsonNode
-	 */
-	public static RichUser mapRichUser(JsonNode jsonNode) {
-		Map<String, JsonNode> map = new HashMap<>();
-		Long id = jsonNode.get("id").asLong();
-		RichUser richUser = new RichUser(id);
-		JsonNode attributesNode = jsonNode.get("userAttributes");
-		for (int i = 0; i < attributesNode.size(); i++) {
-			String friendlyName = attributesNode.get(i).get("friendlyName").asText();
-			String namespace = attributesNode.get(i).get("namespace").asText();
-			JsonNode valueNode = attributesNode.get(i).get("value");
-			map.put(namespace + ":" + friendlyName, valueNode);
-		}
-		richUser.setAttributes(map);
-		return richUser;
-	}
-
-	/**
 	 * Map JsonNode to Perun attribute
 	 * @param jsonNode attribute in JSON format to be mapped
 	 * @return PerunAttribute mapped from JsonNode
 	 */
 	public static PerunAttribute mapAttribute(JsonNode jsonNode) {
 		PerunAttribute attribute = new PerunAttribute();
+
+		String type = jsonNode.get("type").asText();
+		JsonNode value = jsonNode.get("value");
+		PerunAttributeValue attrVal = new PerunAttributeValue(type, value);
+
 		attribute.setId(jsonNode.get("id").asLong());
 		attribute.setFriendlyName(jsonNode.get("friendlyName").asText());
 		attribute.setNamespace(jsonNode.get("namespace").asText());
 		attribute.setDescription(jsonNode.get("description").asText());
-		attribute.setType(jsonNode.get("type").asText());
+		attribute.setType(type);
 		attribute.setDisplayName(jsonNode.get("displayName").asText());
 		attribute.setWritable(jsonNode.get("writable").asBoolean());
 		attribute.setUnique(jsonNode.get("unique").asBoolean());
 		attribute.setBaseFriendlyName(jsonNode.get("baseFriendlyName").asText());
 		attribute.setFriendlyNameParameter(jsonNode.get("friendlyNameParameter").asText());
-		attribute.setValue((jsonNode.get("value").isNull()) ? null : attribute.getType(), jsonNode.get("value"));
+		attribute.setValue(attrVal);
 		JsonNode valueCreatedAt = jsonNode.get("valueCreatedAt");
 		attribute.setValueCreatedAt(valueCreatedAt.isNull() ? null : valueCreatedAt.asText());
 		JsonNode valueModifiedAt = jsonNode.get("valueModifiedAt");
 		attribute.setValueModifiedAt(valueModifiedAt.isNull() ? null : valueModifiedAt.asText());
+
 		return attribute;
 	}
 
@@ -178,12 +180,24 @@ public class Mapper {
 	 * @param jsonNode attributes as array in JSON format to be mapped
 	 * @return Map of PerunAttributes mapped from JsonNode, where key = URN, value = Attribute
 	 */
-	public static Map<String, PerunAttribute> mapAttributes(JsonNode jsonNode) {
+	public static Map<String, PerunAttribute> mapAttributes(JsonNode jsonNode, Set<AttributeMapping> attrMappings) {
 		Map<String, PerunAttribute> res = new HashMap<>();
+		Map<String, PerunAttribute> attributesAsMap = new HashMap<>();
+
 		for (int i = 0; i < jsonNode.size(); i++) {
 			JsonNode attribute = jsonNode.get(i);
 			PerunAttribute mappedAttribute = mapAttribute(attribute);
-			res.put(mappedAttribute.getUrn(), mappedAttribute);
+			attributesAsMap.put(mappedAttribute.getUrn(), mappedAttribute);
+		}
+
+		for (AttributeMapping mapping: attrMappings) {
+			String attrKey = mapping.getRpcName();
+			if (attributesAsMap.containsKey(attrKey)) {
+				PerunAttribute attribute = attributesAsMap.get(attrKey);
+				res.put(mapping.getIdentifier(), attribute);
+			} else {
+				res.put(mapping.getIdentifier(), PerunAttribute.NULL);
+			}
 		}
 
 		return res;
@@ -217,5 +231,92 @@ public class Mapper {
 		}
 
 		return res;
+	}
+
+	/**
+	 * Map JsonNode to list of UserExtSources
+	 * @param jsonNode UserExtSources in JSON format
+	 * @return List of mapped UserExtSources
+	 */
+	public static List<UserExtSource> mapUserExtSources(JsonNode jsonNode) {
+		List<UserExtSource> userExtSources = new ArrayList<>();
+
+		for (int i = 0; i < jsonNode.size(); i++) {
+			JsonNode userExtSource = jsonNode.get(i);
+			UserExtSource mappedUes = mapUserExtSource(userExtSource);
+			userExtSources.add(mappedUes);
+		}
+
+		return userExtSources;
+	}
+
+	/**
+	 * Map JsonNode to UserExtSource
+	 * @param jsonNode UserExtSource in JSON format
+	 * @return Mapped UserExtSource
+	 */
+	public static UserExtSource mapUserExtSource(JsonNode jsonNode) {
+		UserExtSource ues = new UserExtSource();
+		JsonNode extSourceJson = jsonNode.path("extSource");
+		ExtSource extSource = mapExtSource(extSourceJson);
+
+		ues.setId(jsonNode.get("id").asLong());
+		ues.setExtSource(extSource);
+		ues.setLastAccess(Timestamp.valueOf(jsonNode.get("lastAccess").asText()));
+		ues.setPersistent(jsonNode.get("persistent").asBoolean());
+		ues.setLogin(jsonNode.get("login").asText());
+		ues.setLoa(jsonNode.get("loa").asInt());
+
+		return ues;
+	}
+
+	/**
+	 * Map JsonNode to ExtSource
+	 * @param jsonNode ExtSource in JSON format
+	 * @return Mapped ExtSource
+	 */
+	public static ExtSource mapExtSource(JsonNode jsonNode) {
+		ExtSource extSource = new ExtSource();
+
+		extSource.setId(jsonNode.get("id").asLong());
+		extSource.setName(jsonNode.get("name").asText());
+		extSource.setType(jsonNode.get("type").asText());
+
+		return extSource;
+	}
+
+
+	/**
+	 * Map JsonNode to list of ExtSources
+	 * @param jsonNode ExtSources in JSON format
+	 * @return List of mapped ExtSources
+	 */
+	public static List<ExtSource> mapExtSources(JsonNode jsonNode) {
+		List<ExtSource> extSources = new ArrayList<>();
+
+		for (int i = 0; i < jsonNode.size(); i++) {
+			JsonNode extSource = jsonNode.get(i);
+			ExtSource mappedExtSource = mapExtSource(extSource);
+			extSources.add(mappedExtSource);
+		}
+
+		return extSources;
+	}
+
+	/**
+	 * Map JsonNode to list of Aup
+	 * @param jsonNode Aup in JSON format
+	 * @return Mapped Aup
+	 */
+	public static Aup mapAup(JsonNode jsonNode) {
+		Aup aup = new Aup();
+
+		aup.setVersion(jsonNode.get("version").asText());
+		aup.setDate(jsonNode.get("date").asText());
+		aup.setLink(jsonNode.get("link").asText());
+		aup.setText(jsonNode.get("text").asText());
+		aup.setSignedOn(jsonNode.hasNonNull(Aup.SIGNED_ON) ? jsonNode.get(Aup.SIGNED_ON).asText() : null);
+
+		return aup;
 	}
 }

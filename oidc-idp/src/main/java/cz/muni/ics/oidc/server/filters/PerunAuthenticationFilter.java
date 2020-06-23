@@ -1,13 +1,13 @@
 package cz.muni.ics.oidc.server.filters;
 
 import cz.muni.ics.oidc.models.Facility;
-import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunUser;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.server.PerunAcrRepository;
 import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
 import org.mitre.openid.connect.models.Acr;
 import org.slf4j.Logger;
@@ -60,7 +60,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	AntPathRequestMatcher matcher = new AntPathRequestMatcher(PerunUnapprovedController.UNAPPROVED_MAPPING);
 
 	@Autowired
-	private PerunConnector perunConnector;
+	private PerunAdapter perunAdapter;
 
 	@Autowired
 	private FacilityAttrsConfig facilityAttrsConfig;
@@ -77,12 +77,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		HttpServletResponse res = (HttpServletResponse) response;
 
 		PerunPrincipal principal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
-		String clientId = null;
-
-		if (req.getParameter(CLIENT_ID) != null) {
-			clientId = req.getParameter(CLIENT_ID);
-		}
-
+		String clientId = req.getParameter(CLIENT_ID);
 		String redirectURL = null;
 		if (mfaRequestedAndNotPerformedYet(req)) {
 			// MFA - go to login with forceAuthn and also add loggedOut (as otherwise it would match the ACR again)
@@ -110,7 +105,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			} else {
 				PerunUser user;
 				try {
-					user = perunConnector.getPreauthenticatedUserId(principal);
+					user = perunAdapter.getPreauthenticatedUserId(principal);
 				} catch (RuntimeException e) {
 					//user is logged in, but we cannot find him in Perun
 					user = null;
@@ -267,13 +262,13 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	private String getFilterParam(String clientId, HttpServletRequest req) {
 		log.trace("getFilterParam(clientId: {}, req: {})", clientId, req);
 
-		Map<String, PerunAttribute> filterAttributes = Collections.emptyMap();
+		Map<String, PerunAttributeValue> filterAttributes = Collections.emptyMap();
 		String filter = null;
 
 		if (config.isAskPerunForIdpFiltersEnabled()) {
 			Facility facility = null;
 			if (clientId != null) {
-				facility = perunConnector.getFacilityByClientId(clientId);
+				facility = perunAdapter.getFacilityByClientId(clientId);
 			}
 
 			if (facility != null) {
@@ -312,13 +307,13 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return acrValues;
 	}
 
-	private String extractIdpEFilter(HttpServletRequest req, Map<String, PerunAttribute> filterAttributes) {
+	private String extractIdpEFilter(HttpServletRequest req, Map<String, PerunAttributeValue> filterAttributes) {
 		log.debug("extractIdpEFilter");
 		String result = null;
 		if (req.getParameter(PARAM_WAYF_EFILTER) != null) {
 			result = req.getParameter(PARAM_WAYF_EFILTER);
 		} else if (filterAttributes.get(facilityAttrsConfig.getWayfEFilterAttr()) != null) {
-			PerunAttribute filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfEFilterAttr());
+			PerunAttributeValue filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfEFilterAttr());
 			if (filterAttribute.getValue() != null) {
 				result = filterAttribute.valueAsString();
 			}
@@ -328,13 +323,13 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return result;
 	}
 
-	private String extractIdpFilter(HttpServletRequest req, Map<String, PerunAttribute> filterAttributes) {
+	private String extractIdpFilter(HttpServletRequest req, Map<String, PerunAttributeValue> filterAttributes) {
 		log.debug("extractIdpFilter");
 		String result = null;
 		if (req.getParameter(PARAM_WAYF_FILTER) != null) {
 			result = req.getParameter(PARAM_WAYF_FILTER);
 		} else if (filterAttributes.get(facilityAttrsConfig.getWayfFilterAttr()) != null) {
-			PerunAttribute filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfFilterAttr());
+			PerunAttributeValue filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfFilterAttr());
 			if (filterAttribute.getValue() != null) {
 				result = filterAttribute.valueAsString();
 			}
@@ -344,13 +339,13 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		return result;
 	}
 
-	private Map<String, PerunAttribute> getFacilityFilterAttributes(Facility facility) {
+	private Map<String, PerunAttributeValue> getFacilityFilterAttributes(Facility facility) {
 		log.debug("getFacilityFilterAttributes({})", facility);
 		List<String> attrsToFetch = new ArrayList<>();
 		attrsToFetch.add(facilityAttrsConfig.getWayfEFilterAttr());
 		attrsToFetch.add(facilityAttrsConfig.getWayfFilterAttr());
 
-		Map<String, PerunAttribute> result = perunConnector.getFacilityAttributes(facility, attrsToFetch);
+		Map<String, PerunAttributeValue> result = perunAdapter.getFacilityAttributeValues(facility, attrsToFetch);
 		log.debug("getFacilityFilterAttributes returns: {}", result);
 		return result;
 	}

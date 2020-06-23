@@ -42,6 +42,7 @@ public class PerunOidcConfig {
 	private String proxyExtSourceName;
 	private Set<String> idTokenScopes;
 	private List<String> availableLangs;
+	private boolean fillMissingUserAttrs;
 
 	@Autowired
 	private ServletContext servletContext;
@@ -51,6 +52,7 @@ public class PerunOidcConfig {
 	private String localizationFilesPath;
 	private String webClassesFilePath;
 	private String emailContact;
+	private String rpcEnabled;
 
 	public void setRpcUrl(String rpcUrl) {
 		this.rpcUrl = rpcUrl;
@@ -189,6 +191,14 @@ public class PerunOidcConfig {
 		this.localizationFilesPath = localizationFilesPath;
 	}
 
+	public boolean isFillMissingUserAttrs() {
+		return fillMissingUserAttrs;
+	}
+
+	public void setFillMissingUserAttrs(boolean fillMissingUserAttrs) {
+		this.fillMissingUserAttrs = fillMissingUserAttrs;
+	}
+
 	public String getWebClassesFilePath() {
 		return webClassesFilePath;
 	}
@@ -203,6 +213,15 @@ public class PerunOidcConfig {
 
 	public void setEmailContact(String emailContact) {
 		this.emailContact = emailContact;
+	}
+
+
+	public void setRpcEnabled(String rpcEnabled) {
+		this.rpcEnabled = rpcEnabled;
+	}
+
+	public String getRpcEnabled() {
+		return rpcEnabled;
 	}
 
 	@PostConstruct
@@ -238,6 +257,7 @@ public class PerunOidcConfig {
 			log.info("JSON Web Keys: {}", jwk);
 			log.info("JDBC URL: {}", jdbcUrl);
 			log.info("LDAP: ldaps://{}/{}", coreProperties.getProperty("ldap.host"), coreProperties.getProperty("ldap.baseDN"));
+			log.info("FILL MISSING USER ATTRS: {}", fillMissingUserAttrs);
 			log.info("THEME: {}", theme);
 			log.info("baseURL: {}", baseURL);
 			log.info("LOGIN  URL: {}", samlLoginURL);

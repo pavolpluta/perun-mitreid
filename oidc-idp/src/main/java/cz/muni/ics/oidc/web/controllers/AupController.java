@@ -7,8 +7,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import cz.muni.ics.oidc.models.Aup;
 import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.mappers.RpcMapper;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.web.WebHtmlClasses;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ public class AupController {
 
     public static final String URL = "aup";
     public static final String NEW_AUPS = "newAups";
+    public static final String APPROVED = "approved";
     public static final String RETURN_URL = "returnUrl";
     public static final String USER_ATTR = "userAttr";
 
@@ -47,7 +49,7 @@ public class AupController {
     private final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
-    private PerunConnector perunConnector;
+    private PerunAdapter perunAdapter;
 
     @Autowired
     private PerunOidcConfig perunOidcConfig;
@@ -70,7 +72,7 @@ public class AupController {
         Iterator<Map.Entry<String, JsonNode>> iterator = newAupsJson.fields();
         while (iterator.hasNext()) {
             Map.Entry<String, JsonNode> keyAupPair = iterator.next();
-            newAups.put(keyAupPair.getKey(), new Aup(keyAupPair.getValue()));
+            newAups.put(keyAupPair.getKey(), RpcMapper.mapAup(keyAupPair.getValue()));
         }
 
         model.put(NEW_AUPS, newAups);
@@ -106,22 +108,27 @@ public class AupController {
         }
 
         Long userId = Long.parseLong(request.getUserPrincipal().getName());
-        PerunAttribute userAupsAttr = perunConnector.getUserAttribute(userId, userAupsAttrName);
-        Map<String, String> userAupsAttrValue = userAupsAttr.valueAsMap();
-        if (userAupsAttrValue == null) {
-            userAupsAttrValue = new LinkedHashMap<>();
+
+        try {
+            PerunAttribute userAupsAttr = perunAdapter.getAdapterRpc().getUserAttribute(userId, userAupsAttrName);
+            Map<String, String> userAupsAttrValue = userAupsAttr.getValue().valueAsMap();
+            if (userAupsAttrValue == null) {
+                userAupsAttrValue = new LinkedHashMap<>();
+            }
+
+            ObjectNode userAupsAttrAsObjNode = mapper.convertValue(userAupsAttrValue, ObjectNode.class);
+
+            ObjectNode userAttrValueUpdated = updateUserAupsAttrValue(userAupsAttrAsObjNode, aupsToApproveJsonObject);
+            userAupsAttr.getValue().setValue(userAupsAttr.getType(), userAttrValueUpdated);
+            perunAdapter.getAdapterRpc().setUserAttribute(userId, userAupsAttr);
+        } catch (Exception e) {
+            log.warn("Exception when storing aup, probably RPC not reachable", e);
         }
-
-        ObjectNode userAupsAttrAsObjNode = mapper.convertValue(userAupsAttrValue, ObjectNode.class);
-
-        ObjectNode userAttrValueUpdated = updateUserAupsAttrValue(userAupsAttrAsObjNode, aupsToApproveJsonObject);
-        userAupsAttr.setValue(userAttrValueUpdated);
-
-        perunConnector.setUserAttribute(userId, userAupsAttr);
 
         request.getSession().removeAttribute(NEW_AUPS);
         request.getSession().removeAttribute(RETURN_URL);
         request.getSession().removeAttribute(USER_ATTR);
+        request.getSession().setAttribute(APPROVED, true);
 
         log.trace("redirecting to {}", returnUrl);
         return "redirect:" + returnUrl;

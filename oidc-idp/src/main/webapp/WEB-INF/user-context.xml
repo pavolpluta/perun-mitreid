@@ -6,12 +6,18 @@
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	   xmlns:security="http://www.springframework.org/schema/security"
 	   xmlns:context="http://www.springframework.org/schema/context"
-	   xmlns:mvc="http://www.springframework.org/schema/mvc"
 	   xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<context:property-placeholder properties-ref="coreProperties"/>
+	<context:property-placeholder properties-ref="nonOverwrittenAttributeProperties" ignore-unresolvable="true" order="0"/>
+	<context:property-placeholder properties-ref="userAttrMappingsProperties" ignore-unresolvable="true" order="1"/>
+	<context:property-placeholder properties-ref="facilityAttrMappingsProperties" ignore-unresolvable="true" order="2"/>
+	<context:property-placeholder properties-ref="groupAttrMappingsProperties" ignore-unresolvable="true" order="3"/>
+	<context:property-placeholder properties-ref="voAttrMappingsProperties" ignore-unresolvable="true" order="4"/>
+	<context:property-placeholder properties-ref="resourceAttrMappingsProperties" ignore-unresolvable="true" order="5"/>
+	<context:property-placeholder properties-ref="coreProperties" order="6"/>
+
 	<context:component-scan base-package="cz.muni.ics.oidc"/>
 
 	<!-- default config values, by default override in file /etc/perun/perun-mitreid.properties -->
@@ -21,83 +27,54 @@
 				<prop key="main.oidc.issuer.url">https://perun-dev.meta.zcu.cz/oidc/</prop>
 				<prop key="logo.image.url">resources/images/perun_24px.png</prop>
 				<prop key="topbar.title">Perun OIDC</prop>
-				<prop key="proxy.extSource.name"/>
-				<prop key="proxy.base.url"/>
-				<prop key="proxy.login.url"/>
-				<prop key="proxy.logout.url"/>
+				<prop key="admins">3197,59835</prop>
+				<prop key="perun.adapter.callFallback">true</prop>
+				<prop key="fill.missing.user.attrs">true</prop>
+				<prop key="perun.adapter.primary">RPC</prop>
+				<!-- RPC -->
+				<prop key="perun.rpc.enabled">true</prop>
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
 				<prop key="perun.rpc.user">xxxxx</prop>
 				<prop key="perun.rpc.password">yyyyy</prop>
+				<!-- LDAP -->
 				<prop key="ldap.host">perun.cesnet.cz</prop>
 				<prop key="ldap.user">xxxxx</prop>
 				<prop key="ldap.password">yyyyyyy</prop>
 				<prop key="ldap.timeoutSecs">120</prop>
 				<prop key="ldap.baseDN">dc=perun,dc=cesnet,dc=cz</prop>
+				<!-- JDBC -->
 				<prop key="jdbc.driver">org.mariadb.jdbc.Driver</prop>
 				<prop key="jdbc.url">jdbc:mariadb://localhost:3306/oidc</prop>
 				<prop key="jdbc.user">oidc</prop>
 				<prop key="jdbc.password">oidc</prop>
 				<prop key="jdbc.platform">org.eclipse.persistence.platform.database.MySQLPlatform</prop>
+				<!-- STATS JDBC -->
 				<prop key="stats.jdbc.url">jdbc:mariadb://localhost:3306/STATS</prop>
 				<prop key="stats.jdbc.user">user</prop>
 				<prop key="stats.jdbc.password">password</prop>
-				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
-				<prop key="admins">3197,59835</prop>
-				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunAccessTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
+				<!-- WEB INTERFACE -->
 				<prop key="web.theme">default</prop>
 				<prop key="web.langs">EN</prop> <!-- EN,CS,SK -->
 				<prop key="web.langs.customfiles.path">/etc/perun</prop>
 				<prop key="web.classes.path">/etc/perun/web/classes.properties</prop>
 				<prop key="web.baseURL">https://login.cesnet.cz/proxy</prop>
 				<prop key="email.contact">login@cesnet.cz</prop>
+				<!-- LOGIN -->
 				<prop key="idpFilters.askPerun.enabled">false</prop>
 				<prop key="registrar.url">https://perun-dev.cesnet.cz/allfed/registrar/</prop>
+				<prop key="proxy.extSource.name"/>
+				<prop key="proxy.base.url"/>
+				<prop key="proxy.login.url"/>
+				<prop key="proxy.logout.url"/>
+				<!-- OIDC STUFF -->
+				<prop key="jwk">file:///etc/perun/perun-oidc-keystore.jwks</prop>
 				<prop key="id_token.scopes">openid,profile,email,phone,address</prop>
-				<prop key="facility.attrs.checkGroupMembership">urn:perun:facility:attribute-def:def:OIDCCheckGroupMembership</prop>
-				<prop key="facility.attrs.allowRegistration">urn:perun:facility:attribute-def:def:allowRegistration</prop>
-				<prop key="facility.attrs.registrationURL">urn:perun:facility:attribute-def:def:registrationURL</prop>
-				<prop key="facility.attrs.dynamicRegistration">urn:perun:facility:attribute-def:def:dynamicRegistration</prop>
-				<prop key="facility.attrs.voShortNames">urn:perun:facility:attribute-def:virt:voShortNames</prop>
-				<prop key="facility.attrs.clientId">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
-				<prop key="facility.attrs.wayfFilter">urn:perun:facility:attribute-def:def:wayfFilter</prop>
-				<prop key="facility.attrs.wayfEFilter">urn:perun:facility:attribute-def:def:wayfEFilter</prop>
-
-				<!-- for LDAP
-				<prop key="attribute.openid.sub">login;x-ns-einfraid-persistent-shadow</prop>
-				<prop key="attribute.profile.preferred_username">login;x-ns-einfra</prop>
-				<prop key="attribute.profile.given_name">givenName</prop>
-				<prop key="attribute.profile.middle_name">middleName</prop>
-				<prop key="attribute.profile.family_name">sn</prop>
-				<prop key="attribute.profile.name">cn</prop>
-				<prop key="attribute.profile.zoneinfo">timezone</prop>
-				<prop key="attribute.profile.locale">preferredLanguage</prop>
-				<prop key="attribute.email.email">preferredMail</prop>
-				<prop key="attribute.phone.phone">telephoneNumber</prop>
-				<prop key="attribute.address.address.formatted">postalAddress</prop>
 				<prop key="custom.claims">organization,eppns</prop>
-				<prop key="custom.claim.organization.scope">organization</prop>
-				<prop key="custom.claim.organization.attribute">o</prop>
-				<prop key="custom.claim.eppns.scope">eppns</prop>
-				<prop key="custom.claim.eppns.attribute">eduPersonPrincipalNames</prop>
-				-->
-				<!-- for RPC -->
-				<prop key="attribute.openid.sub">urn:perun:user:attribute-def:core:id</prop>
-				<prop key="attribute.profile.preferred_username">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>
-				<prop key="attribute.profile.given_name">urn:perun:user:attribute-def:core:firstName</prop>
-				<prop key="attribute.profile.middle_name">urn:perun:user:attribute-def:core:middleName</prop>
-				<prop key="attribute.profile.family_name">urn:perun:user:attribute-def:core:lastName</prop>
-				<prop key="attribute.profile.name">urn:perun:user:attribute-def:core:displayName</prop>
-				<prop key="attribute.profile.zoneinfo">urn:perun:user:attribute-def:def:timezone</prop>
-				<prop key="attribute.profile.locale">urn:perun:user:attribute-def:def:preferredLanguage</prop>
-				<prop key="attribute.email.email">urn:perun:user:attribute-def:def:preferredMail</prop>
-				<prop key="attribute.phone.phone">urn:perun:user:attribute-def:def:phone</prop>
-				<prop key="attribute.address.address.formatted">urn:perun:user:attribute-def:def:address</prop>
-				<prop key="custom.claims">organization,eppns</prop>
-				<prop key="custom.claim.organization.scope">organization</prop>
-				<prop key="custom.claim.organization.attribute">urn:perun:user:attribute-def:def:organization</prop>
-				<prop key="custom.claim.eppns.scope">eppns</prop>
-				<prop key="custom.claim.eppns.attribute">urn:perun:user:attribute-def:virt:eduPersonPrincipalNames</prop>
-				<!-- USERINFO -->
+				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunAccessTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
+				<!-- UES ATTRS -->
+				<prop key="ues.orgUrl.attr">urn:perun:ues:attribute-def:def:organizationURL</prop>
+				<prop key="ues.affiliations.attr">urn:perun:ues:attribute-def:def:affiliation</prop>
+				<!-- USERINFO MODIFIERS -->
 				<prop key="userInfo.modifiers"/>
 				<!-- REQUEST FILTERS -->
 				<prop key="filter.names">stats</prop>
@@ -115,26 +92,210 @@
 		<property name="locations">
 			<list>
 				<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
-				<value>file://${config.location}</value>
+				<value>file://${config.location}/perun-mitreid.properties</value>
 			</list>
 		</property>
 		<property name="ignoreResourceNotFound" value="false"/>
 	</bean>
 
+	<bean id="nonOverwrittenAttributeProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="user.attribute_names.fixedList">openid_sub,profile_preferred_username,profile_given_name,profile_middle_name,profile_family_name,profile_name,profile_zoneinfo,profile_locale,email_email,address_address_formatted,phone_phone,aups</prop>
+				<prop key="facility.attribute_names.fixedList">checkGroupMembership,allowRegistration,registrationUrl,dynamicRegistration,clientId,voShortNames,wayfFilter,wayfEFilter,requestedAups</prop>
+				<prop key="group.attribute_names.fixedList"/>
+				<prop key="vo.attribute_names.fixedList">aup</prop>
+				<prop key="resource.attribute_names.fixedList">capabilities</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="defaultUserAttrProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="user.attribute_names.customList"/>
+				<!-- ATTRIBUTES MAPPINGS -->
+				<prop key="openid_sub.mapping.ldap">login;x-ns-einfraid-persistent-shadow</prop>
+				<prop key="openid_sub.mapping.rpc">urn:perun:user:attribute-def:core:id</prop>
+				<prop key="openid_sub.type">STRING</prop>
+				<prop key="profile_preferred_username.mapping.ldap">login;x-ns-einfra</prop>
+				<prop key="profile_preferred_username.mapping.rpc">urn:perun:user:attribute-def:def:login-namespace:einfra</prop>
+				<prop key="profile_preferred_username.type">STRING</prop>
+				<prop key="profile_given_name.mapping.ldap">givenName</prop>
+				<prop key="profile_given_name.mapping.rpc">urn:perun:user:attribute-def:core:firstName</prop>
+				<prop key="profile_given_name.type">STRING</prop>
+				<prop key="profile_middle_name.mapping.ldap">middleName</prop>
+				<prop key="profile_middle_name.mapping.rpc">urn:perun:user:attribute-def:core:middleName</prop>
+				<prop key="profile_middle_name.type">STRING</prop>
+				<prop key="profile_family_name.mapping.ldap">sn</prop>
+				<prop key="profile_family_name.mapping.rpc">urn:perun:user:attribute-def:core:lastName</prop>
+				<prop key="profile_family_name.type">STRING</prop>
+				<prop key="profile_name.mapping.ldap">sn</prop>
+				<prop key="profile_name.mapping.rpc">urn:perun:user:attribute-def:core:displayName</prop>
+				<prop key="profile_name.type">STRING</prop>
+				<prop key="profile_zoneinfo.mapping.ldap">timezone</prop>
+				<prop key="profile_zoneinfo.mapping.rpc">urn:perun:user:attribute-def:def:timezone</prop>
+				<prop key="profile_zoneinfo.type">STRING</prop>
+				<prop key="profile_locale.mapping.ldap">preferredLanguage</prop>
+				<prop key="profile_locale.mapping.rpc">urn:perun:user:attribute-def:def:preferredLanguage</prop>
+				<prop key="profile_locale.type">STRING</prop>
+				<prop key="email_email.mapping.ldap">preferredMail</prop>
+				<prop key="email_email.mapping.rpc">urn:perun:user:attribute-def:def:preferredMail</prop>
+				<prop key="email_email.type">STRING</prop>
+				<prop key="phone_phone.mapping.ldap">telephoneNumber</prop>
+				<prop key="phone_phone.mapping.rpc">urn:perun:user:attribute-def:def:phone</prop>
+				<prop key="phone_phone.type">STRING</prop>
+				<prop key="address_address_formatted.mapping.ldap">postalAddress</prop>
+				<prop key="address_address_formatted.mapping.rpc">urn:perun:user:attribute-def:def:address</prop>
+				<prop key="address_address_formatted.type">STRING</prop>
+				<prop key="aups.mapping.ldap">aups</prop>
+				<prop key="aups.mapping.rpc">urn:perun:user:attribute-def:def:aups</prop>
+				<prop key="aups.type">MAP_KEY_VALUE</prop>
+				<prop key="aups.separator">=</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="userAttrMappingsProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties" ref="defaultUserAttrProperties" />
+		<property name="locations">
+			<list>
+				<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+				<value>file://${config.location}/user-attribute-mappings.properties</value>
+			</list>
+		</property>
+		<property name="ignoreResourceNotFound" value="true"/>
+	</bean>
+
+	<bean id="defaultFacilityAttrProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="facility.attribute_names.customList"/>
+				<!-- ATTRIBUTES MAPPINGS -->
+				<prop key="checkGroupMembership.mapping.ldap">checkGroupMembership</prop>
+				<prop key="checkGroupMembership.mapping.rpc">urn:perun:facility:attribute-def:def:checkGroupMembership</prop>
+				<prop key="checkGroupMembership.type">BOOLEAN</prop>
+				<prop key="allowRegistration.mapping.ldap">allowRegistration</prop>
+				<prop key="allowRegistration.mapping.rpc">urn:perun:facility:attribute-def:def:allowRegistration</prop>
+				<prop key="allowRegistration.type">BOOLEAN</prop>
+				<prop key="registrationUrl.mapping.ldap">registrationURL</prop>
+				<prop key="registrationUrl.mapping.rpc">urn:perun:facility:attribute-def:def:registrationURL</prop>
+				<prop key="registrationUrl.type">STRING</prop>
+				<prop key="dynamicRegistration.mapping.ldap">dynamicRegistration</prop>
+				<prop key="dynamicRegistration.mapping.rpc">urn:perun:facility:attribute-def:def:dynamicRegistration</prop>
+				<prop key="dynamicRegistration.type">BOOLEAN</prop>
+				<prop key="clientId.mapping.ldap">OIDCClientID</prop>
+				<prop key="clientId.mapping.rpc">urn:perun:facility:attribute-def:def:OIDCClientID</prop>
+				<prop key="clientId.type">STRING</prop>
+				<prop key="voShortNames.mapping.ldap">voShortNames</prop>
+				<prop key="voShortNames.mapping.rpc">urn:perun:facility:attribute-def:virt:voShortNames</prop>
+				<prop key="voShortNames.type">ARRAY</prop>
+				<prop key="wayfFilter.mapping.ldap">wayfFilter</prop>
+				<prop key="wayfFilter.mapping.rpc">urn:perun:facility:attribute-def:def:wayfFilter</prop>
+				<prop key="wayfFilter.type">STRING</prop>
+				<prop key="wayfEFilter.mapping.ldap">wayfEFilter</prop>
+				<prop key="wayfEFilter.mapping.rpc">urn:perun:facility:attribute-def:def:wayfEFilter</prop>
+				<prop key="wayfEFilter.type">STRING</prop>
+				<prop key="requestedAups.mapping.ldap">requiredAups</prop>
+				<prop key="requestedAups.mapping.rpc">urn:perun:facility:attribute-def:def:reqAups</prop>
+				<prop key="requestedAups.type">ARRAY</prop>
+				<prop key="capabilities.mapping.ldap">capabilities</prop>
+				<prop key="capabilities.mapping.rpc">urn:perun:facility:attribute-def:def:capabilities</prop>
+				<prop key="capabilities.type">ARRAY</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="facilityAttrMappingsProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties" ref="defaultFacilityAttrProperties" />
+		<property name="locations">
+			<list>
+				<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+				<value>file://${config.location}/facility-attribute-mappings.properties</value>
+			</list>
+		</property>
+		<property name="ignoreResourceNotFound" value="true"/>
+	</bean>
+
+	<bean id="defaultGroupAttrProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="group.attribute_names.customList"/>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="groupAttrMappingsProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties" ref="defaultGroupAttrProperties" />
+		<property name="locations">
+			<list>
+				<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+				<value>file://${config.location}/group-attribute-mappings.properties</value>
+			</list>
+		</property>
+		<property name="ignoreResourceNotFound" value="true"/>
+	</bean>
+
+	<bean id="defaultVoAttrProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="vo.attribute_names.customList"/>
+				<!-- ATTRIBUTES MAPPINGS -->
+				<prop key="aup.mapping.ldap">aup</prop>
+				<prop key="aup.mapping.rpc">urn:perun:vo:attribute-def:def:aup</prop>
+				<prop key="aup.type">LARGE_STRING</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="voAttrMappingsProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties" ref="defaultVoAttrProperties" />
+		<property name="locations">
+			<list>
+				<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+				<value>file://${config.location}/vo-attribute-mappings.properties</value>
+			</list>
+		</property>
+		<property name="ignoreResourceNotFound" value="true"/>
+	</bean>
+
+	<bean id="defaultResourceAttrProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<prop key="resource.attribute_names.customList"/>
+				<!-- ATTRIBUTES MAPPINGS -->
+				<prop key="capabilities.mapping.ldap">capabilities</prop>
+				<prop key="capabilities.mapping.rpc">urn:perun:resource:attribute-def:def:capabilities</prop>
+				<prop key="capabilities.type">ARRAY</prop>
+			</props>
+		</property>
+	</bean>
+
+	<bean id="resourceAttrMappingsProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties" ref="defaultResourceAttrProperties" />
+		<property name="locations">
+			<list>
+				<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+				<value>file://${config.location}/resource-attribute-mappings.properties</value>
+			</list>
+		</property>
+		<property name="ignoreResourceNotFound" value="true"/>
+	</bean>
+
 	<!-- defines our own user info service -->
 	<bean id="userInfoService" primary="true" class="cz.muni.ics.oidc.server.userInfo.PerunUserInfoService">
-		<property name="perunConnector" ref="perunConnector"/>
-		<property name="subAttribute" value="${attribute.openid.sub}"/>
-		<property name="preferredUsernameAttribute" value="${attribute.profile.preferred_username}"/>
-		<property name="givenNameAttribute" value="${attribute.profile.given_name}"/>
-		<property name="familyNameAttribute" value="${attribute.profile.family_name}"/>
-		<property name="middleNameAttribute" value="${attribute.profile.middle_name}"/>
-		<property name="fullNameAttribute" value="${attribute.profile.name}"/>
-		<property name="emailAttribute" value="${attribute.email.email}"/>
-		<property name="addressAttribute" value="${attribute.address.address.formatted}"/>
-		<property name="phoneAttribute" value="${attribute.phone.phone}"/>
-		<property name="zoneinfoAttribute" value="${attribute.profile.zoneinfo}"/>
-		<property name="localeAttribute" value="${attribute.profile.locale}"/>
+		<property name="perunAdapter" ref="perunAdapter"/>
+		<property name="subAttribute" value="openid_sub"/>
+		<property name="preferredUsernameAttribute" value="profile_preferred_username"/>
+		<property name="givenNameAttribute" value="profile_given_name"/>
+		<property name="familyNameAttribute" value="profile_family_name"/>
+		<property name="middleNameAttribute" value="profile_middle_name"/>
+		<property name="fullNameAttribute" value="profile_name"/>
+		<property name="emailAttribute" value="email_email"/>
+		<property name="addressAttribute" value="address_address_formatted"/>
+		<property name="phoneAttribute" value="phone_phone"/>
+		<property name="zoneinfoAttribute" value="profile_zoneinfo"/>
+		<property name="localeAttribute" value="profile_locale"/>
 		<property name="properties" ref="coreProperties"/>
 		<property name="customClaimNames" value="#{'${custom.claims}'.split('\s*,\s*')}"/>
 	</bean>
@@ -150,6 +311,7 @@
 	</bean>
 
 	<bean id="perunOidcConfig" class="cz.muni.ics.oidc.server.configurations.PerunOidcConfig">
+		<property name="rpcEnabled" value="${perun.rpc.enabled}"/>
 		<property name="rpcUrl" value="${perun.rpc.url}"/>
 		<property name="configBean" ref="configBean"/>
 		<property name="jwk" value="${jwk}"/>
@@ -160,6 +322,7 @@
 		<property name="samlResourcesURL" value="${proxy.base.url}"/>
 		<property name="baseURL" value="${web.baseURL}"/>
 		<property name="registrarUrl" value="${registrar.url}"/>
+		<property name="fillMissingUserAttrs" value="${fill.missing.user.attrs}"/>
 		<property name="askPerunForIdpFiltersEnabled" value="${idpFilters.askPerun.enabled}"/>
 		<property name="proxyExtSourceName" value="${proxy.extSource.name}"/>
 		<property name="idTokenScopes" value="#{'${id_token.scopes}'.split('\s*,\s*')}"/>
@@ -170,13 +333,13 @@
 	</bean>
 
 	<bean id="facilityAttrsConfig" class="cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig">
-		<property name="checkGroupMembershipAttr" value="${facility.attrs.checkGroupMembership}" />
-		<property name="allowRegistrationAttr" value="${facility.attrs.allowRegistration}" />
-		<property name="registrationURLAttr" value="${facility.attrs.registrationURL}" />
-		<property name="dynamicRegistrationAttr" value="${facility.attrs.dynamicRegistration}" />
-		<property name="voShortNamesAttr" value="${facility.attrs.voShortNames}" />
-		<property name="wayfFilterAttr" value="${facility.attrs.wayfFilter}" />
-		<property name="wayfEFilterAttr" value="${facility.attrs.wayfEFilter}" />
+		<property name="checkGroupMembershipAttr" value="checkGroupMembership" />
+		<property name="allowRegistrationAttr" value="allowRegistration" />
+		<property name="registrationURLAttr" value="registrationURL" />
+		<property name="dynamicRegistrationAttr" value="dynamicRegistration" />
+		<property name="voShortNamesAttr" value="voShortNames" />
+		<property name="wayfFilterAttr" value="wayfFilter" />
+		<property name="wayfEFilterAttr" value="wayfEFilter" />
 	</bean>
 	<!-- authentication -->
 
@@ -202,7 +365,6 @@
 		<property name="preAuthenticatedUserDetailsService" ref="userDetailsService"/>
 	</bean>
 
-
 	<bean id="perunTimeStamper" class="cz.muni.ics.oidc.server.PerunAuthenticationSuccessHandler">
 	</bean>
 
@@ -226,7 +388,7 @@
 
 	<!-- decides who is admin -->
 	<bean id="userDetailsService" class="cz.muni.ics.oidc.server.PerunAuthenticationUserDetailsService">
-		<property name="perunConnector" ref="perunConnector"/>
+		<property name="perunAdapter" ref="perunAdapter"/>
 		<property name="admins" value="#{'${admins}'.split('\s*,\s*')}"/>
 	</bean>
 
@@ -239,22 +401,72 @@
 	</bean>
 
 	<!-- communicates with Perun -->
-	<bean id="perunConnector" class="cz.muni.ics.oidc.server.connectors.impl.PerunConnectorRpc">
-		<property name="perunUrl" value="${perun.rpc.url}"/>
-		<property name="perunUser" value="${perun.rpc.user}"/>
-		<property name="perunPassword" value="${perun.rpc.password}"/>
-		<property name="oidcClientIdAttr" value="${facility.attrs.clientId}" />
-		<property name="oidcCheckMembershipAttr" value="${facility.attrs.checkGroupMembership}"/>
+
+	<bean id="perunConnectorRpc" class="cz.muni.ics.oidc.server.connectors.PerunConnectorRpc">
+		<constructor-arg name="perunUrl" value="${perun.rpc.url}"/>
+		<constructor-arg name="perunUser" value="${perun.rpc.user}"/>
+		<constructor-arg name="perunPassword" value="${perun.rpc.password}"/>
+		<constructor-arg name="enabled" value="${perun.rpc.enabled}"/>
 	</bean>
 
-	<!--
-	<bean id="perunConnectorLdap" class="cz.muni.ics.oidc.serverr.connectors.impl.PerunConnectorLdap">
+	<bean id="perunAdapterMethodsRpc" class="cz.muni.ics.oidc.server.adapters.impl.PerunAdapterRpc">
+		<property name="connectorRpc" ref="perunConnectorRpc"/>
+		<property name="oidcClientIdAttr" value="clientId" />
+		<property name="oidcCheckMembershipAttr" value="checkGroupMembership"/>
+		<property name="affiliationsAttr" value="${ues.affiliations.attr}"/>
+		<property name="orgUrlAttr" value="${ues.orgUrl.attr}"/>
+	</bean>
+
+	<bean id="perunConnectorLdap" class="cz.muni.ics.oidc.server.connectors.PerunConnectorLdap">
 		<constructor-arg name="ldapHost" value="${ldap.host}"/>
 		<constructor-arg name="ldapUser" value="${ldap.user}"/>
 		<constructor-arg name="ldapPassword" value="${ldap.password}"/>
 		<constructor-arg name="timeoutSecs" value="${ldap.timeoutSecs}"/>
 		<constructor-arg name="baseDN" value="${ldap.baseDN}"/>
-		<property name="fallbackConnector" ref="perunConnector"/>
 	</bean>
-	-->
+
+	<bean id="perunAdapterMethodsLdap" class="cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdap">
+		<property name="connectorLdap" ref="perunConnectorLdap"/>
+		<property name="oidcClientIdAttr" value="clientId" />
+		<property name="oidcCheckMembershipAttr" value="checkGroupMembership"/>
+	</bean>
+
+	<bean id="userAttributesMappingService" class="cz.muni.ics.oidc.server.AttributeMappingsService">
+		<constructor-arg name="attrIdentifiersFixed" value="#{'${user.attribute_names.fixedList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrIdentifiersCustom" value="#{'${user.attribute_names.customList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrMappingsProperties" ref="userAttrMappingsProperties" />
+	</bean>
+
+	<bean id="facilityAttributesMappingService" class="cz.muni.ics.oidc.server.AttributeMappingsService">
+		<constructor-arg name="attrIdentifiersFixed" value="#{'${facility.attribute_names.fixedList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrIdentifiersCustom" value="#{'${facility.attribute_names.customList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrMappingsProperties" ref="facilityAttrMappingsProperties" />
+	</bean>
+
+	<bean id="groupAttributesMappingService" class="cz.muni.ics.oidc.server.AttributeMappingsService">
+		<constructor-arg name="attrIdentifiersFixed" value="#{'${group.attribute_names.fixedList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrIdentifiersCustom" value="#{'${group.attribute_names.customList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrMappingsProperties" ref="groupAttrMappingsProperties" />
+	</bean>
+
+	<bean id="voAttributesMappingService" class="cz.muni.ics.oidc.server.AttributeMappingsService">
+		<constructor-arg name="attrIdentifiersFixed" value="#{'${vo.attribute_names.fixedList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrIdentifiersCustom" value="#{'${vo.attribute_names.customList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrMappingsProperties" ref="voAttrMappingsProperties" />
+	</bean>
+
+	<bean id="resourceAttributesMappingService" class="cz.muni.ics.oidc.server.AttributeMappingsService">
+		<constructor-arg name="attrIdentifiersFixed" value="#{'${resource.attribute_names.fixedList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrIdentifiersCustom" value="#{'${resource.attribute_names.customList}'.split('\s*,\s*')}" />
+		<constructor-arg name="attrMappingsProperties" ref="resourceAttrMappingsProperties" />
+	</bean>
+
+	<bean id="perunAdapter" class="cz.muni.ics.oidc.server.adapters.impl.PerunAdapterImpl">
+		<property name="adapterLdap" ref="perunAdapterMethodsLdap"/>
+		<property name="adapterRpc" ref="perunAdapterMethodsRpc"/>
+		<property name="adapterFallback" ref="perunAdapterMethodsRpc"/>
+		<property name="adapterPrimary" ref="#{ '${perun.adapter.primary}' == 'LDAP' ? 'perunAdapterMethodsLdap' : 'perunAdapterMethodsRpc'}"/>
+		<property name="callFallback" value="${perun.adapter.callFallback}"/>
+	</bean>
+
 </beans>

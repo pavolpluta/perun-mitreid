@@ -1,7 +1,7 @@
 package cz.muni.ics.oidc.server;
 
 import cz.muni.ics.oidc.models.PerunUser;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.filters.PerunAuthenticationFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,10 +29,10 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 	private static GrantedAuthority ROLE_USER = new SimpleGrantedAuthority("ROLE_USER");
 	private static GrantedAuthority ROLE_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
 
-	private PerunConnector perunConnector;
+	private PerunAdapter perunAdapter;
 
-	public void setPerunConnector(PerunConnector perunConnector) {
-		this.perunConnector = perunConnector;
+	public void setPerunAdapter(PerunAdapter perunAdapter) {
+		this.perunAdapter = perunAdapter;
 	}
 
 	private List<Long> adminIds = new ArrayList<>();
@@ -65,7 +65,7 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 			throw new UsernameNotFoundException("PerunPrincipal is null");
 		}
 		try {
-			PerunUser perunUser = perunConnector.getPreauthenticatedUserId(perunPrincipal);
+			PerunUser perunUser = perunAdapter.getPreauthenticatedUserId(perunPrincipal);
 			Long userId = perunUser.getId();
 			log.info("User {} {} {} logged in", userId, perunUser.getFirstName(), perunUser.getLastName());
 

@@ -1,5 +1,7 @@
 package cz.muni.ics.oidc.models;
 
+import com.google.common.base.Strings;
+
 import java.util.Objects;
 
 /**
@@ -14,19 +16,21 @@ public class Resource extends Model {
 	private String description;
 	private Vo vo;
 
-    public Resource(Long id, Long voId, String name, String description) {
-        super(id);
-        this.voId = voId;
-        this.name = name;
-        this.description = description;
-    }
+	public Resource() {	}
 
-    /**
-     * Should be used when RichResource is obtained from Perun
-     */
-    public Resource(Long id, Long voId, String name, String description, Vo vo) {
+	public Resource(Long id, Long voId, String name, String description) {
+		super(id);
+		this.setVoId(voId);
+		this.setName(name);
+		this.setDescription(description);
+	}
+
+	/**
+	 * Should be used when RichResource is obtained from Perun
+	 */
+	public Resource(Long id, Long voId, String name, String description, Vo vo) {
 		this(id, voId, name, description);
-		this.vo = vo;
+		this.setVo(vo);
 	}
 
 	public Long getVoId() {
@@ -34,6 +38,10 @@ public class Resource extends Model {
 	}
 
 	public void setVoId(Long voId) {
+		if (voId == null) {
+			throw new IllegalArgumentException("voId can't be null");
+		}
+
 		this.voId = voId;
 	}
 
@@ -42,6 +50,10 @@ public class Resource extends Model {
 	}
 
 	public void setName(String name) {
+		if (Strings.isNullOrEmpty(name)) {
+			throw new IllegalArgumentException("name can't be null or empty");
+		}
+
 		this.name = name;
 	}
 
@@ -50,6 +62,10 @@ public class Resource extends Model {
 	}
 
 	public void setDescription(String description) {
+		if (description == null) {
+			throw new IllegalArgumentException("description can't be null");
+		}
+
 		this.description = description;
 	}
 
@@ -59,6 +75,17 @@ public class Resource extends Model {
 
 	public void setVo(Vo vo) {
 		this.vo = vo;
+	}
+
+	@Override
+	public String toString() {
+		return "Resource{" +
+				"id=" + getId() +
+				", voId=" + voId +
+				", name='" + name + '\'' +
+				", description='" + description + '\'' +
+				", vo=" + vo +
+				'}';
 	}
 
 	@Override
@@ -78,14 +105,4 @@ public class Resource extends Model {
 		return Objects.hash(super.hashCode(), voId, name, description, vo);
 	}
 
-	@Override
-	public String toString() {
-		return "Resource{" +
-				"id=" + getId() +
-				", voId=" + voId +
-				", name='" + name + '\'' +
-				", description='" + description + '\'' +
-				", vo='" + vo + '\'' +
-				'}';
-	}
 }

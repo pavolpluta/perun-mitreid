@@ -81,8 +81,8 @@ public class Localization {
 
 			Properties langProps = new Properties();
 			String resourceFileName = "localization/" + lang + ".properties";
-			try (InputStreamReader isr = new InputStreamReader(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream(resourceFileName))
-					,StandardCharsets.UTF_8)) {
+			try (InputStreamReader isr = new InputStreamReader(Objects.requireNonNull(
+					getClass().getClassLoader().getResourceAsStream(resourceFileName)), StandardCharsets.UTF_8)) {
 				langProps.load(isr);
 				log.trace("Loaded localization file: {}", resourceFileName);
 				localizationFiles.put(lang, langProps);
@@ -97,8 +97,7 @@ public class Localization {
 				langProps.load(isr);
 				log.trace("Loaded localization file: {}", customFileName);
 			} catch (FileNotFoundException e) {
-				log.warn("File: {} not found", customFileName);
-				e.printStackTrace();
+				log.warn("File: {} not found", customFileName, e);
 			} catch (IOException e) {
 				log.warn("Exception caught when reading {}", customFileName, e);
 			}

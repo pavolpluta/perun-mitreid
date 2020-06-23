@@ -1,5 +1,7 @@
 package cz.muni.ics.oidc.models;
 
+import cz.muni.ics.oidc.models.enums.MemberStatus;
+
 import java.util.Objects;
 
 /**
@@ -11,21 +13,52 @@ public class Member extends Model {
 
 	private Long userId;
 	private Long voId;
-	private String status;
+	private MemberStatus status;
 
-	public Member(Long id, Long userId, Long voId, String status) {
+	public Member() {
+	}
+
+	public Member(Long id, Long userId, Long voId, MemberStatus status) {
 		super(id);
+		this.setUserId(userId);
+		this.setVoId(voId);
+		this.setStatus(status);
+	}
+
+	public Long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Long userId) {
+		if (userId == null) {
+			throw new IllegalArgumentException("userId cannot be null");
+		}
+
 		this.userId = userId;
-		this.voId = voId;
-		this.status = status;
 	}
 
 	public Long getVoId() {
 		return voId;
 	}
 
-	public String getStatus() {
+	public void setVoId(Long voId) {
+		if (voId == null) {
+			throw new IllegalArgumentException("voId cannot be null");
+		}
+
+		this.voId = voId;
+	}
+
+	public MemberStatus getStatus() {
 		return status;
+	}
+
+	public void setStatus(MemberStatus status) {
+		if (status == null) {
+			throw new IllegalArgumentException("status cannot be null nor empty");
+		}
+
+		this.status = status;
 	}
 
 	@Override

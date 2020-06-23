@@ -2,13 +2,11 @@ package cz.muni.ics.oidc.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.NullNode;
+import com.google.common.base.Strings;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 
 /**
  * AUP object model.
@@ -32,26 +30,12 @@ public class Aup {
     public Aup() {
     }
 
-    public Aup(String aupAsString) throws IOException {
-        this(new ObjectMapper().readTree(aupAsString));
-    }
-
-    public Aup(JsonNode node) {
-        this.version = node.get("version").asText();
-        this.date = node.get("date").asText();
-        this.link = node.get("link").asText();
-        this.text = node.get("text").asText();
-        if (node.get(SIGNED_ON) != null && !(node.get(SIGNED_ON) instanceof NullNode)) {
-            this.signedOn = node.get(SIGNED_ON).asText();
-        }
-    }
-
     public Aup(String version, String date, String link, String text, String signedOn) {
-        this.version = version;
-        this.date = date;
-        this.link = link;
-        this.text = text;
-        this.signedOn = signedOn;
+        this.setVersion(version);
+        this.setDate(date);
+        this.setLink(link);
+        this.setText(text);
+        this.setSignedOn(signedOn);
     }
 
     public String getVersion() {
@@ -59,6 +43,10 @@ public class Aup {
     }
 
     public void setVersion(String version) {
+        if (Strings.isNullOrEmpty(version)) {
+            throw new IllegalArgumentException("version cannot be null or empty");
+        }
+
         this.version = version;
     }
 
@@ -72,6 +60,10 @@ public class Aup {
     }
 
     public void setDate(String date) {
+        if (Strings.isNullOrEmpty(date)) {
+            throw new IllegalArgumentException("date cannot be null or empty");
+        }
+
         this.date = date;
     }
 
@@ -80,6 +72,10 @@ public class Aup {
     }
 
     public void setLink(String link) {
+        if (Strings.isNullOrEmpty(link)) {
+            throw new IllegalArgumentException("link cannot be null or empty");
+        }
+
         this.link = link;
     }
 
@@ -88,6 +84,10 @@ public class Aup {
     }
 
     public void setText(String text) {
+        if (text == null) {
+            throw new IllegalArgumentException("version cannot be null");
+        }
+
         this.text = text;
     }
 
@@ -108,5 +108,21 @@ public class Aup {
                 ", text='" + text + '\'' +
                 ", signedOn='" + signedOn + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Aup aup = (Aup) o;
+        return Objects.equals(version, aup.version) &&
+                Objects.equals(date, aup.date) &&
+                Objects.equals(link, aup.link) &&
+                Objects.equals(text, aup.text);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(version, date, link, text);
     }
 }

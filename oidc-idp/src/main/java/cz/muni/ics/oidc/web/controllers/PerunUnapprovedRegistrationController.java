@@ -2,11 +2,11 @@ package cz.muni.ics.oidc.web.controllers;
 
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
-import cz.muni.ics.oidc.models.PerunAttribute;
+import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.Vo;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
-import cz.muni.ics.oidc.server.connectors.PerunConnector;
 import cz.muni.ics.oidc.web.WebHtmlClasses;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.mitre.oauth2.model.ClientDetailsEntity;
@@ -48,7 +48,7 @@ public class PerunUnapprovedRegistrationController {
     private ClientDetailsEntityService clientService;
 
     @Autowired
-    private PerunConnector perunConnector;
+    private PerunAdapter perunAdapter;
 
     @Autowired
     private FacilityAttrsConfig facilityAttrsConfig;
@@ -89,12 +89,12 @@ public class PerunUnapprovedRegistrationController {
             return HttpCodeView.VIEWNAME;
         }
 
-        Facility facility = perunConnector.getFacilityByClientId(clientId);
-        Map<String, PerunAttribute> facilityAttributes = perunConnector.getFacilityAttributes(facility,
-                facilityAttrsConfig.getMembershipAttrsAsList());
-
+        Facility facility = perunAdapter.getFacilityByClientId(clientId);
+        Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(facility,
+                facilityAttrsConfig.getMembershipAttrNames());
         List<String> voShortNames = facilityAttributes.get(facilityAttrsConfig.getVoShortNamesAttr()).valueAsList();
-        Map<Vo, List<Group>> groupsForRegistration = perunConnector.getGroupsForRegistration(facility, userId, voShortNames);
+        Map<Vo, List<Group>> groupsForRegistration = perunAdapter.getAdapterRpc()
+                .getGroupsForRegistration(facility, userId, voShortNames);
         log.debug("groupsForReg: {}", groupsForRegistration);
 
         if (groupsForRegistration.isEmpty()) {
