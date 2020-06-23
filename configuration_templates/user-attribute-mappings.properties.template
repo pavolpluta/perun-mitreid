@@ -1,0 +1,32 @@
+########################################################################################################################
+## Configuration of mappings for user attributes                                                                      ##
+#####                                                                                                              #####
+## Already predefined attributes:                                                                                     ##
+## - openid_sub                 - unique persistent identifier of user (STRING)                                       ##
+## - profile_preferred_username - preffered username selected by user or nickname (STRING)                            ##
+## - profile_given_name         - given name (STRING)                                                                 ##
+## - profile_middle_name        - middle name (STRING)                                                                ##
+## - profile_family_name        - family name (STRING)                                                                ##
+## - profile_name               - full name for displaying (STRING)                                                   ##
+## - profile_zoneinfo           - filter for WAYF (STRING)                                                            ##
+## - profile_locale             - locale the user uses (STRING)                                                       ##
+## - email_email                - email address (STRING)                                                              ##
+## - phone_phone                - phone number (STRING)                                                               ##
+## - address_address_formatted  - formatted postal address (STRING)                                                   ##
+## - aups                       - AUPs accepted by the user (MAP_KEY_VALUE)                                           ##
+##                                                                                                                    ##
+## Configuration options for attribute:                                                                               ##
+## - attrname.mapping.ldap=LDAP_NAME	- name in LDAP (cn, sn, ...)                                                  ##
+## - attrname.mapping.rpc=RPC_NAME 	- name in RPC (urn:facility:...)                                              ##
+## - attrname.type=[STRING|LARGE_STRING|INTEGER|BOOLEAN|ARRAY|LARGE_ARRAY|MAP_JSON|MAP_KEY_VALUE] - type of attribute ##
+## - attrname.separator=-               - character used as a separator if type is set to MAP_*                       ##
+########################################################################################################################
+
+# Comma separated list of custom attributes 
+# user.attribute_names.customList=name1,name2
+
+# Template for attribute name1
+# name1.mapping.ldap=name_1
+# name1.mapping.rpc=urn:perun:facility:attribute-def:def:nameone
+# name1.type=STRING
+
