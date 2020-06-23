@@ -1,0 +1,21 @@
+########################################################################################################################
+## Configuration of mappings for resource attributes                                                                  ##
+#####                                                                                                              #####
+## Already predefined attributes:                                                                                     ##
+## - capabilities               - resource capabilities for specific resource (ARRAY)                                 ##
+##                                                                                                                    ##
+## Configuration options for attribute:                                                                               ##
+## - attrname.mapping.ldap=LDAP_NAME	- name in LDAP (cn, sn, ...)                                                  ##
+## - attrname.mapping.rpc=RPC_NAME 	- name in RPC (urn:facility:...)                                              ##
+## - attrname.type=[STRING|LARGE_STRING|INTEGER|BOOLEAN|ARRAY|LARGE_ARRAY|MAP_JSON|MAP_KEY_VALUE] - type of attribute ##
+## - attrname.separator=-               - character used as a separator if type is set to MAP_*                       ##
+########################################################################################################################
+
+# Comma separated list of custom attributes 
+# resource.attribute_names.customList=name1,name2
+
+# Template for attribute name1
+# name1.mapping.ldap=name_1
+# name1.mapping.rpc=urn:perun:facility:attribute-def:def:nameone
+# name1.type=STRING
+
