@@ -7,15 +7,15 @@ Takes user info from Perun system
 Project is built with 'mvn clean package' command. Following parameters can be passed to modify the final build:
 
 ### General properties
-- location of the configuration file: -Dconfig.location=location
-  - default: /etc/perun/perun-mitreid.properties
+- location of the configuration files (path to the containing dir) : -Dconfig.location=location
+  - default: /etc/perun
 - final build name: -Dfinal.name=name
   - default: oidc
 
 ### Logging configuration
 Following are the options for customization of logging when building
 
-- logging style: -Dlog.to=FILE|SYSLOG|ROLING_FILE
+- logging style: -Dlog.to=FILE|SYSLOG|ROLLING_FILE
   - default: FILE
 - logging level: -Dlog.level=level 
   - default: info
