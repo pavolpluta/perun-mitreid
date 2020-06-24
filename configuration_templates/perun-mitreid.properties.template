@@ -46,8 +46,11 @@
 #ldap.host=perun.cesnet.cz
 #ldap.user=xxxxx
 #ldap.password=yyyyyyy
+#ldap.port=636
+#ldap.starttls=true
 #ldap.timeoutSecs=120
 #ldap.baseDN=dc=perun,dc=cesnet,dc=cz
+#ldap.allowUntrustedSsl=false
 
 
 ### JDBC ###

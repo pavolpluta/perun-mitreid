@@ -198,14 +198,14 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 				equal(UNIQUE_MEMBER, uniqueMemberValue)
 		);
 
-		EntryMapper<Boolean> mapper = e -> e.size() == 1;
+		EntryMapper<Long> mapper = e -> Long.parseLong(e.get(PERUN_GROUP_ID).getString());
 
-		String[] attributes = new String[] { OBJECT_CLASS };
+		String[] attributes = new String[] { PERUN_GROUP_ID };
 
-		boolean result = (null == connectorLdap.searchFirst(null, filter, SearchScope.SUBTREE, attributes, mapper));
-
-		log.trace("isUserInGroup({}, {}) returns: {}", userId, groupId, result);
-		return result;
+		List<Long> ids = connectorLdap.search(null, filter, SearchScope.SUBTREE, attributes, mapper);
+		boolean isInGroup = ids.stream().filter(groupId::equals).count() == 1L;
+		log.trace("isUserInGroup({}, {}) returns: {}", userId, groupId, isInGroup);
+		return isInGroup;
 	}
 
 	@Override
@@ -465,23 +465,28 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 				equal(PERUN_FACILITY_ID, String.valueOf(facility.getId())));
 
 		AttributeMapping capabilitiesMapping = getResourceAttributesMappingService().getByName(capabilitiesAttrName);
-		String[] attributes = new String[] {capabilitiesMapping.getLdapName(), ASSIGNED_GROUP_ID};
+		List<String> attributes = new ArrayList<>();
+		attributes.add(ASSIGNED_GROUP_ID);
+		if (capabilitiesMapping != null) {
+			attributes.add(capabilitiesMapping.getLdapName());
+		}
 
 		EntryMapper<CapabilitiesAssignedGroupsPair> mapper = e -> {
 			Set<String> capabilities = new HashSet<>();
 			Set<Long> groupIds = new HashSet<>();
 
-			if (!checkHasAttributes(e, attributes)) {
+			if (!checkHasAttributes(e, attributes.toArray(new String[] {}))) {
 				return new CapabilitiesAssignedGroupsPair(capabilities, groupIds);
 			}
 
-			Attribute capabilitiesAttr = e.get(capabilitiesMapping.getLdapName());
-			Attribute assignedGroupIds = e.get(ASSIGNED_GROUP_ID);
-
-			if (capabilitiesAttr != null) {
-				capabilitiesAttr.iterator().forEachRemaining(v -> capabilities.add(v.getString()));
+			if (capabilitiesMapping != null) {
+				Attribute capabilitiesAttr = e.get(capabilitiesMapping.getLdapName());
+				if (capabilitiesAttr != null) {
+					capabilitiesAttr.iterator().forEachRemaining(v -> capabilities.add(v.getString()));
+				}
 			}
 
+			Attribute assignedGroupIds = e.get(ASSIGNED_GROUP_ID);
 			if (assignedGroupIds != null) {
 				assignedGroupIds.iterator().forEachRemaining(v -> groupIds.add(Long.parseLong(v.getString())));
 			}
@@ -490,7 +495,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 		};
 
 		List<CapabilitiesAssignedGroupsPair> capabilitiesAssignedGroupsPairs = connectorLdap.search(null, filter,
-				SearchScope.SUBTREE, attributes, mapper);
+				SearchScope.SUBTREE, attributes.toArray(new String[] {}), mapper);
 		log.debug("Found capabilities groups pairs: {}", capabilitiesAssignedGroupsPairs);
 
 		capabilitiesAssignedGroupsPairs = capabilitiesAssignedGroupsPairs.stream()

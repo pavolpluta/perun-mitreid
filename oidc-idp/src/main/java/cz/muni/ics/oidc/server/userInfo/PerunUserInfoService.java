@@ -193,7 +193,7 @@ public class PerunUserInfoService implements UserInfoService {
 	@PostConstruct
 	public void postInit() {
 		log.debug("trying to load modifier for attribute.openid.sub");
-		subModifier = loadClaimValueModifier("attribute.openid.sub");
+		subModifier = loadClaimValueModifier("attribute.openid.sub.modifier");
 		//custom claims
 		this.customClaims = new ArrayList<>(customClaimNames.size());
 		for (String claim : customClaimNames) {

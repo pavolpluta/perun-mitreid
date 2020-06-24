@@ -86,7 +86,7 @@ public class ControllerUtils {
 		StringBuilder builder = new StringBuilder();
 		builder.append(baseUrl);
 		builder.append(pathPart);
-		if (! params.isEmpty()) {
+		if (!params.isEmpty()) {
 			builder.append('?');
 			for (Map.Entry<String, String> entry: params.entrySet()) {
 				try {
