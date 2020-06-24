@@ -4,10 +4,13 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - added support for MDC (MessageDiagnosticContext) logging
+- added full support for LDAP connector
 ### Changed
 - Changed format of log messages to include session ID instead of thread ID
+- refactored structure of connectors, adapters, etc...
 ### Fixed
 - Fixed bug for two different URLs to be equal in HashMap (ga4gh scope configuration)
+- Fixed bug in generating expired visas (ga4gh scope)
 
 ## [v1.25.0]
 ### Added
