@@ -986,6 +986,39 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		return groups;
 	}
 
+	@Override
+	public Set<Long> getUserGroupsIds(Long userId, Long voId) {
+		if (!this.connectorRpc.isEnabled()) {
+			return new HashSet<>();
+		}
+
+		log.trace("getUserGroups({}, {})", userId, voId);
+		Member member = getMemberByUser(userId, voId);
+		Set<Long> groups = new HashSet<>();
+		if (member != null) {
+			groups = getMemberGroups(member.getId()).stream().map(Group::getId).collect(Collectors.toSet());
+		}
+
+		log.trace("getUserGroups({}, {}) returns: {}", userId, voId, groups);
+		return groups;
+	}
+
+	private Member getMemberByUser(Long userId, Long voId) {
+		if (!this.connectorRpc.isEnabled()) {
+			return null;
+		}
+
+		log.trace("getMemberByUser({}, {})", userId, voId);
+		Map<String, Object> params = new LinkedHashMap<>();
+		params.put("user", userId);
+		params.put("vo", voId);
+		JsonNode jsonNode = connectorRpc.post(MEMBERS_MANAGER, "getMemberByUser", params);
+
+		Member member = RpcMapper.mapMember(jsonNode);
+		log.trace("getMemberByUser({}, {}) returns: {}", userId, voId, member);
+		return member;
+	}
+
 	private Set<Group> getGroupsWhereUserIsActive(Long facilityId, Long userId) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashSet<>();

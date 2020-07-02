@@ -296,4 +296,11 @@ public interface PerunAdapterMethods {
 	 */
 	PerunAttributeValue getResourceAttributeValue(Long resourceId, String attrToFetch);
 
+	/**
+	 * Fetch group IDs where user is member based on userID and voID
+	 * @param userId id of user
+	 * @param voId id of vo
+	 * @return List of groups IDs (filled or empty)
+	 */
+	Set<Long> getUserGroupsIds(Long userId, Long voId);
 }

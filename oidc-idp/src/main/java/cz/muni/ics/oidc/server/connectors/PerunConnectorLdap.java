@@ -8,6 +8,7 @@ import org.apache.directory.ldap.client.api.DefaultLdapConnectionFactory;
 import org.apache.directory.ldap.client.api.DefaultPoolableLdapConnectionFactory;
 import org.apache.directory.ldap.client.api.LdapConnectionConfig;
 import org.apache.directory.ldap.client.api.LdapConnectionPool;
+import org.apache.directory.ldap.client.api.NoVerificationTrustManager;
 import org.apache.directory.ldap.client.api.search.FilterBuilder;
 import org.apache.directory.ldap.client.template.EntryMapper;
 import org.apache.directory.ldap.client.template.LdapConnectionTemplate;
@@ -30,7 +31,8 @@ public class PerunConnectorLdap implements DisposableBean {
 	private final LdapConnectionPool pool;
 	private final LdapConnectionTemplate ldap;
 
-	public PerunConnectorLdap(String ldapHost, String ldapUser, String ldapPassword, long timeoutSecs, String baseDN) {
+	public PerunConnectorLdap(String ldapHost, String ldapUser, String ldapPassword, int port, boolean useTLS,
+							  boolean useSSL, boolean allowUntrustedSsl, long timeoutSecs, String baseDN) {
 		if (ldapHost == null || ldapHost.trim().isEmpty()) {
 			throw new IllegalArgumentException("Host cannot be null or empty");
 		} else if (baseDN == null || baseDN.trim().isEmpty()) {
@@ -38,7 +40,7 @@ public class PerunConnectorLdap implements DisposableBean {
 		}
 
 		this.baseDN = baseDN;
-		LdapConnectionConfig config = getConfig(ldapHost);
+		LdapConnectionConfig config = getConfig(ldapHost, port, useTLS, useSSL, allowUntrustedSsl);
 		if (ldapUser != null && !ldapUser.isEmpty()) {
 			log.debug("setting ldap user to {}", ldapUser);
 			config.setName(ldapUser);
@@ -62,11 +64,16 @@ public class PerunConnectorLdap implements DisposableBean {
 		return baseDN;
 	}
 
-	private LdapConnectionConfig getConfig(String host) {
+	private LdapConnectionConfig getConfig(String host, int port, boolean useTLS, boolean useSSL,
+										   boolean allowUntrustedSsl) {
 		LdapConnectionConfig config = new LdapConnectionConfig();
 		config.setLdapHost(host);
-		config.setLdapPort(636);
-		config.setUseSsl(true);
+		config.setLdapPort(port);
+		config.setUseSsl(useSSL);
+		config.setUseTls(useTLS);
+		if (allowUntrustedSsl) {
+			config.setTrustManagers(new NoVerificationTrustManager());
+		}
 
 		return config;
 	}

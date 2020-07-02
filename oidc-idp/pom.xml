@@ -13,7 +13,7 @@
 	<packaging>war</packaging>
 
 	<properties>
-		<config.location>/etc/perun/perun-mitreid.properties</config.location>
+		<config.location>/etc/perun</config.location>
 		<log.to>FILE</log.to>
 		<log.contextName>oidc</log.contextName>
 		<log.facility>LOCAL7</log.facility>
@@ -156,12 +156,32 @@
 			<version>4.3.1</version>
 		</dependency>
 
+		<!-- JDK9 beyond and above ... -->
 		<!-- @Resource and @PostConstruct for Java 11 -->
 		<dependency>
 			<groupId>javax.annotation</groupId>
 			<artifactId>javax.annotation-api</artifactId>
 			<version>1.3.2</version>
 		</dependency>
+		<!-- API, java.xml.bind module -->
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+			<version>2.3.2</version>
+		</dependency>
 
+		<!-- Runtime, com.sun.xml.bind module -->
+		<dependency>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
+			<version>2.3.2</version>
+		</dependency>
+
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>4.0.4</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>

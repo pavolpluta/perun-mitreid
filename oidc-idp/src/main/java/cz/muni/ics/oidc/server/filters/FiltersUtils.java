@@ -20,7 +20,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.AbstractMap;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -212,8 +211,13 @@ public class FiltersUtils {
 	public static void redirectUnapproved(HttpServletRequest request, HttpServletResponse response, String clientId) {
 		// cannot register, redirect to unapproved
 		log.debug("redirect to unapproved");
+		Map<String, String> params = new HashMap<>();
+		if (clientId != null) {
+			params.put("client_id", clientId);
+		}
+
 		String redirectUrl = ControllerUtils.createRedirectUrl(request, PerunFilterConstants.AUTHORIZE_REQ_PATTERN,
-				PerunUnapprovedController.UNAPPROVED_MAPPING, Collections.singletonMap("client_id", clientId));
+				PerunUnapprovedController.UNAPPROVED_MAPPING, params);
 		response.reset();
 		response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 		response.setHeader("Location", redirectUrl);

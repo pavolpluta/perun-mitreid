@@ -40,8 +40,13 @@
 				<prop key="ldap.host">perun.cesnet.cz</prop>
 				<prop key="ldap.user">xxxxx</prop>
 				<prop key="ldap.password">yyyyyyy</prop>
+				<prop key="ldap.port">636</prop>
+				<prop key="ldap.starttls">true</prop>
+				<prop key="ldap.ssl">true</prop>
+				<prop key="ldap.password">yyyyyyy</prop>
 				<prop key="ldap.timeoutSecs">120</prop>
 				<prop key="ldap.baseDN">dc=perun,dc=cesnet,dc=cz</prop>
+				<prop key="ldap.allowUntrustedSsl">false</prop>
 				<!-- JDBC -->
 				<prop key="jdbc.driver">org.mariadb.jdbc.Driver</prop>
 				<prop key="jdbc.url">jdbc:mariadb://localhost:3306/oidc</prop>
@@ -130,7 +135,7 @@
 				<prop key="profile_family_name.mapping.ldap">sn</prop>
 				<prop key="profile_family_name.mapping.rpc">urn:perun:user:attribute-def:core:lastName</prop>
 				<prop key="profile_family_name.type">STRING</prop>
-				<prop key="profile_name.mapping.ldap">sn</prop>
+				<prop key="profile_name.mapping.ldap">displayName</prop>
 				<prop key="profile_name.mapping.rpc">urn:perun:user:attribute-def:core:displayName</prop>
 				<prop key="profile_name.type">STRING</prop>
 				<prop key="profile_zoneinfo.mapping.ldap">timezone</prop>
@@ -421,8 +426,12 @@
 		<constructor-arg name="ldapHost" value="${ldap.host}"/>
 		<constructor-arg name="ldapUser" value="${ldap.user}"/>
 		<constructor-arg name="ldapPassword" value="${ldap.password}"/>
+		<constructor-arg name="port" value="${ldap.port}"/>
+		<constructor-arg name="useTLS" value="${ldap.starttls}"/>
+		<constructor-arg name="useSSL" value="${ldap.ssl}"/>
 		<constructor-arg name="timeoutSecs" value="${ldap.timeoutSecs}"/>
 		<constructor-arg name="baseDN" value="${ldap.baseDN}"/>
+		<constructor-arg name="allowUntrustedSsl" value="${ldap.allowUntrustedSsl}"/>
 	</bean>
 
 	<bean id="perunAdapterMethodsLdap" class="cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdap">

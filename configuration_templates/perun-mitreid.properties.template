@@ -4,24 +4,36 @@
 
 ### APPLICATION PROPERTIES ###
 #main.oidc.issuer.url=https://perun-dev.meta.zcu.cz/oidc/
-#jwk=file:///etc/perun/perun-oidc-keystore.jwks                             # Path to JWKs
-#admins=3197,59835                                                          # Comma separated list of IDs for admins
-#accessTokenClaimsModifier=cz.muni.ics.***.NoOpAccessTokenClaimsModifier    # Fully qualified class name for Access token modifier
-#idpFilters.askPerun.enabled=false                                          # Enable / disable filtering of IdPs on WAYF
-#registrar.url=https://perun-dev.cesnet.cz/allfed/registrar/                # URL of Perun registrar module
-#id_token.scopes=openid,profile,email,phone,address                         # Comma separated list of scopes included in ID_TOKEN
+# Path to JWKs
+#jwk=file:///etc/perun/perun-oidc-keystore.jwks
+# Comma separated list of IDs for admins
+#admins=3197,59835
+# Fully qualified class name for Access token modifier
+#accessTokenClaimsModifier=cz.muni.ics.***.NoOpAccessTokenClaimsModifier
+# Enable / disable filtering of IdPs on WAYF
+#idpFilters.askPerun.enabled=false
+# URL of Perun registrar module
+#registrar.url=https://perun-dev.cesnet.cz/allfed/registrar/
+# Comma separated list of scopes included in ID_TOKEN
+#id_token.scopes=openid,profile,email,phone,address
 
 
 ### PROXY ###
-#proxy.extSource.name=      # Name of extSource to use for fetching user
-#proxy.base.url=            # Base URL of proxy/idp
-#proxy.login.url=           # URL to login on proxy/idp
-#proxy.logout.url=          # URL to logout on proxy/idp
+# Name of extSource to use for fetching user
+#proxy.extSource.name=
+# Base URL of proxy/idp
+#proxy.base.url=
+# URL to login on proxy/idp
+#proxy.login.url=
+# URL to logout on proxy/idp
+#proxy.logout.url=
 
 
 # HOW TO COMMUNICATE WITH PERUN
-#perun.adapter.primary=LDAP      # PRIMARY ADAPTER TO BE USED [LDAP, RPC]
-#perun.adapter.callFallback=true # IF FAILS, CALL FALLBACK (RPC)?
+# Primary adapter to be used [LDAP, RPC]
+#perun.adapter.primary=LDAP
+# If a call fails, should we call the callback?
+#perun.adapter.callFallback=true
 
 
 ### PERUN RPC ###
@@ -34,8 +46,11 @@
 #ldap.host=perun.cesnet.cz
 #ldap.user=xxxxx
 #ldap.password=yyyyyyy
+#ldap.port=636
+#ldap.starttls=true
 #ldap.timeoutSecs=120
 #ldap.baseDN=dc=perun,dc=cesnet,dc=cz
+#ldap.allowUntrustedSsl=false
 
 
 ### JDBC ###
@@ -53,12 +68,18 @@
 
 
 ### WEB INTERFACE ###
-#logo.image.url=resources/images/perun_24px.png                 # Logo displayed in top bar in GUI
-#topbar.title=Perun OIDC                                        # Title displayed in top bar in GUI
-#web.theme=default [muni|cesnet|elixir|europdx|bbmri|ceitec]    # theme for web interface
-#web.langs=EN,CS,SK [EN|CS|SK]                                  # comma separated list of enabled languages
-#web.langs.customfiles.path=/etc/perun                          # path to custom localization files
-#web.baseURL=                                                   # base URL where the web sits
+# Logo displayed in top bar in GUI
+#logo.image.url=resources/images/perun_24px.png
+# Title displayed in top bar in GUI
+#topbar.title=Perun OIDC
+# theme for web interface
+#web.theme=default [muni|cesnet|elixir|europdx|bbmri|ceitec]
+# comma separated list of enabled languages
+#web.langs=EN,CS,SK [EN|CS|SK]
+# path to custom localization files
+#web.langs.customfiles.path=/etc/perun
+# base URL where the web sits
+#web.baseURL=
 
 
 #################################################################
@@ -83,14 +104,20 @@
 ## custom.claim.[claimName].[propertyName]=[val] - Template for options, see class documentation for options ##
 ###############################################################################################################
 
-#custom.claims=c1,c2                            # Comma separated list of names for custom claims
+# Comma separated list of names for custom claims
+#custom.claims=c1,c2
 
 # CUSTOM CLAIM C1
-#custom.claim.c1.scope=                    # Name of scope for claim c1
-#custom.claim.c1.source.class=             # Fully qualified class name for the claim source, defaults to PerunAttributeClaimSource
-#custom.claim.c1.source.prop1=             # Value for custom claim source C1 property PROP1
-#custom.claim.c1.modifier.class=           # Fully qualified class name for the claim modifier, modifier class is optional
-#custom.claim.c1.modifier.prop1=           # Value for custom claim modifier C1 property PROP1
+# Name of scope for claim c1
+#custom.claim.c1.scope=
+# Fully qualified class name for the claim source, defaults to PerunAttributeClaimSource
+#custom.claim.c1.source.class=
+# Value for custom claim source C1 property PROP1
+#custom.claim.c1.source.prop1=
+# Fully qualified class name for the claim modifier, modifier class is optional
+#custom.claim.c1.modifier.class=
+# Value for custom claim modifier C1 property PROP1
+#custom.claim.c1.modifier.prop1=
 
 
 ##################################################################################################################
@@ -98,12 +125,16 @@
 ## userInfo.modifier.[modName].[propertyName]=[val] - Template for options, see class documentation for options ##
 ##################################################################################################################
 
-#userInfo.modifiers=mod1,mod2           # Comma separated list of names for UserInfo object modifiers
+# Comma separated list of names for UserInfo object modifiers
+#userInfo.modifiers=mod1,mod2
 
 # USER INFO MODIFIER MOD1
-#userInfo.modifier.mod1.class=           # Fully qualified class name the modifier instantiates
-#userInfo.modifier.mod1.prop1=           # Value for modifier MOD1 and property PROP1
-#userInfo.modifier.mod1.prop2=           # Value for modifier MOD1 and property PROP2
+# Fully qualified class name the modifier instantiates
+#userInfo.modifier.mod1.class=
+# Value for modifier MOD1 and property PROP1
+#userInfo.modifier.mod1.prop1=
+# Value for modifier MOD1 and property PROP2
+#userInfo.modifier.mod1.prop2=
 
 
 ##########################################################################################################
@@ -111,12 +142,17 @@
 ## filter.[filterName].[propertyName]=[val] - Template for options, see class documentation for options ##
 ##########################################################################################################
 
-#filter.names=f1,f2           # Comma separated list of names for UserInfo object modifiers
+# Comma separated list of names for UserInfo object modifiers
+#filter.names=f1,f2
 
 # REQUEST FILTER F1
-#filter.f1.class=[fully qualified class name]  # Fully qualified class name the filter instantiates
-#filter.f1.subs=[val1,val2]                    # Comma separated list of user SUB attribute values. If current is in the list, filter will be skipped
-#filter.f1.clientIds=[val1,val2]               # Comma separated list of client_ids. If current is in the list, filter will be skipped
-#filter.f1.prop1=[val]                         # Value for filter F1 and property PROP1
-#filter.f1.prop2=[val]                         # Value for filter F1 and property PROP2
-
+# Fully qualified class name the filter instantiates
+#filter.f1.class=[fully qualified class name]
+# Comma separated list of user SUB attribute values. If current is in the list, filter will be skipped
+#filter.f1.subs=[val1,val2]
+# Comma separated list of client_ids. If current is in the list, filter will be skipped
+#filter.f1.clientIds=[val1,val2]
+# Value for filter F1 and property PROP1
+#filter.f1.prop1=[val]
+# Value for filter F1 and property PROP2
+#filter.f1.prop2=[val]

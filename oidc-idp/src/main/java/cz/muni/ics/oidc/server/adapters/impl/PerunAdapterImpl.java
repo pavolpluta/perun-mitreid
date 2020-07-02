@@ -346,4 +346,17 @@ public class PerunAdapterImpl extends PerunAdapter {
             }
         }
     }
+
+    @Override
+    public Set<Long> getUserGroupsIds(Long userId, Long voId) {
+        try {
+            return this.getAdapterPrimary().getUserGroupsIds(userId, voId);
+        } catch (UnsupportedOperationException e) {
+            if (this.isCallFallback()) {
+                return this.getAdapterFallback().getUserGroupsIds(userId, voId);
+            } else {
+                throw e;
+            }
+        }
+    }
 }

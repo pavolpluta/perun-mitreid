@@ -177,7 +177,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 			return false;
 		}
 
-		Set<Long> userGroupIds = getGroupIdsWhereUserIsMember(userId);
+		Set<Long> userGroupIds = getGroupIdsWhereUserIsMember(userId, null);
 		if (userGroupIds == null || userGroupIds.isEmpty()) {
 			log.trace("canUserAccessBasedOnMembership({}, {}) returns: {}", facility, userId, false);
 			return false;
@@ -198,20 +198,20 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 				equal(UNIQUE_MEMBER, uniqueMemberValue)
 		);
 
-		EntryMapper<Boolean> mapper = e -> e.size() == 1;
+		EntryMapper<Long> mapper = e -> Long.parseLong(e.get(PERUN_GROUP_ID).getString());
 
-		String[] attributes = new String[] { OBJECT_CLASS };
+		String[] attributes = new String[] { PERUN_GROUP_ID };
 
-		boolean result = (null == connectorLdap.searchFirst(null, filter, SearchScope.SUBTREE, attributes, mapper));
-
-		log.trace("isUserInGroup({}, {}) returns: {}", userId, groupId, result);
-		return result;
+		List<Long> ids = connectorLdap.search(null, filter, SearchScope.SUBTREE, attributes, mapper);
+		boolean isInGroup = ids.stream().filter(groupId::equals).count() == 1L;
+		log.trace("isUserInGroup({}, {}) returns: {}", userId, groupId, isInGroup);
+		return isInGroup;
 	}
 
 	@Override
 	public List<Affiliation> getGroupAffiliations(Long userId, String groupAffiliationsAttr) {
 		log.trace("getGroupAffiliations({}, {})", userId, groupAffiliationsAttr);
-		Set<Long> userGroupIds = getGroupIdsWhereUserIsMember(userId);
+		Set<Long> userGroupIds = getGroupIdsWhereUserIsMember(userId, null);
 		if (userGroupIds == null || userGroupIds.isEmpty()) {
 			return new ArrayList<>();
 		}
@@ -465,23 +465,28 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 				equal(PERUN_FACILITY_ID, String.valueOf(facility.getId())));
 
 		AttributeMapping capabilitiesMapping = getResourceAttributesMappingService().getByName(capabilitiesAttrName);
-		String[] attributes = new String[] {capabilitiesMapping.getLdapName(), ASSIGNED_GROUP_ID};
+		List<String> attributes = new ArrayList<>();
+		attributes.add(ASSIGNED_GROUP_ID);
+		if (capabilitiesMapping != null) {
+			attributes.add(capabilitiesMapping.getLdapName());
+		}
 
 		EntryMapper<CapabilitiesAssignedGroupsPair> mapper = e -> {
 			Set<String> capabilities = new HashSet<>();
 			Set<Long> groupIds = new HashSet<>();
 
-			if (!checkHasAttributes(e, attributes)) {
+			if (!checkHasAttributes(e, attributes.toArray(new String[] {}))) {
 				return new CapabilitiesAssignedGroupsPair(capabilities, groupIds);
 			}
 
-			Attribute capabilitiesAttr = e.get(capabilitiesMapping.getLdapName());
-			Attribute assignedGroupIds = e.get(ASSIGNED_GROUP_ID);
-
-			if (capabilitiesAttr != null) {
-				capabilitiesAttr.iterator().forEachRemaining(v -> capabilities.add(v.getString()));
+			if (capabilitiesMapping != null) {
+				Attribute capabilitiesAttr = e.get(capabilitiesMapping.getLdapName());
+				if (capabilitiesAttr != null) {
+					capabilitiesAttr.iterator().forEachRemaining(v -> capabilities.add(v.getString()));
+				}
 			}
 
+			Attribute assignedGroupIds = e.get(ASSIGNED_GROUP_ID);
 			if (assignedGroupIds != null) {
 				assignedGroupIds.iterator().forEachRemaining(v -> groupIds.add(Long.parseLong(v.getString())));
 			}
@@ -490,7 +495,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 		};
 
 		List<CapabilitiesAssignedGroupsPair> capabilitiesAssignedGroupsPairs = connectorLdap.search(null, filter,
-				SearchScope.SUBTREE, attributes, mapper);
+				SearchScope.SUBTREE, attributes.toArray(new String[] {}), mapper);
 		log.debug("Found capabilities groups pairs: {}", capabilitiesAssignedGroupsPairs);
 
 		capabilitiesAssignedGroupsPairs = capabilitiesAssignedGroupsPairs.stream()
@@ -536,7 +541,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	@Override
 	public Set<Group> getGroupsWhereUserIsActiveWithUniqueNames(Long facilityId, Long userId) {
 		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {})", facilityId, userId);
-		Set<Long> userGroups = this.getGroupIdsWhereUserIsMember(userId);
+		Set<Long> userGroups = this.getGroupIdsWhereUserIsMember(userId, null);
 		Set<Long> facilityGroups = this.getGroupIdsWithAccessToFacility(facilityId);
 		Set<Long> groupIds = userGroups.stream()
 				.filter(facilityGroups::contains)
@@ -554,6 +559,15 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 
 		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {}) returns: {}", facilityId, userId, groups);
 		return groups;
+	}
+
+	@Override
+	public Set<Long> getUserGroupsIds(Long userId, Long voId) {
+		log.trace("getUserGroupsIds({}, {})", userId, voId);
+		Set<Long> groupIds = getGroupIdsWhereUserIsMember(userId, voId);
+
+		log.trace("getUserGroupsIds({}, {}) return {}", userId, voId, groupIds);
+		return groupIds;
 	}
 
 	private List<Group> getGroups(Collection<?> objects, String objectAttribute) {
@@ -607,7 +621,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 		return result;
 	}
 
-	private Set<Long> getGroupIdsWhereUserIsMember(Long userId) {
+	private Set<Long> getGroupIdsWhereUserIsMember(Long userId, Long voId) {
 		log.trace("getGroupIdsWhereUserIsMember({})", userId);
 
 		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_USER),equal(PERUN_USER_ID, String.valueOf(userId)));
@@ -618,9 +632,17 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 				Attribute a = e.get(MEMBER_OF);
 				a.iterator().forEachRemaining(id -> {
 					String fullVal = id.getString();
-					String val = fullVal.split(",")[0];
-					val = val.replace(PERUN_GROUP_ID + '=', "");
-					ids.add(Long.valueOf(val));
+					String[] parts = fullVal.split(",", 3);
+
+					String groupId = parts[0];
+					groupId = groupId.replace(PERUN_GROUP_ID + '=', "");
+
+					String voIdStr = parts[1];
+					voIdStr = voIdStr.replace(PERUN_VO_ID + '=', "");
+
+					if (voId == null || voId.equals(Long.valueOf(voIdStr))) {
+						ids.add(Long.valueOf(groupId));
+					}
 				});
 			}
 
