@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.0.0]
 ### Added
 - added claim source for generating EPSA on MU
 - added missing dependencies for newer JDKs
@@ -18,6 +18,16 @@ All notable changes to this project will be documented in this file.
 - Fixed a bug for two different URLs to be equal in HashMap (ga4gh scope configuration)
 - Fixed a bug in generating expired visas (ga4gh scope)
 - Fixed README
+
+## [v1.25.2]
+### Added
+- added support for MDC (MessageDiagnosticContext) logging
+### Changed
+- Changed format of log messages to include session ID instead of thread ID
+
+## [v1.25.1]
+### Fixed
+- Fixed bug for two different URLs to be equal in HashMap (ga4gh scope configuration)
 
 ## [v1.25.0]
 ### Added
@@ -227,6 +237,9 @@ All notable changes to this project will be documented in this file.
 First release of modified MITREid server which uses Shibboleth for authentication and reads user data from Perun system. It also has support for new scopes and claims, for extension of released access tokens, and for releasing user claims from introspection endpoint.
 
 [Unreleased]: https://github.com/CESNET/perun-mitreid/tree/master
+[v2.0.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v2.0.0
+[v1.25.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.2
+[v1.25.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.1
 [v1.25.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.0
 [v1.24.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.2
 [v1.24.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.24.1
