@@ -13,7 +13,7 @@
 	<packaging>war</packaging>
 
 	<properties>
-		<config.location>/etc/perun/perun-mitreid.properties</config.location>
+		<config.location>/etc/perun</config.location>
 		<log.to>FILE</log.to>
 		<log.contextName>oidc</log.contextName>
 		<log.facility>LOCAL7</log.facility>
@@ -178,11 +178,10 @@
 		</dependency>
 
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<version>4.0.1</version>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>4.0.4</version>
 			<scope>provided</scope>
 		</dependency>
-
 	</dependencies>
 </project>

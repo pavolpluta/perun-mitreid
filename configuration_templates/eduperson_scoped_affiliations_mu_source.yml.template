@@ -1,0 +1,26 @@
+---
+scope: 'muni.cz'
+voId: 363
+affiliations:
+  - value: 'student'
+    groups:
+      - 3578
+  - value: 'employee'
+    groups:
+      - 3577
+      - 6655
+      - 6653
+  - value: 'member'
+    groups:
+      - 3578
+      - 3577
+      - 4394
+  - value: 'staff'
+    groups:
+      - 6655
+  - value: 'faculty'
+    groups:
+      - 6653
+  - value: 'alum'
+    groups:
+      - 6656
