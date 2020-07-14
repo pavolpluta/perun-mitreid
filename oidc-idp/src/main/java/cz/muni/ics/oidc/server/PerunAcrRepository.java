@@ -27,7 +27,6 @@ public class PerunAcrRepository {
 	private EntityManager manager;
 
 	public Acr getActive(String sub, String clientId, String acr, String state) {
-		log.trace("get(sub: {}, clientId: {}, acr: {}, state: {})", sub, clientId, acr, state);
 		TypedQuery<Acr> query = manager.createNamedQuery(Acr.GET_ACTIVE, Acr.class);
 		query.setParameter(Acr.PARAM_SUB, sub);
 		query.setParameter(Acr.PARAM_CLIENT_ID, clientId);
@@ -36,34 +35,26 @@ public class PerunAcrRepository {
 		long currentEpochTime = Instant.now().toEpochMilli();
 		query.setParameter(Acr.PARAM_EXPIRES_AT, currentEpochTime);
 
-		Acr result = query.getSingleResult();
-		log.trace("get() returns: {}", result);
-		return result;
+		return query.getSingleResult();
 	}
 
 	public Acr getById(Long id) {
-		log.trace("getById({})", id);
 		TypedQuery<Acr> query = manager.createNamedQuery(Acr.GET_BY_ID, Acr.class);
 		query.setParameter(Acr.PARAM_ID, id);
 
-		Acr result = query.getSingleResult();
-		log.trace("get() returns: {}", result);
-		return result;
+		return query.getSingleResult();
 	}
 
 	@Transactional
 	public Acr store(Acr acr) {
-		log.trace("store({})", acr);
 		Acr tmp = manager.merge(acr);
 		manager.flush();
 
-		log.trace("store() returns: {}", tmp);
 		return tmp;
 	}
 
 	@Transactional
 	public void remove(Long id) {
-		log.trace("remove({})", id);
 		Acr acr = getById(id);
 
 		if (acr != null) {
@@ -73,7 +64,6 @@ public class PerunAcrRepository {
 
 	@Transactional
 	public void deleteExpired() {
-		log.trace("deleteExpired()");
 		Query query = manager.createNamedQuery(Acr.DELETE_EXPIRED);
 		query.setParameter(Acr.PARAM_EXPIRES_AT, Instant.now().toEpochMilli());
 		query.executeUpdate();

@@ -43,8 +43,6 @@ public class UserInfoModifierContext {
 	}
 
 	public PerunUserInfo modify(PerunUserInfo perunUserInfo, String clientId) {
-		log.trace("modify({}, {})", perunUserInfo, clientId);
-
 		for (UserInfoModifier m : modifiers) {
 			m.modify(perunUserInfo, clientId);
 		}

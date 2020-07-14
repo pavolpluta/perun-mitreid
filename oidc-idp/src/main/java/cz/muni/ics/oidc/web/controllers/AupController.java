@@ -64,8 +64,6 @@ public class AupController {
     public String showAup(HttpServletRequest request, Map<String, Object> model,
                           @SessionAttribute(name = NEW_AUPS) String newAupsString) throws IOException
     {
-        log.trace("showAup()");
-
         JsonNode newAupsJson = mapper.readTree(newAupsString);
         Map<String, Aup> newAups = new LinkedHashMap<>();
 
@@ -87,8 +85,6 @@ public class AupController {
                            @SessionAttribute(name = NEW_AUPS) String newAupsString,
                            @SessionAttribute(name = USER_ATTR) String userAupsAttrName) throws IOException
     {
-        log.trace("storeAup({})", returnUrl);
-
         JsonNode aupsToApproveJson = mapper.readTree(newAupsString);
         ObjectNode aupsToApproveJsonObject = new ObjectNode(jsonNodeFactory);
 
@@ -130,12 +126,10 @@ public class AupController {
         request.getSession().removeAttribute(USER_ATTR);
         request.getSession().setAttribute(APPROVED, true);
 
-        log.trace("redirecting to {}", returnUrl);
         return "redirect:" + returnUrl;
     }
 
     private ObjectNode updateUserAupsAttrValue(ObjectNode userAups, ObjectNode newAups) throws IOException {
-        log.trace("updateUserAupsAttrValue({}, {})", userAups, newAups);
         if (userAups == null) {
             userAups = new ObjectNode(jsonNodeFactory);
         }
@@ -162,7 +156,6 @@ public class AupController {
             userAups.put(aupKey, oldAupsArray.toString());
         }
 
-        log.trace("updateUserAupsAttrValue() returns {}", userAups);
         return userAups;
     }
 }

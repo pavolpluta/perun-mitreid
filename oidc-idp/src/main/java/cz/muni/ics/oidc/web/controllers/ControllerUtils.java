@@ -76,7 +76,6 @@ public class ControllerUtils {
 	 */
 	public static String createRedirectUrl(HttpServletRequest request, String removedPart,
 										   String pathPart, Map<String, String> params) {
-		log.trace("createRedirectUrl({}, {}, {}, {})", request.getRequestURL(), removedPart, pathPart, params);
 		String baseUrl = request.getRequestURL().toString();
 		int endIndex = baseUrl.indexOf(removedPart);
 		if (endIndex > 1) {
@@ -102,7 +101,6 @@ public class ControllerUtils {
 			builder.deleteCharAt(builder.length() - 1);
 		}
 
-		log.trace("createRedirectUrl returns: {}", builder.toString());
 		return builder.toString();
 	}
 

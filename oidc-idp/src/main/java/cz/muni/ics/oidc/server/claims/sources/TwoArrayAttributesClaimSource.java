@@ -36,8 +36,6 @@ public class TwoArrayAttributesClaimSource extends ClaimSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		log.trace("produceValue(sub={})",pctx.getSub());
-
 		JsonNode j1 = new ArrayNode(JsonNodeFactory.instance);
 		if (pctx.getAttrValues().containsKey(attribute1Name)) {
 			j1 = pctx.getAttrValues().get(attribute1Name).valueAsJson();

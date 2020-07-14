@@ -38,7 +38,6 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 	private List<Long> adminIds = new ArrayList<>();
 
 	public void setAdmins(List<String> admins) {
-		log.trace("setAdmins({})", admins);
 		for (String id : admins) {
 			long l = Long.parseLong(id);
 			adminIds.add(l);
@@ -59,7 +58,6 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 	 */
 	@Override
 	public UserDetails loadUserDetails(PreAuthenticatedAuthenticationToken token) throws UsernameNotFoundException {
-		log.trace("loadUserDetails({})", token);
 		PerunPrincipal perunPrincipal = (PerunPrincipal) token.getPrincipal();
 		if (perunPrincipal == null) {
 			throw new UsernameNotFoundException("PerunPrincipal is null");

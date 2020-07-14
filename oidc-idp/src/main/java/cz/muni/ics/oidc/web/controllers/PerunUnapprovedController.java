@@ -104,7 +104,6 @@ public class PerunUnapprovedController {
     public String showUnapprovedSpec(ServletRequest req, Map<String, Object> model,
                                      @RequestParam(value = PARAM_HEADER, required = false) String header,
                                      @RequestParam(value = PARAM_MESSAGE, required = false) String message) {
-        log.debug("showUnapprovedSpec(header: {}, message: {})", header,message);
 
         ControllerUtils.setPageOptions(model, (HttpServletRequest) req, localization, htmlClasses, perunOidcConfig);
 
@@ -124,7 +123,6 @@ public class PerunUnapprovedController {
     public String showUnapprovedIsCesnetEligible(ServletRequest req, Map<String, Object> model,
                                      @RequestParam(value = PARAM_TARGET) String target,
                                      @RequestParam(value = PARAM_REASON) String reason) {
-        log.debug("showUnapprovedSpec(target: {}, reason: {})", target, reason);
 
         ControllerUtils.setPageOptions(model, (HttpServletRequest) req, localization, htmlClasses, perunOidcConfig);
 

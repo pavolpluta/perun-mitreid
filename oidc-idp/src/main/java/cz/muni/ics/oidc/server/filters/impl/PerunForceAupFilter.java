@@ -173,7 +173,6 @@ public class PerunForceAupFilter extends PerunRequestFilter {
     }
 
     private Map<String, Aup> getAupsToApprove(PerunUser user, Map<String, PerunAttributeValue> facilityAttributes) throws ParseException, IOException {
-        log.trace("getAupsToApprove({}, {})", user, facilityAttributes);
         Map<String, Aup> aupsToApprove= new LinkedHashMap<>();
 
         PerunAttributeValue userAupsAttr = perunAdapter.getUserAttributeValue(user.getId(), perunUserAupsAttrName);
@@ -197,7 +196,6 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             mergeAupMaps(aupsToApprove, voAupsToApprove);
         }
 
-        log.trace("getAupsToApprove({}, {}) returns: {}", user, facilityAttributes, aupsToApprove);
         return aupsToApprove;
     }
 
@@ -217,8 +215,6 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
     private Map<String, Aup> getVoAupsToApprove(List<String> facilityVoShortNames, Map<String, List<Aup>> userAups)
             throws IOException, ParseException {
-        log.trace("getVoAupsToApprove({}, {})", facilityVoShortNames, userAups);
-
         Map<String, Aup> aupsToApprove = new LinkedHashMap<>();
         Map<String, List<Aup>> voAups = getVoAups(facilityVoShortNames);
 
@@ -238,14 +234,11 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             }
         }
 
-        log.trace("getVoAupsToApprove({}, {}) returns: {}", facilityVoShortNames, userAups, aupsToApprove);
         return aupsToApprove;
     }
 
     private Map<String, Aup> getOrgAupsToApprove(List<String > requestedAups, Map<String, List<Aup>> userAups)
             throws ParseException, IOException {
-        log.trace("getOrgAupsToApprove({}, {})", requestedAups, userAups);
-
         Map<String, Aup> aupsToApprove = new LinkedHashMap<>();
         Map<String, List<Aup>> orgAups = new HashMap<>();
 
@@ -278,12 +271,10 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             }
         }
 
-        log.trace("getOrgAupsToApprove({}, {}, {}) returns: {}", requestedAups, orgAupsAttr, userAups, aupsToApprove);
         return aupsToApprove;
     }
 
     private Map<String, List<Aup>> getVoAups(List<String> voShortNames) throws IOException {
-        log.trace("getVoAups({})", voShortNames);
         Map<String, List<Aup>> voAups = new HashMap<>();
 
         if (voShortNames != null && !voShortNames.isEmpty()) {
@@ -302,12 +293,10 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             }
         }
 
-        log.trace("getVoAups({}) returns: {}", voShortNames, voAups);
         return voAups;
     }
 
     private Map<String, List<Aup>> convertToMapKeyToListOfAups(Map<String, String> keyToListOfAupsString) throws IOException {
-        log.trace("convertToMapKeyToListOfAups({})", keyToListOfAupsString);
         Map<String, List<Aup>> resultMap = new HashMap<>();
 
         if (keyToListOfAupsString != null && !keyToListOfAupsString.isEmpty()) {
@@ -318,12 +307,10 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             }
         }
 
-        log.trace("convertToMapKEyToListOfAups({}) returns: {}", keyToListOfAupsString, resultMap);
         return resultMap;
     }
 
     private Aup getLatestAupFromList(List<Aup> aups) throws ParseException {
-        log.trace("getLatesAup({})", aups);
         Aup latestAup = aups.get(0);
 
         for(Aup aup : aups) {
@@ -335,7 +322,6 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             }
         }
 
-        log.trace("getLatestAup({}) returns: {}", aups, latestAup);
         return latestAup;
     }
 }

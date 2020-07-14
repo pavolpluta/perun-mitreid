@@ -68,7 +68,6 @@ public class PerunScopeClaimTranslationService implements ScopeClaimTranslationS
 	 */
 	@Override
 	public Set<String> getClaimsForScope(String scope) {
-		log.trace("getClaimsForScope({})",scope);
 		if (scopesToClaims.containsKey(scope)) {
 			return scopesToClaims.get(scope);
 		} else {
