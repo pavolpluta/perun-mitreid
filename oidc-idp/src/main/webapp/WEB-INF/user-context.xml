@@ -6,9 +6,11 @@
 	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	   xmlns:security="http://www.springframework.org/schema/security"
 	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
 	   xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
 
 	<context:property-placeholder properties-ref="nonOverwrittenAttributeProperties" ignore-unresolvable="true" order="0"/>
 	<context:property-placeholder properties-ref="userAttrMappingsProperties" ignore-unresolvable="true" order="1"/>
@@ -19,6 +21,8 @@
 	<context:property-placeholder properties-ref="coreProperties" order="6"/>
 
 	<context:component-scan base-package="cz.muni.ics.oidc"/>
+
+	<aop:aspectj-autoproxy/>
 
 	<!-- default config values, by default override in file /etc/perun/perun-mitreid.properties -->
 	<bean id="defaultCoreProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">

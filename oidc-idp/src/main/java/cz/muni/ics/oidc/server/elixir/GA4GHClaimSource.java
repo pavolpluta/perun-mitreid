@@ -107,7 +107,6 @@ public class GA4GHClaimSource extends ClaimSource {
 	}
 
 	static void parseConfigFile(String file) {
-		log.debug("loading config file {}", file);
 		YAMLMapper mapper = new YAMLMapper();
 		try {
 			JsonNode root = mapper.readValue(new File(file), JsonNode.class);
@@ -149,8 +148,6 @@ public class GA4GHClaimSource extends ClaimSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		log.trace("produceValue(user={})", pctx.getPerunUserId());
-
 		if (pctx.getClient() == null) {
 			log.debug("client is not set");
 			return JsonNodeFactory.instance.textNode("Global Alliance For Genomic Health structured claim");

@@ -123,7 +123,6 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
 
     private void logHook(OAuth2AccessTokenEntity token, OAuth2Authentication authentication) {
         //log request info from authentication
-        log.trace("enhance(accessToken={},authentication={})", token, authentication);
         Object principal = authentication.getPrincipal();
         String userId = principal instanceof User ? ((User) principal).getUsername() : principal.toString();
         OAuth2Request oAuth2Request = authentication.getOAuth2Request();
@@ -140,7 +139,6 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
 
     private void accessTokenClaimsHook(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo) {
         if (accessTokenClaimsModifier != null) {
-            log.trace("calling accessTokenClaimsHook() on {}",accessTokenClaimsModifier.getClass().getName());
             accessTokenClaimsModifier.modifyClaims(sub, builder, accessToken, authentication, userInfo);
         }
     }

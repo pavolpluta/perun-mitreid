@@ -179,8 +179,6 @@ public class FiltersUtils {
 	 * @return Rebuilt URL.
 	 */
 	public static String buildRequestURL(HttpServletRequest req, Map<String, String> additionalParams) {
-		log.trace("buildReturnUrl({})", req);
-
 		String returnURL = req.getRequestURL().toString();
 
 		if (req.getQueryString() != null) {
@@ -198,7 +196,6 @@ public class FiltersUtils {
 			}
 		}
 
-		log.trace("buildReturnUrl() returns: {}", returnURL);
 		return returnURL;
 	}
 

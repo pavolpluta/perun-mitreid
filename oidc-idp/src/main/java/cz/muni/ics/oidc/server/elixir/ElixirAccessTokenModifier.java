@@ -26,7 +26,6 @@ public class ElixirAccessTokenModifier implements PerunAccessTokenEnhancer.Acces
 
 	@Override
 	public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo) {
-		log.trace("modifyClaims(sub={})", sub);
 		Set<String> scopes = accessToken.getScope();
 		//GA4GH
 		if (scopes.contains(GA4GHClaimSource.GA4GH_SCOPE)) {

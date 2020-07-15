@@ -140,8 +140,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	 */
 	@Override
 	protected Object getPreAuthenticatedPrincipal(HttpServletRequest req) {
-		log.debug("getPreAuthenticatedPrincipal()");
-
 		PerunPrincipal perunPrincipal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
 		if (perunPrincipal == null) {
 			String shibIdentityProvider = config.getProxyExtSourceName();
@@ -154,7 +152,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 					"extLogin: " + remoteUser + ", "
 			);
 		}
-		log.debug("Extracted principal {}", perunPrincipal);
 		return perunPrincipal;
 	}
 
@@ -177,16 +174,12 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 		long expiresAtEpoch = Instant.now().plusSeconds(600L).toEpochMilli();
 		acr.setExpiresAt(expiresAtEpoch);
-
-		log.debug("storing acr: {}", acr);
 		acrRepository.store(acr);
 	}
 
 	private String buildLoginURL(HttpServletRequest req, String clientId, boolean forceAuthn, boolean addLoggedOut)
 			throws UnsupportedEncodingException
 	{
-		log.debug("constructLoginRedirectUrl(req: {}, clientId: {})", req, clientId);
-
 		String returnURL;
 		if (addLoggedOut) {
 			returnURL = FiltersUtils.buildRequestURL(req, Collections.singletonMap(PARAM_LOGGED_OUT, "true"));
@@ -206,15 +199,10 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			params.put(PARAM_FORCE_AUTHN, "true");
 		}
 
-		String loginURL = buildStringURL(base, params);
-
-		log.debug("constructLoginRedirectUrl returns: '{}'", loginURL);
-		return loginURL;
+		return buildStringURL(base, params);
 	}
 
 	private String buildAuthnContextClassRef(String clientId, HttpServletRequest req) {
-		log.trace("buildAuthnContextClassRef(clientId: {}, req: {})", clientId, req);
-
 		String filterParam = getFilterParam(clientId, req);
 		String acrValues = getAcrValues(req);
 
@@ -233,12 +221,10 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		}
 
 		String authnContextClassRef = joiner.toString().trim().isEmpty() ? null : joiner.toString();
-		log.trace("buildAuthnContextClassRef() returns: {}", authnContextClassRef);
 		return authnContextClassRef;
 	}
 
 	private String buildStringURL(String base, Map<String, String> params) throws UnsupportedEncodingException {
-		log.trace("buildStringURL(base: {}, params: {})", base, params);
 		if (params == null || params.isEmpty()) {
 			return base;
 		}
@@ -250,9 +236,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			paramsJoiner.add(paramName + '=' + paramValue);
 		}
 
-		String stringURL = base + '?' + paramsJoiner.toString();
-		log.trace("buildStringURL returns: {}", stringURL);
-		return stringURL;
+		return base + '?' + paramsJoiner.toString();
 	}
 
 	private String urlEncode(String str) throws UnsupportedEncodingException {
@@ -260,8 +244,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	}
 
 	private String getFilterParam(String clientId, HttpServletRequest req) {
-		log.trace("getFilterParam(clientId: {}, req: {})", clientId, req);
-
 		Map<String, PerunAttributeValue> filterAttributes = Collections.emptyMap();
 		String filter = null;
 
@@ -292,18 +274,15 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			filter = EFILTER_PREFIX + idpEfilter;
 		}
 
-		log.trace("getFilterParam() returns: {}", filter);
 		return filter;
 	}
 
 	private String getAcrValues(HttpServletRequest req) {
-		log.trace("getAcrValues({})", req);
 		String acrValues = null;
 		if (req.getParameter(Acr.PARAM_ACR) != null) {
 			acrValues = req.getParameter(Acr.PARAM_ACR);
 		}
 
-		log.trace("getAcrValues() returns: {}", acrValues);
 		return acrValues;
 	}
 

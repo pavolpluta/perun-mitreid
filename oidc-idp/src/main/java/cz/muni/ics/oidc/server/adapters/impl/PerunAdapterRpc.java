@@ -87,7 +87,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 
 	@Override
 	public PerunUser getPreauthenticatedUserId(PerunPrincipal perunPrincipal) {
-		log.trace("getPreauthenticatedUserId({})", perunPrincipal);
 		if (!this.connectorRpc.isEnabled()) {
 			return null;
 		}
@@ -96,14 +95,11 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		map.put("extSourceName", perunPrincipal.getExtSourceName());
 
 		JsonNode response = connectorRpc.post(USERS_MANAGER, "getUserByExtSourceNameAndExtLogin", map);
-		PerunUser res = RpcMapper.mapPerunUser(response);
-		log.trace("getPreauthenticatedUserId({}) returns: {}", perunPrincipal, res);
-		return res;
+		return RpcMapper.mapPerunUser(response);
 	}
 
 	@Override
 	public Facility getFacilityByClientId(String clientId) {
-		log.trace("getFacilitiesByClientId({})", clientId);
 		if (!this.connectorRpc.isEnabled()) {
 			return null;
 		}
@@ -115,9 +111,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		map.put("attributeValue", clientId);
 		JsonNode jsonNode = connectorRpc.post(FACILITIES_MANAGER, "getFacilitiesByAttribute", map);
 
-		Facility facility = (jsonNode.size() > 0) ? RpcMapper.mapFacility(jsonNode.get(0)) : null;
-		log.trace("getFacilitiesByClientId({}) returns {}", clientId, facility);
-		return facility;
+		return (jsonNode.size() > 0) ? RpcMapper.mapFacility(jsonNode.get(0)) : null;
 	}
 
 	@Override
@@ -126,7 +120,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return false;
 		}
 
-		log.trace("isMembershipCheckEnabledOnFacility({})", facility);
 		AttributeMapping mapping = this.getFacilityAttributesMappingService().getByName(oidcCheckMembershipAttr);
 
 		Map<String, Object> map = new LinkedHashMap<>();
@@ -134,9 +127,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		map.put("attributeName", mapping.getRpcName());
 		JsonNode res = connectorRpc.post(ATTRIBUTES_MANAGER, "getAttribute", map);
 
-		boolean result = res.get("value").asBoolean(false);
-		log.trace("isMembershipCheckEnabledOnFacility({}) returns {}", facility, result);
-		return result;
+		return res.get("value").asBoolean(false);
 	}
 
 	@Override
@@ -145,12 +136,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return true;
 		}
 
-		log.trace("canUserAccessBasedOnMembership({}, {})", facility, userId);
 		List<Group> activeGroups = getGroupsWhereUserIsActive(facility, userId);
-
-		boolean res = !activeGroups.isEmpty();
-		log.trace("canUserAccessBasedOnMembership({}, {}) returns: {}", facility, userId, res);
-		return res;
+		return !activeGroups.isEmpty();
 	}
 
 	@Override
@@ -159,7 +146,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getGroupsForRegistration({}, {}, {})", facility, userId, voShortNames);
 		List<Vo> vos = getVosByShortNames(voShortNames);
 		Map<Long, Vo> vosMap = convertVoListToMap(vos);
 		List<Member> userMembers = getMembersByUser(userId);
@@ -196,7 +182,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			list.add(group);
 		}
 
-		log.trace("getGroupsForRegistration({}, {}, {}) returns: {}", facility, userId, voShortNames, result);
 		return result;
 	}
 
@@ -206,19 +191,16 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return false;
 		}
 
-		log.trace("groupsWhereCanRegisterExists({})", facility);
 		List<Group> allowedGroups = getAllowedGroups(facility);
 
 		if (!allowedGroups.isEmpty()) {
 			for (Group group : allowedGroups) {
 				if (getApplicationForm(group)) {
-					log.trace("groupsWhereCanRegisterExists({}) returns: true", facility);
 					return true;
 				}
 			}
 		}
 
-		log.trace("groupsWhereCanRegisterExists({}) returns: false", facility);
 		return false;
 	}
 
@@ -244,10 +226,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		isGroupMemberParams.put("member", member.getId());
 		JsonNode res = connectorRpc.post(GROUPS_MANAGER, "isGroupMember", isGroupMemberParams);
 
-		boolean result = res.asBoolean(false);
-
-		log.trace("isUserInGroup(userId={},group={}) returns {}", userId, group.getName(), result);
-		return result;
+		return res.asBoolean(false);
 	}
 
 	@Override
@@ -256,7 +235,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return true;
 		}
 
-		log.trace("setUserAttribute(user={}, attribute={})", userId, attribute);
 		JsonNode attributeJson = attribute.toJson();
 
 		Map<String, Object> map = new LinkedHashMap<>();
@@ -264,10 +242,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		map.put("attribute", attributeJson);
 
 		JsonNode response = connectorRpc.post(ATTRIBUTES_MANAGER, "setAttribute", map);
-		boolean successful = (response == null || response.isNull() || response instanceof NullNode);
-
-		log.trace("setUserAttribute({}, {}) returns {}", userId, attribute, successful);
-		return successful;
+		return (response == null || response.isNull() || response instanceof NullNode);
 	}
 
 	@Override
@@ -275,8 +250,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-
-		log.trace("getUserExtSourcesAffiliations({})", userId);
 
 		List<UserExtSource> userExtSources = getUserExtSources(userId);
 		List<Affiliation> affiliations = new ArrayList<>();
@@ -305,7 +278,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			}
 		}
 
-		log.trace("getUserExtSourcesAffiliations({}) returns: {}", userId, affiliations);
 		return affiliations;
 	}
 
@@ -315,7 +287,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new ArrayList<>();
 		}
 
-		log.trace("getGroupAffiliations({})", userId);
 		List<Affiliation> affiliations = new ArrayList<>();
 
 		List<Member> userMembers = getMembersByUser(userId);
@@ -336,7 +307,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			}
 		}
 
-		log.trace("getGroupAffiliations({}) returns: {}", userId, affiliations);
 		return affiliations;
 	}
 
@@ -346,7 +316,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new ArrayList<>();
 		}
 
-		log.trace("getGroupsAssignedToResourcesWithUniqueNames({})", facility);
 		List<Resource> resources = getAssignedResources(facility);
 		List<String> result = new ArrayList<>();
 
@@ -365,7 +334,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			}
 		}
 
-		log.trace("getGroupsAssignedToResourcesWithUniqueNames({}) returns: {}", facility, result);
 		return result;
 	}
 
@@ -374,8 +342,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-
-		log.trace("getEntitylessAttributes({})", attributeName);
 
 		Map<String, Object> attrNameMap = new LinkedHashMap<>();
 		attrNameMap.put("attrName", attributeName);
@@ -397,7 +363,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		log.trace("getEntitylessAttributes({}) returns {}", attributeName, result);
 		return result;
 	}
 
@@ -407,15 +372,11 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		log.trace("getVoByShortName({})", shortName);
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("shortName", shortName);
 
 		JsonNode jsonNode = connectorRpc.post(VOS_MANAGER, "getVoByShortName", params);
-		Vo vo = RpcMapper.mapVo(jsonNode);
-
-		log.trace("getVoByShortName({}) returns: {}", shortName, vo);
-		return vo;
+		return RpcMapper.mapVo(jsonNode);
 	}
 
 	@Override
@@ -424,7 +385,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getUserAttributeValues({}, {})", user, attrsToFetch);
 		return this.getUserAttributeValues(user.getId(), attrsToFetch);
 	}
 
@@ -434,12 +394,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getUserAttributeValues({}, {})", userId, attrsToFetch);
 		Map<String, PerunAttribute> userAttributes = this.getUserAttributes(userId, attrsToFetch);
-		Map<String, PerunAttributeValue> valueMap = extractValues(userAttributes);
-
-		log.trace("getUserAttributeValues({}, {}) returns: {}", userId, attrsToFetch, valueMap);
-		return valueMap;
+		return extractValues(userAttributes);
 	}
 
 	@Override
@@ -448,7 +404,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getUserAttributeValue({}, {})", user, attrToFetch);
 		return this.getUserAttributeValue(user.getId(), attrToFetch);
 	}
 
@@ -458,11 +413,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getUserAttributeValue({}, {})", userId, attrToFetch);
-		PerunAttributeValue value = this.getUserAttribute(userId, attrToFetch).getValue();
-
-		log.trace("getUserAttributeValue({}, {}) returns: {}", userId, attrToFetch, value);
-		return value;
+		return this.getUserAttribute(userId, attrToFetch).getValue();
 	}
 
 	@Override
@@ -471,7 +422,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getFacilityAttributeValues({}, {})", facility, attrsToFetch);
 		return this.getFacilityAttributeValues(facility.getId(), attrsToFetch);
 	}
 
@@ -481,12 +431,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getFacilityAttributeValues({}, {})", facilityId, attrsToFetch);
 		Map<String, PerunAttribute> facilityAttributes = this.getFacilityAttributes(facilityId, attrsToFetch);
-		Map<String, PerunAttributeValue> valueMap = extractValues(facilityAttributes);
-
-		log.trace("getFacilityAttributeValues({}, {}) returns: {}", facilityId, attrsToFetch, valueMap);
-		return valueMap;
+		return extractValues(facilityAttributes);
 	}
 
 	@Override
@@ -495,7 +441,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getFacilityAttributeValue({}, {})", facility, attrToFetch);
 		return this.getGroupAttributeValue(facility.getId(), attrToFetch);
 	}
 
@@ -505,11 +450,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getFacilityAttributeValue({}, {})", facilityId, attrToFetch);
-		PerunAttributeValue value = this.getFacilityAttribute(facilityId, attrToFetch).getValue();
-
-		log.trace("getFacilityAttributeValue({}, {}) returns: {}", facilityId, attrToFetch, value);
-		return value;
+		return this.getFacilityAttribute(facilityId, attrToFetch).getValue();
 	}
 
 	@Override
@@ -518,7 +459,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getVoAttributeValues({}, {})", vo, attrsToFetch);
 		return this.getVoAttributeValues(vo.getId(), attrsToFetch);
 	}
 
@@ -528,12 +468,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getVoAttributeValues({}, {})", voId, attrsToFetch);
 		Map<String, PerunAttribute> voAttributes = this.getVoAttributes(voId, attrsToFetch);
-		Map<String, PerunAttributeValue> valueMap = extractValues(voAttributes);
-
-		log.trace("getVoAttributeValues({}, {}) returns: {}", voId, attrsToFetch, valueMap);
-		return valueMap;
+		return extractValues(voAttributes);
 	}
 
 	@Override
@@ -542,7 +478,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getVoAttributeValue({}, {})", vo, attrToFetch);
 		return this.getVoAttributeValue(vo.getId(), attrToFetch);
 	}
 
@@ -552,11 +487,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getVoAttributeValue({}, {})", voId, attrToFetch);
-		PerunAttributeValue value = this.getFacilityAttribute(voId, attrToFetch).getValue();
-
-		log.trace("getVoAttributeValue({}, {}) returns: {}", voId, attrToFetch, value);
-		return value;
+		return this.getFacilityAttribute(voId, attrToFetch).getValue();
 	}
 
 	@Override
@@ -565,7 +496,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getGroupAttributeValues({}, {})", group, attrsToFetch);
 		return this.getGroupAttributeValues(group.getId(), attrsToFetch);
 	}
 
@@ -575,12 +505,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getGroupAttributeValues({}, {})", groupId, attrsToFetch);
 		Map<String, PerunAttribute> groupAttributes = this.getGroupAttributes(groupId, attrsToFetch);
-		Map<String, PerunAttributeValue> valueMap = extractValues(groupAttributes);
-
-		log.trace("getGroupAttributeValues({}, {}) returns: {}", groupId, attrsToFetch, valueMap);
-		return valueMap;
+		return extractValues(groupAttributes);
 	}
 
 	@Override
@@ -589,7 +515,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getGroupAttributeValue({}, {})", group, attrToFetch);
 		return this.getGroupAttributeValue(group.getId(), attrToFetch);
 	}
 
@@ -599,11 +524,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return PerunAttributeValue.NULL;
 		}
 
-		log.trace("getGroupAttributeValue({}, {})", groupId, attrToFetch);
-		PerunAttributeValue value = this.getGroupAttribute(groupId, attrToFetch).getValue();
-
-		log.trace("getGroupAttributeValue({}, {}) returns: {}", groupId, attrToFetch, value);
-		return value;
+		return this.getGroupAttribute(groupId, attrToFetch).getValue();
 	}
 
 	@Override
@@ -612,7 +533,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashMap<>();
 		}
 
-		log.trace("getResourceAttributeValues({}, {})", resource, attrsToFetch);
 		return this.getResourceAttributeValues(resource.getId(), attrsToFetch);
 	}
 
@@ -621,13 +541,9 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getResourceAttributeValues({}, {})", resourceId, attrsToFetch);
-		Map<String, PerunAttribute> resourceAttributes = this.getResourceAttributes(resourceId, attrsToFetch);
-		Map<String, PerunAttributeValue> valueMap = extractValues(resourceAttributes);
 
-		log.trace("getResourceAttributeValues({}, {}) returns: {}", resourceId, attrsToFetch, valueMap);
-		return valueMap;
+		Map<String, PerunAttribute> resourceAttributes = this.getResourceAttributes(resourceId, attrsToFetch);
+		return extractValues(resourceAttributes);
 	}
 
 	@Override
@@ -635,8 +551,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttributeValue.NULL;
 		}
-		
-		log.trace("getResourceAttributeValue({}, {})", resource, attrToFetch);
+
 		return this.getResourceAttributeValue(resource.getId(), attrToFetch);
 	}
 
@@ -645,12 +560,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttributeValue.NULL;
 		}
-		
-		log.trace("getResourceAttributeValue({}, {})", resourceId, attrToFetch);
-		PerunAttributeValue value = this.getResourceAttribute(resourceId, attrToFetch).getValue();
 
-		log.trace("getResourceAttributeValue({}, {}) returns: {}", resourceId, attrToFetch, value);
-		return value;
+		return this.getResourceAttribute(resourceId, attrToFetch).getValue();
 	}
 
 	@Override
@@ -658,8 +569,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getFacilityAttributes({}, {})", facility, attrsToFetch);
+
 		return this.getFacilityAttributes(facility.getId(), attrsToFetch);
 	}
 
@@ -668,13 +578,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getFacilityAttributes({}, {})", facilityId, attrsToFetch);
 
-		Map<String, PerunAttribute> attributes = getAttributes(PerunEntityType.FACILITY, facilityId, attrsToFetch);
-
-		log.trace("getFacilityAttributes({}, {}) returns: {}", facilityId, attrsToFetch, attributes);
-		return attributes;
+		return getAttributes(PerunEntityType.FACILITY, facilityId, attrsToFetch);
 	}
 
 	@Override
@@ -682,8 +587,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getFacilityAttribute({}, {})", facility, attrToFetch);
+
 		return this.getFacilityAttribute(facility.getId(), attrToFetch);
 	}
 
@@ -692,13 +596,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getFacilityAttribute({}, {})", facilityId, attrToFetch);
 
-		PerunAttribute attribute = getAttribute(PerunEntityType.FACILITY, facilityId, attrToFetch);
-
-		log.trace("getFacilityAttribute({}, {}) returns: {}", facilityId, attrToFetch, attribute);
-		return attribute;
+		return getAttribute(PerunEntityType.FACILITY, facilityId, attrToFetch);
 	}
 
 	@Override
@@ -706,8 +605,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getGroupAttributes({}, {})", group, attrsToFetch);
+
 		return this.getGroupAttributes(group.getId(), attrsToFetch);
 	}
 
@@ -716,13 +614,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getGroupAttributes({}, {})", groupId, attrsToFetch);
 
-		Map<String, PerunAttribute> attributes = getAttributes(PerunEntityType.GROUP, groupId, attrsToFetch);
-
-		log.trace("getGroupAttributes({}, {}) returns: {}", groupId, attrsToFetch, attributes);
-		return attributes;
+		return getAttributes(PerunEntityType.GROUP, groupId, attrsToFetch);
 	}
 
 	@Override
@@ -730,8 +623,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getGroupAttribute({}, {})", group, attrToFetch);
+
 		return this.getGroupAttribute(group.getId(), attrToFetch);
 	}
 
@@ -740,13 +632,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getGroupAttribute({}, {})", groupId, attrToFetch);
 
-		PerunAttribute attribute = getAttribute(PerunEntityType.GROUP, groupId, attrToFetch);
-
-		log.trace("getGroupAttribute({}, {}) returns: {}", groupId, attrToFetch, attribute);
-		return attribute;
+		return getAttribute(PerunEntityType.GROUP, groupId, attrToFetch);
 	}
 
 	@Override
@@ -754,8 +641,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getUserAttributes({}, {})", user, attrsToFetch);
+
 		return this.getUserAttributes(user.getId(), attrsToFetch);
 	}
 
@@ -764,13 +650,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getUserAttributes({}, {})", userId, attrsToFetch);
 
-		Map<String, PerunAttribute> attributes = getAttributes(PerunEntityType.USER, userId, attrsToFetch);
-
-		log.trace("getUserAttributes({}, {}) returns: {}", userId, attrsToFetch, attributes);
-		return attributes;
+		return getAttributes(PerunEntityType.USER, userId, attrsToFetch);
 	}
 
 	@Override
@@ -778,8 +659,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getUserAttribute({}, {})", user, attrToFetch);
+
 		return this.getUserAttribute(user.getId(), attrToFetch);
 	}
 
@@ -788,13 +668,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getUserAttribute({}, {})", userId, attrToFetch);
 
-		PerunAttribute attribute = getAttribute(PerunEntityType.USER, userId, attrToFetch);
-
-		log.trace("getUserAttribute({}, {}) returns: {}", userId, attrToFetch, attribute);
-		return attribute;
+		return getAttribute(PerunEntityType.USER, userId, attrToFetch);
 	}
 
 	@Override
@@ -802,8 +677,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getVoAttributes({}, {})", vo, attrsToFetch);
+
 		return this.getVoAttributes(vo.getId(), attrsToFetch);
 	}
 
@@ -812,13 +686,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getVoAttributes({}, {})", voId, attrsToFetch);
 
-		Map<String, PerunAttribute> attributes = getAttributes(PerunEntityType.VO, voId, attrsToFetch);
-
-		log.trace("getVoAttributes({}, {}) returns: {}", voId, attrsToFetch, attributes);
-		return attributes;
+		return getAttributes(PerunEntityType.VO, voId, attrsToFetch);
 	}
 
 	@Override
@@ -826,8 +695,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getvoAttribute({}, {})", vo, attrToFetch);
+
 		return this.getVoAttribute(vo.getId(), attrToFetch);
 	}
 
@@ -836,13 +704,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getVoAttribute({}, {})", voId, attrToFetch);
 
-		PerunAttribute attribute = getAttribute(PerunEntityType.VO, voId, attrToFetch);
-
-		log.trace("getVoAttribute({}, {}) returns: {}", voId, attrToFetch, attribute);
-		return attribute;
+		return getAttribute(PerunEntityType.VO, voId, attrToFetch);
 	}
 
 	@Override
@@ -850,8 +713,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getResourceAttributes({}, {})", resource, attrsToFetch);
+
 		return this.getResourceAttributes(resource.getId(), attrsToFetch);
 	}
 
@@ -860,13 +722,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getResourceAttributes({}, {})", resourceId, attrsToFetch);
 
-		Map<String, PerunAttribute> attributes = getAttributes(PerunEntityType.RESOURCE, resourceId, attrsToFetch);
-
-		log.trace("getResourceAttributes({}, {}) returns: {}", resourceId, attrsToFetch, attributes);
-		return attributes;
+		return getAttributes(PerunEntityType.RESOURCE, resourceId, attrsToFetch);
 	}
 
 	@Override
@@ -874,8 +731,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getResourceAttribute({}, {})", resource, attrToFetch);
+
 		return this.getResourceAttribute(resource.getId(), attrToFetch);
 	}
 
@@ -884,13 +740,8 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getResourceAttribute({}, {})", resourceId, attrToFetch);
 
-		PerunAttribute attribute = getAttribute(PerunEntityType.RESOURCE, resourceId, attrToFetch);
-
-		log.trace("getResourceAttribute({}, {}) returns: {}", resourceId, attrToFetch, attribute);
-		return attribute;
+		return getAttribute(PerunEntityType.RESOURCE, resourceId, attrToFetch);
 	}
 
 	@Override
@@ -898,8 +749,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashSet<>();
 		}
-
-		log.trace("getResourceCapabilities({}, {}, {})", facility, groupNames, capabilitiesAttrName);
 
 		if (facility == null) {
 			return new LinkedHashSet<>();
@@ -939,7 +788,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			}
 		}
 
-		log.trace("getResourceCapabilities({}, {}, {}) returns {})", facility, groupNames, capabilitiesAttrName, capabilities);
 		return capabilities;
 	}
 
@@ -948,7 +796,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashSet<>();
 		}
-		log.trace("getFacilityCapabilities({}, {})", facility, capabilitiesAttrName);
 
 		Set<String> capabilities = new HashSet<>();
 		if (facility != null) {
@@ -958,7 +805,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			}
 		}
 
-		log.trace("getFacilityCapabilities({}, {}) returns: {}", facility, capabilitiesAttrName, capabilities);
 		return capabilities;
 	}
 
@@ -967,8 +813,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashSet<>();
 		}
-		
-		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {})", facilityId, userId);
+
 		Set<Group> groups = this.getGroupsWhereUserIsActive(facilityId, userId);
 
 		Map<Long, String> voIdToShortNameMap = new HashMap<>();
@@ -982,7 +827,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			g.setUniqueGroupName(voIdToShortNameMap.get(g.getVoId()) + ':' + g.getName());
 		});
 
-		log.trace("getGroupsWhereUserIsActiveWithUniqueNames({}, {}) returns: {}", facilityId, userId, groups);
 		return groups;
 	}
 
@@ -992,14 +836,12 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return new HashSet<>();
 		}
 
-		log.trace("getUserGroups({}, {})", userId, voId);
 		Member member = getMemberByUser(userId, voId);
 		Set<Long> groups = new HashSet<>();
 		if (member != null) {
 			groups = getMemberGroups(member.getId()).stream().map(Group::getId).collect(Collectors.toSet());
 		}
 
-		log.trace("getUserGroups({}, {}) returns: {}", userId, voId, groups);
 		return groups;
 	}
 
@@ -1008,53 +850,44 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		log.trace("getMemberByUser({}, {})", userId, voId);
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("user", userId);
 		params.put("vo", voId);
 		JsonNode jsonNode = connectorRpc.post(MEMBERS_MANAGER, "getMemberByUser", params);
 
-		Member member = RpcMapper.mapMember(jsonNode);
-		log.trace("getMemberByUser({}, {}) returns: {}", userId, voId, member);
-		return member;
+		return RpcMapper.mapMember(jsonNode);
 	}
 
 	private Set<Group> getGroupsWhereUserIsActive(Long facilityId, Long userId) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashSet<>();
 		}
-		
-		log.trace("getGroupsWhereUserIsActive({}, {})", facilityId, userId);
+
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facilityId);
 		map.put("user", userId);
 		JsonNode res = connectorRpc.post(USERS_MANAGER, "getGroupsWhereUserIsActive", map);
 
-		Set<Group> groups = new HashSet<>(RpcMapper.mapGroups(res));
-		log.trace("getGroupsWhereUserIsActive({}, {}) returns: {}", facilityId, userId, groups);
-		return groups;
+		return new HashSet<>(RpcMapper.mapGroups(res));
 	}
 
 	private Vo getVoById(Long voId) {
 		if (!this.connectorRpc.isEnabled()) {
 			return null;
 		}
-		
-		log.trace("getVoById({})",voId);
+
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("id", voId);
 
 		JsonNode res = connectorRpc.post(VOS_MANAGER, "getVoById", map);
-		Vo vo = RpcMapper.mapVo(res);
-		log.trace("getVoById({}) returns {}", voId, vo);
-		return vo;
+		return RpcMapper.mapVo(res);
 	}
 
 	private List<Group> getAssignedGroups(Long resourceId) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
+
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("resource", resourceId);
 
@@ -1120,47 +953,37 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getMemberGroups({})", memberId);
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("member", memberId);
 
 		JsonNode response = connectorRpc.post(GROUPS_MANAGER, "getMemberGroups", map);
-		List<Group> groups = RpcMapper.mapGroups(response);
-
-		log.trace("getMemberGroups({}) returns: {}", memberId, groups);
-		return groups;
+		return RpcMapper.mapGroups(response);
 	}
 
 	private List<Member> getMembersByUser(Long userId) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getMemberByUser({})", userId);
+
 		Map<String, Object> params = new LinkedHashMap<>();
 		params.put("user", userId);
 		JsonNode jsonNode = connectorRpc.post(MEMBERS_MANAGER, "getMembersByUser", params);
 
-		List<Member> userMembers = RpcMapper.mapMembers(jsonNode);
-		log.trace("getMembersByUser({}) returns: {}", userId, userMembers);
-		return userMembers;
+		return RpcMapper.mapMembers(jsonNode);
 	}
 
 	private List<Vo> getVosByShortNames(List<String> voShortNames) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getVosByShortNames({})", voShortNames);
+
 		List<Vo> vos = new ArrayList<>();
 		for (String shortName : voShortNames) {
 			Vo vo = getVoByShortName(shortName);
 			vos.add(vo);
 		}
 
-		log.trace("getVosByShortNames({}) returns: {}", voShortNames, vos);
 		return vos;
 	}
 
@@ -1181,8 +1004,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashMap<>();
 		}
-		
-		log.trace("getUserExtSourceAttributeValues({}, {})", uesId, attrMappings);
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("userExtSource", uesId);
@@ -1190,18 +1011,14 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 
 		JsonNode response = connectorRpc.post(ATTRIBUTES_MANAGER, "getAttributes", map);
 		Map<String, PerunAttribute> attributeMap = RpcMapper.mapAttributes(response, attrMappings);
-		Map<String, PerunAttributeValue> valueMap = extractValues(attributeMap);
-
-		log.trace("getUserExtSourceAttributeValues({}, {}) returns: {}", uesId, attrMappings, valueMap);
-		return valueMap;
+		return extractValues(attributeMap);
 	}
 
 	private List<Group> getAllowedGroups(Facility facility) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getAllowedGroups({})", facility);
+
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
 		JsonNode jsonNode = connectorRpc.post(FACILITIES_MANAGER, "getAllowedGroups", map);
@@ -1211,7 +1028,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			result.add(RpcMapper.mapGroup(groupNode));
 		}
 
-		log.trace("getAllowedGroups({}) returns: {}", facility, result);
 		return result;
 	}
 
@@ -1220,7 +1036,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return false;
 		}
 		
-		log.trace("getApplicationForm({})", group);
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("group", group.getId());
 		try {
@@ -1233,11 +1048,9 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		} catch (Exception e) {
 			// when group does not have form exception is thrown. Every error thus is supposed as group without form
 			// this method will be used after calling other RPC methods - if RPC is not available other methods should discover it first
-			log.trace("getApplicationForm({}) returns: false", group);
 			return false;
 		}
 
-		log.trace("getApplicationForm({}) returns: true", group);
 		return true;
 	}
 
@@ -1245,8 +1058,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return false;
 		}
-		
-		log.trace("getApplicationForm({})", voId);
+
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("vo", voId);
 		try {
@@ -1254,11 +1066,9 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		} catch (Exception e) {
 			// when vo does not have form exception is thrown. Every error thus is supposed as vo without form
 			// this method will be used after calling other RPC methods - if RPC is not available other methods should discover it first
-			log.trace("getApplicationForm({}) returns: false", voId);
 			return false;
 		}
 
-		log.trace("getApplicationForm({}) returns: true", voId);
 		return true;
 	}
 
@@ -1266,16 +1076,13 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getGroupsWhereUserIsActive({}, {})", facility, userId);
+
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
 		map.put("user", userId);
 		JsonNode jsonNode = connectorRpc.post(USERS_MANAGER, "getGroupsWhereUserIsActive", map);
 
-		List<Group> res = RpcMapper.mapGroups(jsonNode);
-		log.trace("getGroupsWhereUserIsActive({}, {}) returns: {}", facility, userId, res);
-		return res;
+		return RpcMapper.mapGroups(jsonNode);
 	}
 
 	private Map<Long, Vo> convertVoListToMap(List<Vo> vos) {
@@ -1295,25 +1102,19 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getAssignedResources({})", facility);
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
 
 		JsonNode res = connectorRpc.post(FACILITIES_MANAGER, "getAssignedResources", map);
-		List<Resource> resources = RpcMapper.mapResources(res);
-
-		log.trace("getAssignedResources({}) returns: {}", facility, resources);
-		return resources;
+		return RpcMapper.mapResources(res);
 	}
 
 	private List<Group> getRichGroupsAssignedToResourceWithAttributesByNames(Resource resource, List<String> attrNames) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getRichGroupsAssignedToResourceWithAttributesByNames({}, {})", resource, attrNames);
+
 		Map<String, Object> map = new LinkedHashMap<>();
 		Set<AttributeMapping> mappings = this.getGroupAttributesMappingService()
 				.getMappingsForAttrNames(attrNames);
@@ -1344,7 +1145,6 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			groups.add(group);
 		}
 
-		log.trace("getRichGroupsAssignedToResourceWithAttributesByNames({}) returns: {}", resource, groups);
 		return groups;
 	}
 
@@ -1352,8 +1152,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		if (!this.connectorRpc.isEnabled()) {
 			return PerunAttribute.NULL;
 		}
-		
-		log.trace("getAttribute({}, {}, {})", entity, entityId, attributeName);
+
 		AttributeMapping mapping;
 		switch (entity) {
 			case USER: mapping = this.getUserAttributesMappingService()
@@ -1380,26 +1179,18 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		map.put("attributeName", mapping.getRpcName());
 
 		JsonNode res = connectorRpc.post(ATTRIBUTES_MANAGER, "getAttribute", map);
-		PerunAttribute attribute = RpcMapper.mapAttribute(res);
-
-		log.trace("getAttribute({}, {}, {}) returns: {}", entity, entityId, attributeName, attribute);
-		return attribute;
+		return RpcMapper.mapAttribute(res);
 	}
 
 	private List<UserExtSource> getUserExtSources(Long userId) {
 		if (!this.connectorRpc.isEnabled()) {
 			return new ArrayList<>();
 		}
-		
-		log.trace("getUserExtSources({})", userId);
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("user", userId);
 
 		JsonNode response = connectorRpc.post(USERS_MANAGER, "getUserExtSources", map);
-		List<UserExtSource> userExtSources = RpcMapper.mapUserExtSources(response);
-
-		log.trace("getUserExtSources({}) returns: {}", userExtSources, userExtSources);
-		return userExtSources;
+		return RpcMapper.mapUserExtSources(response);
 	}
 }

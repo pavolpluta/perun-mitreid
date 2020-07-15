@@ -281,7 +281,6 @@ public class PerunUserInfoService implements UserInfoService {
 
 	@Override
 	public UserInfo getByUsernameAndClientId(String username, String clientId) {
-		log.trace("getByUsernameAndClientId(username={},clientId={})", username, clientId);
 		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
 		if (client == null) {
 			log.warn("did not found client with id {}", clientId);
@@ -303,13 +302,11 @@ public class PerunUserInfoService implements UserInfoService {
 
 	@Override
 	public UserInfo getByUsername(String username) {
-		log.trace("getByUsername({})", username);
 		UserInfo userInfo;
 		try {
 			userInfo = cache.get(new UserClientPair(username));
 			log.trace("loaded UserInfo from cache for '{}'", userInfo.getName());
 			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, null);
-			log.trace("Modified userInfo {}", userInfo);
 		} catch (UncheckedExecutionException | ExecutionException e) {
 			log.error("cannot get user from cache", e);
 			return null;
@@ -320,7 +317,6 @@ public class PerunUserInfoService implements UserInfoService {
 
 	@Override
 	public UserInfo getByEmailAddress(String email) {
-		log.trace("getByEmailAddress({})", email);
 		throw new RuntimeException("PerunUserInfoService.getByEmailAddress() not implemented");
 	}
 

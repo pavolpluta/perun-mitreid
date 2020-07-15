@@ -37,7 +37,7 @@ public class AttributeMappingsService {
 	private static final String TYPE = ".type";
 	private static final String SEPARATOR = ".separator";
 
-	private Map<String, AttributeMapping> attributeMap;
+	private final Map<String, AttributeMapping> attributeMap;
 
 	public AttributeMappingsService(String[] attrIdentifiersFixed, String[] attrIdentifiersCustom,
 									Properties attrMappingsProperties) {
@@ -53,23 +53,17 @@ public class AttributeMappingsService {
 	}
 
 	public void add(AttributeMapping attribute) {
-		log.trace("add({})", attribute);
 		attributeMap.put(attribute.getIdentifier(), attribute);
 	}
 
 	public AttributeMapping getByName(String name) {
-		log.trace("getByName({})", name);
-		AttributeMapping result = attributeMap.getOrDefault(name, null);
-
-		log.trace("getByName({}) returns: {}", name, result);
-		return result;
+		return attributeMap.getOrDefault(name, null);
 	}
 
 	public List<AttributeMapping> getMappingsForAttrNames(String... attrNames) {
-		log.trace("getMappingsForAttrNames({})", (Object) attrNames);
 
 		List<AttributeMapping> mappings = new ArrayList<>();
-		String[] attrNamesArr = null;
+		String[] attrNamesArr;
 
 		if (attrNames != null && (attrNamesArr = attrNames.clone()) != null) {
 			mappings = new ArrayList<>();
@@ -80,13 +74,10 @@ public class AttributeMappingsService {
 			}
 		}
 
-		log.trace("getMappingsForAttrNames({}) returns: {}", attrNamesArr, mappings);
 		return mappings;
 	}
 
 	public Set<AttributeMapping> getMappingsForAttrNames(Collection<String> attrNames) {
-		log.trace("getMappingsForAttrNames({})", attrNames);
-
 		Set<AttributeMapping> mappings = new HashSet<>();
 
 		if (attrNames != null) {
@@ -96,13 +87,10 @@ public class AttributeMappingsService {
 				}
 			}
 		}
-
-		log.trace("getMappingsForAttrNames({}) returns: {}", attrNames, mappings);
 		return mappings;
 	}
 
 	public List<AttributeMapping> getAttributeMappingsToFetch(Map<String, PerunAttributeValue> fetched, Collection<String> allToFetch) {
-		log.trace("getAttributeMappingsToFetch({}, {})", fetched, allToFetch);
 		if (allToFetch == null) {
 			throw new IllegalArgumentException("AllToFetch cannot be null");
 		}
@@ -111,16 +99,15 @@ public class AttributeMappingsService {
 
 		if (fetched == null || fetched.keySet().isEmpty()) {
 			mappings = allToFetch.stream()
-					.map(toFetch -> attributeMap.get(toFetch))
+					.map(attributeMap::get)
 					.collect(Collectors.toList());
 		} else {
 			mappings = allToFetch.stream()
 					.filter(attrKey -> (!fetched.containsKey(attrKey) || fetched.get(attrKey) == null))
-					.map(toFetch -> attributeMap.get(toFetch))
+					.map(attributeMap::get)
 					.collect(Collectors.toList());
 		}
 
-		log.trace("getAttributeMappingsToFetch({}, {}) returns: {}", fetched, allToFetch, mappings);
 		return mappings;
 	}
 
@@ -140,7 +127,6 @@ public class AttributeMappingsService {
 	}
 
 	private AttributeMapping initAttrMapping(String attrIdentifier, Properties attrProperties) {
-		log.trace("initAttrMapping({})", attrIdentifier);
 		String rpcIdentifier = attrProperties.getProperty(attrIdentifier + RPC_NAME);
 		String ldapIdentifier = attrProperties.getProperty(attrIdentifier + LDAP_NAME);
 		if (ldapIdentifier != null && ldapIdentifier.trim().isEmpty()) {

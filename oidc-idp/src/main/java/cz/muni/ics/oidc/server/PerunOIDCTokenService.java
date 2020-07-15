@@ -73,8 +73,6 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 	}
 
 	private String getAuthnContextClass(String clientId, String sub, Map<String, String> params) {
-		log.trace("getAuthnContextClass(clientId: {}, sub: {}, params: {})", clientId, sub, params);
-
 		String state = params.get(Acr.PARAM_STATE);
 		String acrValues = params.get(Acr.PARAM_ACR);
 
@@ -85,7 +83,6 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 			authnContextClass = acr.getShibAuthnContextClass();
 		}
 
-		log.trace("getAuthnContextClass() returns: {}", authnContextClass);
 		return authnContextClass;
 	}
 

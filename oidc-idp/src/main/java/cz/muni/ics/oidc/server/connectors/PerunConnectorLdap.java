@@ -83,7 +83,6 @@ public class PerunConnectorLdap implements DisposableBean {
 	 */
 	@Override
 	public void destroy() {
-		log.trace("destroy()");
 		if (!pool.isClosed()) {
 			pool.close();
 		}
@@ -101,12 +100,8 @@ public class PerunConnectorLdap implements DisposableBean {
 	 * @return Found entry mapped to target class
 	 */
 	public <T> T searchFirst(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes, EntryMapper<T> entryMapper) {
-		log.trace("searchFirst({}, {}, {}, {} , {})", dnPrefix, filter, scope, attributes, entryMapper);
 		Dn fullDn = getFullDn(dnPrefix);
-		T result = ldap.searchFirst(fullDn, filter, scope, attributes, entryMapper);
-
-		log.trace("searchFirst({}, {}, {}, {} , {}) returns: {}", dnPrefix, filter, scope, attributes, entryMapper, result);
-		return result;
+		return ldap.searchFirst(fullDn, filter, scope, attributes, entryMapper);
 	}
 
 	/**
@@ -119,12 +114,8 @@ public class PerunConnectorLdap implements DisposableBean {
 	 * @return Found entry mapped to target class
 	 */
 	public <T> T lookup(String dnPrefix, String[] attributes, EntryMapper<T> entryMapper) {
-		log.trace("lookup({}, {}, {})", dnPrefix, attributes, entryMapper);
 		Dn fullDn = getFullDn(dnPrefix);
-
-		T result = ldap.lookup(fullDn, attributes, entryMapper);
-		log.trace("lookup({}, {}, {}) returns: {}", dnPrefix, attributes, entryMapper, result);
-		return result;
+		return ldap.lookup(fullDn, attributes, entryMapper);
 	}
 
 	/**
@@ -139,12 +130,8 @@ public class PerunConnectorLdap implements DisposableBean {
 	 * @return List of found entries mapped to target class
 	 */
 	public <T> List<T> search(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes, EntryMapper<T> entryMapper) {
-		log.trace("search({}, {}, {}, {} , {})", dnPrefix, filter, scope, attributes, entryMapper);
 		Dn fullDn = getFullDn(dnPrefix);
-
-		List<T> result = ldap.search(fullDn, filter, scope, attributes, entryMapper);
-		log.trace("searchFirst({}, {}, {}, {} , {}) returns: {}", dnPrefix, filter, scope, attributes, entryMapper, result);
-		return result;
+		return ldap.search(fullDn, filter, scope, attributes, entryMapper);
 	}
 
 	private Dn getFullDn(String prefix) {
@@ -153,8 +140,6 @@ public class PerunConnectorLdap implements DisposableBean {
 			dn = prefix + "," + baseDN;
 		}
 
-		Dn newDn = ldap.newDn(dn);
-		log.trace("getFullDn ({}) returns: {}", prefix, newDn);
-		return newDn;
+		return ldap.newDn(dn);
 	}
 }
