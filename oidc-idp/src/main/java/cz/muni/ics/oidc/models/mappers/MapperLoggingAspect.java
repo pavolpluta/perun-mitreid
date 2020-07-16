@@ -1,6 +1,6 @@
 package cz.muni.ics.oidc.models.mappers;
 
-import cz.muni.ics.oidc.server.ServerLoggingAspect;
+import cz.muni.ics.oidc.aop.ServerLoggingAspect;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;

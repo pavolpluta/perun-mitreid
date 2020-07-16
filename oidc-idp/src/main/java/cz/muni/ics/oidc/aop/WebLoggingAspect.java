@@ -1,6 +1,5 @@
-package cz.muni.ics.oidc.web;
+package cz.muni.ics.oidc.aop;
 
-import cz.muni.ics.oidc.server.ServerLoggingAspect;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -20,13 +19,13 @@ public class WebLoggingAspect {
         String className = pjp.getTarget().getClass().getName();
         Object[] args = pjp.getArgs();
 
-        log.trace("{} --- {}({})", className, methodName, args);
+        log.trace("{} - {}({})", className, methodName, args);
         try {
             Object result = pjp.proceed();
-            log.trace("{} --- {}({}) returns: {}", className, methodName, args, result);
+            log.trace("{} - {}({}) returns: {}", className, methodName, args, result);
             return result;
         } catch (Throwable e) {
-            log.warn("{} --- {}({}) has thrown {}", className, methodName, args, e.getClass(), e);
+            log.warn("{} - {}({}) has thrown {}", className, methodName, args, e.getClass(), e);
             throw e;
         }
     }
@@ -36,13 +35,13 @@ public class WebLoggingAspect {
         String methodName = pjp.getSignature().getName();
         String className = pjp.getTarget().getClass().getName();
 
-        log.trace("{} --- {}()", className, methodName);
+        log.trace("{} - {}()", className, methodName);
         try {
             Object result = pjp.proceed();
-            log.trace("{} --- {}() returns: {}", className, methodName, result);
+            log.trace("{} - {}() returns: {}", className, methodName, result);
             return result;
         } catch (Throwable e) {
-            log.warn("{} --- {}() has thrown {}", className, methodName, e.getClass(), e);
+            log.warn("{} - {}() has thrown {}", className, methodName, e.getClass(), e);
             throw e;
         }
     }
