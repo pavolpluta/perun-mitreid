@@ -79,7 +79,7 @@ public class EntitlementSource extends GroupNamesSource {
 				if (Strings.isNotEmpty(parts[1])) {
 					gname += (':' + parts[1]);
 				}
-				groupNames.add(gname);
+				groupNames.add(value);
 				entitlements.add(wrapGroupNameToAARC(gname));
 			}
 
