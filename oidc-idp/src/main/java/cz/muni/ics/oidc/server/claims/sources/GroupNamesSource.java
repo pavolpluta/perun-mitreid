@@ -12,6 +12,7 @@ import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -37,6 +38,7 @@ public class GroupNamesSource extends ClaimSource {
 	}
 
 	protected JsonNode produceValueWithoutReplacing(ClaimSourceProduceContext pctx) {
+		log.debug("producing value without trimming 'members'");
 		return produceValue(pctx, false);
 	}
 
@@ -61,8 +63,7 @@ public class GroupNamesSource extends ClaimSource {
 		Set<String> groups = new TreeSet<>();
 		userGroups.forEach(g -> {
 			String uniqueName = g.getUniqueGroupName();
-			if (trimMembers && uniqueName != null && !uniqueName.trim().isEmpty()
-					&& "members".equals(g.getName())) {
+			if (trimMembers && StringUtils.hasText(uniqueName) && "members".equals(g.getName())) {
 				uniqueName = uniqueName.replace(":members", "");
 				g.setUniqueGroupName(uniqueName);
 			}
@@ -71,10 +72,11 @@ public class GroupNamesSource extends ClaimSource {
 		});
 
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
-		for (String entitlement: groups) {
-			result.add(entitlement);
+		for (String groupName: groups) {
+			result.add(groupName);
 		}
 
+		log.debug("produced groupNames: {}", result);
 		return result;
 	}
 
