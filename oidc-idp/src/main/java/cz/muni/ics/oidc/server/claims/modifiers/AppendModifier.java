@@ -16,11 +16,13 @@ import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
 @SuppressWarnings("unused")
 public class AppendModifier extends ClaimModifier {
 
-	private String appendText;
+	private static final String APPEND = "append";
+
+	private final String appendText;
 
 	public AppendModifier(ClaimModifierInitContext ctx) {
 		super(ctx);
-		appendText = ctx.getProperty("append", "");
+		appendText = ctx.getProperty(APPEND, "");
 	}
 
 	@Override

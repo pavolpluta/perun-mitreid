@@ -8,7 +8,9 @@ import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
-import org.apache.directory.api.util.Strings;
+import cz.muni.ics.oidc.server.claims.ClaimUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.util.HashSet;
@@ -38,6 +40,15 @@ import java.util.TreeSet;
  */
 public class EntitlementSource extends GroupNamesSource {
 
+	public static final Logger log = LoggerFactory.getLogger(EntitlementSource.class);
+
+	private static final String FORWARDED_ENTITLEMENTS = "forwardedEntitlements";
+	private static final String RESOURCE_CAPABILITIES = "resourceCapabilities";
+	private static final String FACILITY_CAPABILITIES = "facilityCapabilities";
+	private static final String PREFIX = "prefix";
+	private static final String AUTHORITY = "authority";
+	private static final String MEMBERS = "members";
+
 	private final String forwardedEntitlements;
 	private final String resourceCapabilities;
 	private final String facilityCapabilities;
@@ -46,11 +57,17 @@ public class EntitlementSource extends GroupNamesSource {
 
 	public EntitlementSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		forwardedEntitlements = ctx.getProperty("forwardedEntitlements", "eduPersonEntitlement");
-		resourceCapabilities = ctx.getProperty("resourceCapabilities", "capabilities");
-		facilityCapabilities = ctx.getProperty("facilityCapabilities", "capabilities");
-		prefix = ctx.getProperty("prefix", null);
-		authority = ctx.getProperty("authority", null);
+		this.forwardedEntitlements = ClaimUtils.fillStringPropertyOrNoVal(FORWARDED_ENTITLEMENTS, ctx);
+		this.resourceCapabilities = ClaimUtils.fillStringPropertyOrNoVal(RESOURCE_CAPABILITIES, ctx);
+		this.facilityCapabilities = ClaimUtils.fillStringPropertyOrNoVal(FACILITY_CAPABILITIES, ctx);
+		this.prefix = ClaimUtils.fillStringPropertyOrNoVal(PREFIX, ctx);
+		if (!ClaimUtils.isPropSet(this.prefix)) {
+			throw new IllegalArgumentException("Missing mandatory configuration option - prefix");
+		}
+		this.authority = ClaimUtils.fillStringPropertyOrNoVal(AUTHORITY, ctx);
+		if (!ClaimUtils.isPropSet(this.authority)) {
+			throw new IllegalArgumentException("Missing mandatory configuration option - authority");
+		}
 	}
 
 	@Override
@@ -65,50 +82,15 @@ public class EntitlementSource extends GroupNamesSource {
 		}
 
 		if (groupNamesJson != null) {
-			ArrayNode groupNamesArrayNode = (ArrayNode) groupNamesJson;
-			Set<String> groupNames = new HashSet<>();
-
-			for (int i = 0; i < groupNamesArrayNode.size(); i++) {
-				String value = groupNamesArrayNode.get(i).textValue();
-				String[] parts = value.split(":", 2);
-				if (parts.length == 2 && !Strings.isEmpty(parts[1]) && "members".equals(parts[1])) {
-					parts[1] = parts[1].replace("members", "");
-				}
-
-				String gname = parts[0];
-				if (Strings.isNotEmpty(parts[1])) {
-					gname += (':' + parts[1]);
-				}
-				groupNames.add(value);
-				entitlements.add(wrapGroupNameToAARC(gname));
-			}
-
-			if (facility != null && !StringUtils.isEmpty(this.resourceCapabilities)) {
-				Set<String> resultCapabilities = pctx.getPerunAdapter()
-						.getResourceCapabilities(facility, groupNames, resourceCapabilities);
-
-				for (String capability : resultCapabilities) {
-					entitlements.add(wrapCapabilityToAARC(capability));
-				}
-			}
+			fillEntitlementsFromGroupNames(facility, pctx, groupNamesJson, entitlements);
 		}
 
-		if (facility != null && !StringUtils.isEmpty(this.facilityCapabilities)) {
-			Set<String> resultCapabilities = pctx.getPerunAdapter()
-					.getFacilityCapabilities(facility, facilityCapabilities);
-			for (String capability : resultCapabilities) {
-				entitlements.add(wrapCapabilityToAARC(capability));
-			}
+		if (facility != null && ClaimUtils.isPropSet(this.facilityCapabilities)) {
+			fillFacilityCapabilities(facility, pctx, entitlements);
 		}
 
-		if (this.forwardedEntitlements != null && !this.forwardedEntitlements.trim().isEmpty()) {
-			PerunAttributeValue forwardedEntitlementsVal = pctx.getAttrValues().get(forwardedEntitlements);
-			if (forwardedEntitlementsVal != null && !PerunAttributeValue.NULL.equals(forwardedEntitlementsVal)) {
-				JsonNode eduPersonEntitlementJson = forwardedEntitlementsVal.valueAsJson();
-				for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
-					entitlements.add(eduPersonEntitlementJson.get(i).asText());
-				}
-			}
+		if (ClaimUtils.isPropSet(this.forwardedEntitlements)) {
+			fillForwardedEntitlements(pctx, entitlements);
 		}
 
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
@@ -117,6 +99,60 @@ public class EntitlementSource extends GroupNamesSource {
 		}
 
 		return result;
+	}
+
+	private void fillForwardedEntitlements(ClaimSourceProduceContext pctx, Set<String> entitlements) {
+		PerunAttributeValue forwardedEntitlementsVal = pctx.getPerunAdapter()
+				.getUserAttributeValue(pctx.getPerunUserId(), this.forwardedEntitlements);
+		if (forwardedEntitlementsVal != null && !PerunAttributeValue.NULL.equals(forwardedEntitlementsVal)) {
+			JsonNode eduPersonEntitlementJson = forwardedEntitlementsVal.valueAsJson();
+			for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
+				log.debug("Added forwarded entitlement: {}", eduPersonEntitlementJson.get(i).asText());
+				entitlements.add(eduPersonEntitlementJson.get(i).asText());
+			}
+		}
+	}
+
+	private void fillFacilityCapabilities(Facility facility, ClaimSourceProduceContext pctx, Set<String> entitlements) {
+		Set<String> resultCapabilities = pctx.getPerunAdapter()
+				.getFacilityCapabilities(facility, facilityCapabilities);
+		for (String capability : resultCapabilities) {
+			entitlements.add(wrapCapabilityToAARC(capability));
+		}
+	}
+
+	private void fillEntitlementsFromGroupNames(Facility facility, ClaimSourceProduceContext pctx,
+												JsonNode groupNamesJson, Set<String> entitlements) {
+		ArrayNode groupNamesArrayNode = (ArrayNode) groupNamesJson;
+		Set<String> groupNames = new HashSet<>();
+
+		for (JsonNode arrItem: groupNamesArrayNode) {
+			if (arrItem == null || arrItem.isNull()) {
+				continue;
+			}
+
+			String value = arrItem.textValue();
+			String[] parts = value.split(":", 2);
+			if (parts.length == 2 && StringUtils.hasText(parts[1]) && MEMBERS.equals(parts[1])) {
+				parts[1] = parts[1].replace(MEMBERS, "");
+			}
+
+			String gname = parts[0];
+			if (StringUtils.hasText(parts[1])) {
+				gname += (':' + parts[1]);
+			}
+			groupNames.add(value);
+			entitlements.add(wrapGroupNameToAARC(gname));
+		}
+
+		if (facility != null && ClaimUtils.isPropSet(this.resourceCapabilities)) {
+			Set<String> resultCapabilities = pctx.getPerunAdapter()
+					.getResourceCapabilities(facility, groupNames, resourceCapabilities);
+
+			for (String capability : resultCapabilities) {
+				entitlements.add(wrapCapabilityToAARC(capability));
+			}
+		}
 	}
 
 	private String wrapGroupNameToAARC(String groupName) {

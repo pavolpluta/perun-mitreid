@@ -36,14 +36,23 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 
 	private static final Logger log = LoggerFactory.getLogger(EdupersonScopedAffiliationsMUSource.class);
 
-	private Map<List<Long>, String> affiliations = new HashMap<>();
+	private static final String CONFIG_FILE = "config_file";
+	private static final String KEY_SCOPE = "scope";
+	private static final String KEY_VO_ID = "voId";
+	private static final String KEY_AFFILIATIONS = "affiliations";
+	private static final String KEY_VALUE = "value";
+	private static final String KEY_GROUPS = "groups";
+
+	private static final String DEFAULT_PATH = "/etc/perun/eduperson_scoped_affiliations_mu_source.yml";
+
+	private final Map<List<Long>, String> affiliations = new HashMap<>();
 	private Long voId = 363L;
 	private String scope = "muni.cz";
 
 	public EdupersonScopedAffiliationsMUSource(ClaimSourceInitContext ctx) {
 		super(ctx);
 		log.debug("initializing");
-		parseConfigFile(ctx.getProperty("config_file", "/etc/perun/eduperson_scoped_affiliations_mu_source.yml"));
+		parseConfigFile(ctx.getProperty(CONFIG_FILE, DEFAULT_PATH));
 	}
 
 	private void parseConfigFile(String file) {
@@ -51,13 +60,12 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 		YAMLMapper mapper = new YAMLMapper();
 		try {
 			JsonNode root = mapper.readValue(new File(file), JsonNode.class);
-			// prepare claim repositories
-			scope = root.get("scope").asText();
-			voId = root.get("voId").longValue();
-			for (JsonNode affiliationMapping : root.path("affiliations")) {
-				String value = affiliationMapping.path("value").asText();
+			scope = root.get(KEY_SCOPE).asText();
+			voId = root.get(KEY_VO_ID).longValue();
+			for (JsonNode affiliationMapping : root.path(KEY_AFFILIATIONS)) {
+				String value = affiliationMapping.path(KEY_VALUE).asText();
 				List<Long> gids = new ArrayList<>();
-				for (JsonNode gid : affiliationMapping.path("groups")) {
+				for (JsonNode gid : affiliationMapping.path(KEY_GROUPS)) {
 					gids.add(gid.asLong());
 				}
 				affiliations.put(gids, value);

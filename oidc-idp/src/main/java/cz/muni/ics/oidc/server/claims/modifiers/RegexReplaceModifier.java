@@ -18,13 +18,16 @@ import java.util.regex.Pattern;
 @SuppressWarnings("unused")
 public class RegexReplaceModifier extends ClaimModifier {
 
-	private Pattern regex;
-	private String replacement;
+	private static final String FIND = "find";
+	private static final String REPLACE = "replace";
+
+	private final Pattern regex;
+	private final String replacement;
 
 	public RegexReplaceModifier(ClaimModifierInitContext ctx) {
 		super(ctx);
-		regex = Pattern.compile(ctx.getProperty("find", ""));
-		replacement = ctx.getProperty("replace", "");
+		regex = Pattern.compile(ctx.getProperty(FIND, ""));
+		replacement = ctx.getProperty(REPLACE, "");
 	}
 
 	@Override

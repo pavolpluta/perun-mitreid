@@ -3,10 +3,12 @@ package cz.muni.ics.oidc.server.claims.sources;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
+import cz.muni.ics.oidc.server.claims.ClaimUtils;
 
 /**
  * This source extract attribute values for given scope
@@ -21,24 +23,33 @@ import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
  */
 public class ExtractValuesByDomainSource extends ClaimSource {
 
-	private String domain;
-	private String attributeName;
+	private static final String EXTRACT_BY_DOMAIN = "extractByDomain";
+	private static final String ATTRIBUTE_NAME = "attributeName";
+
+	private final String domain;
+	private final String attributeName;
 
 	public ExtractValuesByDomainSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		domain = ctx.getProperty("extractByDomain", null);
-		attributeName = ctx.getProperty("attributeName", null);
+		this.domain = ClaimUtils.fillStringPropertyOrNoVal(EXTRACT_BY_DOMAIN, ctx);
+		if (!ClaimUtils.isPropSet(this.domain)) {
+			throw new IllegalArgumentException("Missing mandatory configuration option - domain");
+		}
+		this.attributeName = ClaimUtils.fillStringPropertyOrNoVal(ATTRIBUTE_NAME, ctx);
+		if (!ClaimUtils.isPropSet(this.attributeName)) {
+			throw new IllegalArgumentException("Missing mandatory configuration option - attributeName");
+		}
 	}
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-
-		if (domain == null || domain.isEmpty()) {
-			return null;
+		if (!ClaimUtils.isPropSet(domain)) {
+			return NullNode.getInstance();
+		} else if (!ClaimUtils.isPropSetAndHasAttribute(attributeName, pctx)) {
+			return NullNode.getInstance();
 		}
 
 		PerunAttributeValue attributeValue = pctx.getAttrValues().get(attributeName);
-
 		if (attributeValue != null) {
 			JsonNode attributeValueJson = attributeValue.valueAsJson();
 			if (attributeValueJson.isTextual() && hasDomain(attributeValueJson.textValue(), domain)) {
@@ -58,11 +69,12 @@ public class ExtractValuesByDomainSource extends ClaimSource {
 			}
 		}
 
-		return null;
+		return NullNode.getInstance();
 	}
 
 	private boolean hasDomain(String value, String domain) {
 		String[] parts = value.split("@");
 		return parts[parts.length - 1].equals(domain);
 	}
+
 }

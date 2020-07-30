@@ -3,6 +3,7 @@ package cz.muni.ics.oidc.server.claims.modifiers;
 import com.google.common.net.UrlEscapers;
 import cz.muni.ics.oidc.server.claims.ClaimModifier;
 import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
+import cz.muni.ics.oidc.server.claims.ClaimUtils;
 
 /**
  * GroupName to AARC Format modifier. Converts groupName values to AARC format.
@@ -24,13 +25,22 @@ import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
 @SuppressWarnings("unused")
 public class GroupNamesAARCFormatModifier extends ClaimModifier {
 
-	private String prefix;
-	private String authority;
+	public static final String PREFIX = "prefix";
+	public static final String AUTHORITY = "authority";
+
+	private final String prefix;
+	private final String authority;
 
 	public GroupNamesAARCFormatModifier(ClaimModifierInitContext ctx) {
 		super(ctx);
-		prefix = ctx.getProperty("prefix", "urn:geant:cesnet.cz:group:");
-		authority = ctx.getProperty("authority", "perun.cesnet.cz");
+		this.prefix = ClaimUtils.fillStringPropertyOrNoVal(PREFIX, ctx);
+		if (!ClaimUtils.isPropSet(this.prefix)) {
+			throw new IllegalArgumentException("Missing mandatory configuration option - prefix");
+		}
+		this.authority = ClaimUtils.fillStringPropertyOrNoVal(AUTHORITY, ctx);
+		if (!ClaimUtils.isPropSet(this.authority)) {
+			throw new IllegalArgumentException("Missing mandatory configuration option - authority");
+		}
 	}
 
 	@Override
