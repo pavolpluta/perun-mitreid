@@ -20,17 +20,17 @@ public class LoggingUtils {
      * @throws Throwable throw exception by the method execution.
      */
     public static Object logExecutionStartAndEnd(Logger log, ProceedingJoinPoint pjp) throws Throwable {
+        String className = pjp.getSignature().getClass().getSimpleName();
         String methodName = pjp.getSignature().getName();
-        String className = pjp.getTarget().getClass().getName();
         Object[] args = pjp.getArgs();
 
-        log.trace("{} - {}({})", className, methodName, args);
+        log.trace("{}.{}({})", className, methodName, args.length > 0 ? args : "");
         try {
             Object result = pjp.proceed();
-            log.trace("{} - {}({}) returns: {}", className, methodName, args.length > 0 ? args : "", result);
+            log.trace("{}.{}({}) returns: {}", className, methodName, args.length > 0 ? args : "", result);
             return result;
         } catch (Throwable e) {
-            log.warn("{} - {}({}) has thrown {}", className, methodName, args.length > 0 ? args : "", e.getClass(), e);
+            log.warn("{}.{}({}) has thrown {}", className, methodName, args.length > 0 ? args : "", e.getClass(), e);
             throw e;
         }
     }
@@ -42,13 +42,14 @@ public class LoggingUtils {
      * @return Value returned by the methods.
      * @throws Throwable throw exception by the method execution.
      */
-    public static Object logExectuionTimes(Logger log, ProceedingJoinPoint pjp) throws Throwable {
+    public static Object logExecutionTimes(Logger log, ProceedingJoinPoint pjp) throws Throwable {
+        String className = pjp.getSignature().getClass().getName();
         String methodName = pjp.getSignature().getName();
-        String className = pjp.getTarget().getClass().getSimpleName();
         Object[] args = pjp.getArgs();
         long start = System.currentTimeMillis();
 
-        log.trace("Execution of {}.{}({}) started at {}", className, methodName, args.length > 0 ? args : "", new Timestamp(start));
+        log.trace("Execution of {}.{}({}) started at {}",
+                className, methodName, args.length > 0 ? args : "", new Timestamp(start));
         try {
             Object result = pjp.proceed();
             long finish = System.currentTimeMillis();

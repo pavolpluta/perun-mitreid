@@ -15,7 +15,7 @@ public class ExecutionTimeLoggingAspect {
 
     @Around("@annotation(LogTimes) && execution(* cz.muni.ics.oidc.server.connectors..* (..))")
     public Object logExecutionTimeForConnectorsWithParams(ProceedingJoinPoint pjp) throws Throwable {
-        return LoggingUtils.logExectuionTimes(log, pjp);
+        return LoggingUtils.logExecutionTimes(log, pjp);
     }
 
 }

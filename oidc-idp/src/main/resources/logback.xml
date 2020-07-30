@@ -2,8 +2,6 @@
 	<contextName>${log.contextName}</contextName>
 	<property name="PATTERN"
 			  value="%boldYellow([%X{sessionID}]) %boldBlue(%cn) : %highlight(%-5level) %cyan(%logger{40}) - %m%n%xException" />
-	<property name="AOP_PATTERN"
-			  value="%boldYellow([%X{sessionID}]) %boldBlue(%cn) : %highlight(%-5level) %m%n%xException" />
 
 	<!-- ROLLING FILE -->
 	<appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -26,7 +24,7 @@
 		</rollingPolicy>
 		<withJansi>true</withJansi>
 		<encoder>
-			<pattern>${AOP_PATTERN}</pattern>
+			<pattern>${PATTERN}</pattern>
 		</encoder>
 	</appender>
 	<appender name="ROLLING_FILE_TRACE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -36,7 +34,7 @@
 		</rollingPolicy>
 		<withJansi>true</withJansi>
 		<encoder>
-			<pattern>${AOP_PATTERN}</pattern>
+			<pattern>${PATTERN}</pattern>
 		</encoder>
 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
 			<level>TRACE</level>
@@ -60,14 +58,14 @@
 		<file>${log.file.path}.times</file>
 		<withJansi>true</withJansi>
 		<encoder>
-			<pattern>${AOP_PATTERN}</pattern>
+			<pattern>${PATTERN}</pattern>
 		</encoder>
 	</appender>
 	<appender name="FILE_TRACE" class="ch.qos.logback.core.FileAppender">
 		<file>${log.file.path}.trace</file>
 		<withJansi>true</withJansi>
 		<encoder>
-			<pattern>${AOP_PATTERN}</pattern>
+			<pattern>${PATTERN}</pattern>
 		</encoder>
 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
 			<level>TRACE</level>
@@ -91,14 +89,14 @@
 		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 		<facility>${log.facility}</facility>
 		<throwableExcluded>true</throwableExcluded>
-		<suffixPattern>${AOP_PATTERN}</suffixPattern>
+		<suffixPattern>${PATTERN}</suffixPattern>
 		<withJansi>true</withJansi>
 	</appender>
 	<appender name="SYSLOG_TRACE" class="ch.qos.logback.classic.net.SyslogAppender">
 		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 		<facility>${log.facility}</facility>
 		<throwableExcluded>true</throwableExcluded>
-		<suffixPattern>${AOP_PATTERN}</suffixPattern>
+		<suffixPattern>${PATTERN}</suffixPattern>
 		<withJansi>true</withJansi>
 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
 			<level>TRACE</level>
