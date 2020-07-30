@@ -13,14 +13,9 @@ public class ExecutionTimeLoggingAspect {
 
     public static final Logger log = LoggerFactory.getLogger(ExecutionTimeLoggingAspect.class);
 
-    @Around("@annotation(LogTimes) && execution (* cz.muni.ics.oidc.server.connectors..* (*))")
+    @Around("@annotation(LogTimes) && execution(* cz.muni.ics.oidc.server.connectors..* (..))")
     public Object logExecutionTimeForConnectorsWithParams(ProceedingJoinPoint pjp) throws Throwable {
-        return LoggingUtils.logExecutionWithParams(log, pjp);
-    }
-
-    @Around("@annotation(LogTimes) && execution (* cz.muni.ics.oidc.server.connectors..* ())")
-    public Object logExecutionTimeForConnectorsWithNoParams(ProceedingJoinPoint pjp) throws Throwable {
-        return LoggingUtils.logExecutionWithNoParams(log, pjp);
+        return LoggingUtils.logExectuionTimes(log, pjp);
     }
 
 }

@@ -13,35 +13,13 @@ import java.sql.Timestamp;
 public class LoggingUtils {
 
     /**
-     * Log at TRACE level start and end of method without parameters
-     * @param log Logger object
-     * @param pjp proceeding join point
-     * @return Value returned by the methods
-     * @throws Throwable throw exception by the method execution
+     * Log at TRACE level start and end of method.
+     * @param log Logger object.
+     * @param pjp proceeding join point.
+     * @return Value returned by the methods.
+     * @throws Throwable throw exception by the method execution.
      */
-    public static Object logWithNoParams(Logger log, ProceedingJoinPoint pjp) throws Throwable {
-        String methodName = pjp.getSignature().getName();
-        String className = pjp.getTarget().getClass().getName();
-
-        log.trace("{} - {}()", className, methodName);
-        try {
-            Object result = pjp.proceed();
-            log.trace("{} - {}() returns: {}", className, methodName, result);
-            return result;
-        } catch (Throwable e) {
-            log.warn("{} - {}() has thrown {}", className, methodName, e.getClass(), e);
-            throw e;
-        }
-    }
-
-    /**
-     * Log at TRACE level start and end of method with parameters
-     * @param log Logger object
-     * @param pjp proceeding join point
-     * @return Value returned by the methods
-     * @throws Throwable throw exception by the method execution
-     */
-    public static Object logWithParams(Logger log, ProceedingJoinPoint pjp) throws Throwable {
+    public static Object logExecutionStartAndEnd(Logger log, ProceedingJoinPoint pjp) throws Throwable {
         String methodName = pjp.getSignature().getName();
         String className = pjp.getTarget().getClass().getName();
         Object[] args = pjp.getArgs();
@@ -49,65 +27,38 @@ public class LoggingUtils {
         log.trace("{} - {}({})", className, methodName, args);
         try {
             Object result = pjp.proceed();
-            log.trace("{} - {}({}) returns: {}", className, methodName, args, result);
+            log.trace("{} - {}({}) returns: {}", className, methodName, args.length > 0 ? args : "", result);
             return result;
         } catch (Throwable e) {
-            log.warn("{} - {}({}) has thrown {}", className, methodName, args, e.getClass(), e);
+            log.warn("{} - {}({}) has thrown {}", className, methodName, args.length > 0 ? args : "", e.getClass(), e);
             throw e;
         }
     }
 
     /**
-     * Log at TRACE level times of start and end of method execution without parameters
-     * @param log Logger object
-     * @param pjp proceeding join point
-     * @return Value returned by the methods
-     * @throws Throwable throw exception by the method execution
+     * Log at TRACE level times of start and end of method execution.
+     * @param log Logger object.
+     * @param pjp proceeding join point.
+     * @return Value returned by the methods.
+     * @throws Throwable throw exception by the method execution.
      */
-    public static Object logExecutionWithParams(Logger log, ProceedingJoinPoint pjp) throws Throwable {
+    public static Object logExectuionTimes(Logger log, ProceedingJoinPoint pjp) throws Throwable {
         String methodName = pjp.getSignature().getName();
-        String className = pjp.getTarget().getClass().getName();
+        String className = pjp.getTarget().getClass().getSimpleName();
         Object[] args = pjp.getArgs();
         long start = System.currentTimeMillis();
 
-        log.trace("Execution of {}.{}({}) started at {}", className, methodName, args, new Timestamp(start));
+        log.trace("Execution of {}.{}({}) started at {}", className, methodName, args.length > 0 ? args : "", new Timestamp(start));
         try {
             Object result = pjp.proceed();
             long finish = System.currentTimeMillis();
             log.trace("Execution of {}.{}({}) finished successfully at {}, execution took {}ms",
-                    className, methodName, args, new Timestamp(finish), finish - start);
+                    className, methodName, args.length > 0 ? args : "", new Timestamp(finish), finish - start);
             return result;
         } catch (Throwable e) {
             long finish = System.currentTimeMillis();
             log.trace("Execution of {}.{}({}) finished by exception being thrown at {}, execution took {}ms",
-                    className, methodName, args, new Timestamp(finish), finish - start);
-            throw e;
-        }
-    }
-
-    /**
-     * Log at TRACE level times of start and end of method execution without parameters
-     * @param log Logger object
-     * @param pjp proceeding join point
-     * @return Value returned by the methods
-     * @throws Throwable throw exception by the method execution
-     */
-    public static Object logExecutionWithNoParams(Logger log, ProceedingJoinPoint pjp) throws Throwable {
-        String methodName = pjp.getSignature().getName();
-        String className = pjp.getTarget().getClass().getName();
-        long start = System.currentTimeMillis();
-
-        log.trace("Execution of {}.{}() started at {}", className, methodName, new Timestamp(start));
-        try {
-            Object result = pjp.proceed();
-            long finish = System.currentTimeMillis();
-            log.trace("Execution of {}.{}() finished successfully at {}, execution took {}ms",
-                    className, methodName, new Timestamp(finish), finish - start);
-            return result;
-        } catch (Throwable e) {
-            long finish = System.currentTimeMillis();
-            log.trace("Execution of {}.{}() finished by exception being thrown at {}, execution took {}ms",
-                    className, methodName, new Timestamp(finish), finish - start);
+                    className, methodName, args.length > 0 ? args : "", new Timestamp(finish), finish - start);
             throw e;
         }
     }

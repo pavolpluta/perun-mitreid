@@ -128,6 +128,6 @@
 		<appender-ref ref="${log.to}_TIMES" />
 	</logger>
 	<logger name="org.mitre.openid.connect.web.EndSessionEndpoint" level="${log.level}"/>
-	<logger name="net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateStorageAccessor" level="error"/>
+	<logger name="net.javacrumbs.shedlock" level="error"/>
 
 </configuration>

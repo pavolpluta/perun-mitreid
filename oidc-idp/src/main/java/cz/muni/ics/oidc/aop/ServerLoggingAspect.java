@@ -13,14 +13,9 @@ public class ServerLoggingAspect {
 
     public static final Logger log = LoggerFactory.getLogger(ServerLoggingAspect.class);
 
-    @Around("execution(* cz.muni.ics.oidc.server..* (*))")
+    @Around("execution(* cz.muni.ics.oidc.server..* (..))")
     public Object logAroundMethodWithParams(ProceedingJoinPoint pjp) throws Throwable {
-        return LoggingUtils.logWithParams(log, pjp);
-    }
-
-    @Around("execution(* cz.muni.ics.oidc.server..* ())")
-    public Object logAroundMethodWithoutParams(ProceedingJoinPoint pjp) throws Throwable {
-        return LoggingUtils.logWithNoParams(log, pjp);
+        return LoggingUtils.logExecutionStartAndEnd(log, pjp);
     }
 
 }
