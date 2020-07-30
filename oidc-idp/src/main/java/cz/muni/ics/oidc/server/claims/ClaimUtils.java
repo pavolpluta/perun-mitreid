@@ -1,7 +1,5 @@
 package cz.muni.ics.oidc.server.claims;
 
-import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
-import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import org.springframework.util.StringUtils;
 
 public class ClaimUtils {
@@ -22,8 +20,15 @@ public class ClaimUtils {
     }
 
     public static String fillStringPropertyOrNoVal(String suffix, ClaimSourceInitContext ctx) {
-        String prop = ctx.getProperty(suffix, NO_VALUE);
-        if (!StringUtils.hasText(prop)) {
+        return fillStringPropertyOrNoVal(ctx.getProperty(suffix, NO_VALUE));
+    }
+
+    public static String fillStringPropertyOrNoVal(String suffix, ClaimModifierInitContext ctx) {
+        return fillStringPropertyOrNoVal(ctx.getProperty(suffix, NO_VALUE));
+    }
+
+    private static String fillStringPropertyOrNoVal(String prop) {
+        if (StringUtils.hasText(prop)) {
             return prop;
         } else {
             return NO_VALUE;
