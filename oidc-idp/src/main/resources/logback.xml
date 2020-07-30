@@ -2,7 +2,7 @@
 	<contextName>${log.contextName}</contextName>
 	<property name="PATTERN"
 			  value="%boldYellow([%X{sessionID}]) %boldBlue(%cn) : %highlight(%-5level) %cyan(%logger{40}) - %m%n%xException" />
-	<property name="TRACE_PATTERN"
+	<property name="AOP_PATTERN"
 			  value="%boldYellow([%X{sessionID}]) %boldBlue(%cn) : %highlight(%-5level) %m%n%xException" />
 
 	<!-- ROLLING FILE -->
@@ -19,6 +19,16 @@
 			<level>DEBUG</level>
 		</filter>
 	</appender>
+	<appender name="ROLLING_FILE_TIMES" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${log.rolling-file.path}.times</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${log.rolling-file.path}.times.%d{yyyy-MM-dd}</fileNamePattern>
+		</rollingPolicy>
+		<withJansi>true</withJansi>
+		<encoder>
+			<pattern>${AOP_PATTERN}</pattern>
+		</encoder>
+	</appender>
 	<appender name="ROLLING_FILE_TRACE" class="ch.qos.logback.core.rolling.RollingFileAppender">
 		<file>${log.rolling-file.path}.trace</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -26,7 +36,7 @@
 		</rollingPolicy>
 		<withJansi>true</withJansi>
 		<encoder>
-			<pattern>${TRACE_PATTERN}</pattern>
+			<pattern>${AOP_PATTERN}</pattern>
 		</encoder>
 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
 			<level>TRACE</level>
@@ -37,7 +47,7 @@
 
 	<!-- FILE -->
 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>${log.file.path}.trace</file>
+		<file>${log.file.path}</file>
 		<withJansi>true</withJansi>
 		<encoder>
 			<pattern>${PATTERN}</pattern>
@@ -46,11 +56,18 @@
 			<level>DEBUG</level>
 		</filter>
 	</appender>
+	<appender name="FILE_TIMES" class="ch.qos.logback.core.FileAppender">
+		<file>${log.file.path}.times</file>
+		<withJansi>true</withJansi>
+		<encoder>
+			<pattern>${AOP_PATTERN}</pattern>
+		</encoder>
+	</appender>
 	<appender name="FILE_TRACE" class="ch.qos.logback.core.FileAppender">
 		<file>${log.file.path}.trace</file>
 		<withJansi>true</withJansi>
 		<encoder>
-			<pattern>${TRACE_PATTERN}</pattern>
+			<pattern>${AOP_PATTERN}</pattern>
 		</encoder>
 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
 			<level>TRACE</level>
@@ -70,11 +87,18 @@
 			<level>DEBUG</level>
 		</filter>
 	</appender>
+	<appender name="SYSLOG_TIMES" class="ch.qos.logback.classic.net.SyslogAppender">
+		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
+		<facility>${log.facility}</facility>
+		<throwableExcluded>true</throwableExcluded>
+		<suffixPattern>${AOP_PATTERN}</suffixPattern>
+		<withJansi>true</withJansi>
+	</appender>
 	<appender name="SYSLOG_TRACE" class="ch.qos.logback.classic.net.SyslogAppender">
 		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 		<facility>${log.facility}</facility>
 		<throwableExcluded>true</throwableExcluded>
-		<suffixPattern>${TRACE_PATTERN}</suffixPattern>
+		<suffixPattern>${AOP_PATTERN}</suffixPattern>
 		<withJansi>true</withJansi>
 		<filter class="ch.qos.logback.classic.filter.LevelFilter">
 			<level>TRACE</level>
@@ -100,6 +124,9 @@
 	<logger name="org.mitre" level="info"/>
 	<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 	<logger name="cz.muni.ics.oidc" level="${log.level}"/>
+	<logger name="cz.muni.ics.oidc.aop.ExecutionTimeLoggingAspect" level="trace">
+		<appender-ref ref="${log.to}_TIMES" />
+	</logger>
 	<logger name="org.mitre.openid.connect.web.EndSessionEndpoint" level="${log.level}"/>
 	<logger name="net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateStorageAccessor" level="error"/>
 

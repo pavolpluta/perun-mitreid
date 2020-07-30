@@ -1,6 +1,7 @@
 package cz.muni.ics.oidc.server.connectors;
 
 import com.google.common.base.Strings;
+import cz.muni.ics.oidc.aop.LogTimes;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.directory.api.ldap.model.message.SearchScope;
 import org.apache.directory.api.ldap.model.name.Dn;
@@ -99,6 +100,7 @@ public class PerunConnectorLdap implements DisposableBean {
 	 * @param <T> Class that the result should be mapped to.
 	 * @return Found entry mapped to target class
 	 */
+	@LogTimes
 	public <T> T searchFirst(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes, EntryMapper<T> entryMapper) {
 		Dn fullDn = getFullDn(dnPrefix);
 		return ldap.searchFirst(fullDn, filter, scope, attributes, entryMapper);
@@ -113,6 +115,7 @@ public class PerunConnectorLdap implements DisposableBean {
 	 * @param <T> Class that the result should be mapped to.
 	 * @return Found entry mapped to target class
 	 */
+	@LogTimes
 	public <T> T lookup(String dnPrefix, String[] attributes, EntryMapper<T> entryMapper) {
 		Dn fullDn = getFullDn(dnPrefix);
 		return ldap.lookup(fullDn, attributes, entryMapper);
@@ -129,6 +132,7 @@ public class PerunConnectorLdap implements DisposableBean {
 	 * @param <T> Class that the result should be mapped to.
 	 * @return List of found entries mapped to target class
 	 */
+	@LogTimes
 	public <T> List<T> search(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes, EntryMapper<T> entryMapper) {
 		Dn fullDn = getFullDn(dnPrefix);
 		return ldap.search(fullDn, filter, scope, attributes, entryMapper);

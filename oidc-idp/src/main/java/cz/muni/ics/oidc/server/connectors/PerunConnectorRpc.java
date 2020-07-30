@@ -3,6 +3,7 @@ package cz.muni.ics.oidc.server.connectors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import cz.muni.ics.oidc.aop.LogTimes;
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
 import org.apache.http.client.config.RequestConfig;
@@ -141,6 +142,7 @@ public class PerunConnectorRpc {
 	 * @param map Map of parameters to be passed as request body
 	 * @return Response from Perun
 	 */
+	@LogTimes
 	public JsonNode post(String manager, String method, Map<String, Object> map) {
 		if (!this.isEnabled) {
 			return JsonNodeFactory.instance.nullNode();

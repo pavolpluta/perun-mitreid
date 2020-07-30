@@ -1,6 +1,5 @@
 package cz.muni.ics.oidc.aop;
 
-import cz.muni.ics.oidc.LoggingUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -12,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class MapperLoggingAspect {
 
-    public static final Logger log = LoggerFactory.getLogger(ServerLoggingAspect.class);
+    public static final Logger log = LoggerFactory.getLogger(MapperLoggingAspect.class);
 
     @Around("execution(* cz.muni.ics.oidc.models.mappers..* (*))")
     public Object logAroundMethodWithParams(ProceedingJoinPoint pjp) throws Throwable {
@@ -23,4 +22,5 @@ public class MapperLoggingAspect {
     public Object logAroundMethodWithoutParams(ProceedingJoinPoint pjp) throws Throwable {
         return LoggingUtils.logWithNoParams(log, pjp);
     }
+
 }
