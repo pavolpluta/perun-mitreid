@@ -73,7 +73,6 @@ public class EntitlementSource extends GroupNamesSource {
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
 		JsonNode groupNamesJson = super.produceValueWithoutReplacing(pctx);
-
 		Set<String> entitlements = new TreeSet<>();
 
 		Facility facility = null;
@@ -82,11 +81,15 @@ public class EntitlementSource extends GroupNamesSource {
 		}
 
 		if (groupNamesJson != null) {
-			fillEntitlementsFromGroupNames(facility, pctx, groupNamesJson, entitlements);
+			fillEntitlementsFromGroupNames(groupNamesJson, entitlements);
 		}
 
 		if (facility != null && ClaimUtils.isPropSet(this.facilityCapabilities)) {
 			fillFacilityCapabilities(facility, pctx, entitlements);
+		}
+
+		if (facility != null && ClaimUtils.isPropSet(this.resourceCapabilities)) {
+			fillResourceCapabilities(facility, pctx, groupNamesJson, entitlements);
 		}
 
 		if (ClaimUtils.isPropSet(this.forwardedEntitlements)) {
@@ -99,6 +102,22 @@ public class EntitlementSource extends GroupNamesSource {
 		}
 
 		return result;
+	}
+
+	private void fillResourceCapabilities(Facility facility, ClaimSourceProduceContext pctx,
+										  JsonNode groupNamesJson, Set<String> entitlements) {
+		ArrayNode groupNamesArrayNode = (ArrayNode) groupNamesJson;
+		Set<String> groupNames = new HashSet<>();
+		for (JsonNode groupName: groupNamesArrayNode) {
+			groupNames.add(groupName.textValue());
+		}
+
+		Set<String> resultCapabilities = pctx.getPerunAdapter()
+				.getResourceCapabilities(facility, groupNames, resourceCapabilities);
+
+		for (String capability : resultCapabilities) {
+			entitlements.add(wrapCapabilityToAARC(capability));
+		}
 	}
 
 	private void fillForwardedEntitlements(ClaimSourceProduceContext pctx, Set<String> entitlements) {
@@ -121,11 +140,8 @@ public class EntitlementSource extends GroupNamesSource {
 		}
 	}
 
-	private void fillEntitlementsFromGroupNames(Facility facility, ClaimSourceProduceContext pctx,
-												JsonNode groupNamesJson, Set<String> entitlements) {
+	private void fillEntitlementsFromGroupNames(JsonNode groupNamesJson, Set<String> entitlements) {
 		ArrayNode groupNamesArrayNode = (ArrayNode) groupNamesJson;
-		Set<String> groupNames = new HashSet<>();
-
 		for (JsonNode arrItem: groupNamesArrayNode) {
 			if (arrItem == null || arrItem.isNull()) {
 				continue;
@@ -141,17 +157,7 @@ public class EntitlementSource extends GroupNamesSource {
 			if (StringUtils.hasText(parts[1])) {
 				gname += (':' + parts[1]);
 			}
-			groupNames.add(value);
 			entitlements.add(wrapGroupNameToAARC(gname));
-		}
-
-		if (facility != null && ClaimUtils.isPropSet(this.resourceCapabilities)) {
-			Set<String> resultCapabilities = pctx.getPerunAdapter()
-					.getResourceCapabilities(facility, groupNames, resourceCapabilities);
-
-			for (String capability : resultCapabilities) {
-				entitlements.add(wrapCapabilityToAARC(capability));
-			}
 		}
 	}
 
