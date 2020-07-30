@@ -149,7 +149,7 @@ public class PerunConnectorRpc {
 		String actionUrl = perunUrl + "/json/" + manager + '/' + method;
 		//make the call
 		try {
-			log.trace("calling {} with {}", actionUrl, map);
+			log.debug("calling {} with {}", actionUrl, map);
 			return restTemplate.postForObject(actionUrl, map, JsonNode.class);
 		} catch (HttpClientErrorException ex) {
 			MediaType contentType = ex.getResponseHeaders().getContentType();

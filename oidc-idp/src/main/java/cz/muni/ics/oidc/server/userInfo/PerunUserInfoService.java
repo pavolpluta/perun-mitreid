@@ -290,7 +290,7 @@ public class PerunUserInfoService implements UserInfoService {
 		UserInfo userInfo;
 		try {
 			userInfo = cache.get(new UserClientPair(username, clientId, client));
-			log.trace("loaded UserInfo from cache for '{}'/'{}'", userInfo.getName(), client.getClientName());
+			log.debug("loaded UserInfo from cache for '{}'/'{}'", userInfo.getName(), client.getClientName());
 			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, clientId);
 		} catch (ExecutionException e) {
 			log.error("cannot get user from cache", e);
@@ -305,7 +305,7 @@ public class PerunUserInfoService implements UserInfoService {
 		UserInfo userInfo;
 		try {
 			userInfo = cache.get(new UserClientPair(username));
-			log.trace("loaded UserInfo from cache for '{}'", userInfo.getName());
+			log.debug("loaded UserInfo from cache for '{}'", userInfo.getName());
 			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, null);
 		} catch (UncheckedExecutionException | ExecutionException e) {
 			log.error("cannot get user from cache", e);
@@ -380,7 +380,7 @@ public class PerunUserInfoService implements UserInfoService {
 	private CacheLoader<UserClientPair, UserInfo> cacheLoader = new CacheLoader<UserClientPair, UserInfo>() {
 		@Override
 		public UserInfo load(UserClientPair pair) {
-			log.trace("load({}) ... populating cache for the key", pair);
+			log.debug("load({}) ... populating cache for the key", pair);
 			PerunUserInfo ui = new PerunUserInfo();
 			long perunUserId = pair.getUserId();
 
@@ -438,11 +438,11 @@ public class PerunUserInfoService implements UserInfoService {
 			ui.setAddress(address);
 			//custom claims
 			ClaimSourceProduceContext pctx = new ClaimSourceProduceContext(perunUserId, sub, userAttributeValues, perunAdapter, pair.getClient());
-			log.trace("processing custom claims");
+			log.debug("processing custom claims");
 			for (PerunCustomClaimDefinition pccd : customClaims) {
-				log.trace("producing value for custom claim {}", pccd.getClaim());
+				log.debug("producing value for custom claim {}", pccd.getClaim());
 				JsonNode claimInJson = pccd.getClaimSource().produceValue(pctx);
-				log.trace("produced value {}={}", pccd.getClaim(), claimInJson);
+				log.debug("produced value {}={}", pccd.getClaim(), claimInJson);
 				if (claimInJson == null) {
 					log.debug("claim {} is null", pccd.getClaim());
 					continue;
@@ -470,7 +470,7 @@ public class PerunUserInfoService implements UserInfoService {
 				}
 				ui.getCustomClaims().put(pccd.getClaim(), claimInJson);
 			}
-			log.trace("UserInfo created");
+			log.debug("UserInfo created");
 			return ui;
 		}
 	};

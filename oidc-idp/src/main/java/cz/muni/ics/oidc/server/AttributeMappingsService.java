@@ -121,7 +121,7 @@ public class AttributeMappingsService {
 				continue;
 			}
 			AttributeMapping am = initAttrMapping(identifier, attrProperties);
-			log.trace("Initialized attributeMapping: {}", am);
+			log.debug("Initialized attributeMapping: {}", am);
 			attributeMap.put(am.getIdentifier(), am);
 		}
 	}

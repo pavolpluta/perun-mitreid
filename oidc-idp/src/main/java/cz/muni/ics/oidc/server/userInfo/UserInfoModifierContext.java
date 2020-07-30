@@ -35,7 +35,7 @@ public class UserInfoModifierContext {
 		for (String m : modifierNames) {
 			UserInfoModifier modifier = loadModifier("userInfo.modifier." + m);
 			if (modifier != null) {
-				log.trace("Executing modifier {}", m);
+				log.debug("Executing modifier {}", m);
 				modifiers.add(modifier);
 			}
 		}

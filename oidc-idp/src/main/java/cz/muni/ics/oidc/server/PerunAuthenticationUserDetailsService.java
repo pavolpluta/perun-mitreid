@@ -67,7 +67,7 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 			Long userId = perunUser.getId();
 			log.info("User {} {} {} logged in", userId, perunUser.getFirstName(), perunUser.getLastName());
 
-			log.trace("setting user role for {}", userId);
+			log.debug("setting user role for {}", userId);
 			Collection<GrantedAuthority> authorities = new ArrayList<>();
 			authorities.add(ROLE_USER);
 			if (adminIds.contains(userId)) {

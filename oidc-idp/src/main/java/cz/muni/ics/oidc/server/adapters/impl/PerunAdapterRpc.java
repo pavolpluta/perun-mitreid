@@ -768,7 +768,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			for (Group group : groups) {
 				String groupName = group.getName();
 				if ("members".equals(groupName)) {
-					log.trace("Group is members, continue with special handling");
+					log.debug("Group is members, continue with special handling");
 					groupName = "";
 					if (resource.getVo() != null) {
 						groupName = resource.getVo().getShortName();
@@ -777,14 +777,14 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 					groupName = resource.getVo().getShortName() + ':' + groupName;
 				}
 				group.setUniqueGroupName(groupName);
-				log.trace("Constructed unique groupName: {}", groupName);
+				log.debug("Constructed unique groupName: {}", groupName);
 
 				if (groupNames.contains(groupName)) {
-					log.trace("Group found in user's group, add capabilities");
+					log.debug("Group found in user's group, add capabilities");
 					capabilities.addAll(resourceCapabilities);
 					break;
 				}
-				log.trace("Group not found, continue to the next one");
+				log.debug("Group not found, continue to the next one");
 			}
 		}
 
@@ -1040,7 +1040,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		map.put("group", group.getId());
 		try {
 			if (group.getName().equalsIgnoreCase("members")) {
-				log.trace("getApplicationForm({}) continues to call regForm for VO {}", group, group.getVoId());
+				log.debug("getApplicationForm({}) continues to call regForm for VO {}", group, group.getVoId());
 				return getApplicationForm(group.getVoId());
 			} else {
 				connectorRpc.post(REGISTRAR_MANAGER, "getApplicationForm", map);

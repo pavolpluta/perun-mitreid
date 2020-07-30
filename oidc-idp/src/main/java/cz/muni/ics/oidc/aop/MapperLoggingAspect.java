@@ -10,17 +10,17 @@ import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
-public class WebLoggingAspect {
+public class MapperLoggingAspect {
 
     public static final Logger log = LoggerFactory.getLogger(ServerLoggingAspect.class);
 
-    @Around("execution(* cz.muni.ics.oidc.web..* (*))")
-    public Object logStart(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(* cz.muni.ics.oidc.models.mappers..* (*))")
+    public Object logAroundMethodWithParams(ProceedingJoinPoint pjp) throws Throwable {
         return LoggingUtils.logWithParams(log, pjp);
     }
 
-    @Around("execution(* cz.muni.ics.oidc.web..* ())")
-    public Object logStartNoParams(ProceedingJoinPoint pjp) throws Throwable {
+    @Around("execution(* cz.muni.ics.oidc.models.mappers..* ())")
+    public Object logAroundMethodWithoutParams(ProceedingJoinPoint pjp) throws Throwable {
         return LoggingUtils.logWithNoParams(log, pjp);
     }
 }

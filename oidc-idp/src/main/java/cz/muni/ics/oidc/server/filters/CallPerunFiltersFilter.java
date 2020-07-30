@@ -42,7 +42,7 @@ public class CallPerunFiltersFilter extends GenericFilterBean {
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         List<PerunRequestFilter> filters = perunFiltersContext.getFilters();
         for (PerunRequestFilter filter : filters) {
-            log.trace("Calling filter: {}", filter.getClass().getName());
+            log.debug("Calling filter: {}", filter.getClass().getName());
             if(!filter.doFilter(servletRequest, servletResponse)) {
                 return;
             }
