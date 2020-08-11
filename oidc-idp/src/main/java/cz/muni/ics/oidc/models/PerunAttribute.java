@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.Objects;
 
-import static cz.muni.ics.oidc.models.PerunAttributeValue.NULL_TYPE;
-
 /**
  * Perun Attribute model
  *
@@ -14,19 +12,9 @@ import static cz.muni.ics.oidc.models.PerunAttributeValue.NULL_TYPE;
  */
 public class PerunAttribute extends PerunAttributeDefinition {
 
-	public static final PerunAttribute NULL = new PerunAttribute(NULL_TYPE, PerunAttributeValue.NULL);
 	private PerunAttributeValue value;
 	private String valueCreatedAt;
 	private String valueModifiedAt;
-
-	public PerunAttribute() { }
-
-	private PerunAttribute(String type, PerunAttributeValue value) {
-		super(-1L, "NULL", "NULL" ,"NULL", type, "NULL", false, false, "NULL", "NULL" ,"NULL");
-		this.value = value;
-		this.valueCreatedAt = null;
-		this.valueModifiedAt = null;
-	}
 
 	public PerunAttributeValue getValue() {
 		return value;

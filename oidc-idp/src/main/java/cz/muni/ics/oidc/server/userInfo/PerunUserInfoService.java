@@ -389,7 +389,7 @@ public class PerunUserInfoService implements UserInfoService {
 			if (shouldFillAttrs(userAttributeValues)) {
 				List<String> attrNames = userAttributeValues.entrySet()
 						.stream()
-						.filter(entry -> (null == entry.getValue() || entry.getValue() == PerunAttributeValue.NULL))
+						.filter(entry -> (null == entry.getValue() || entry.getValue().isNullValue()))
 						.map(Map.Entry::getKey)
 						.collect(Collectors.toList());
 				Map<String, PerunAttributeValue> missingAttrs = perunAdapter.getAdapterFallback()
@@ -477,9 +477,7 @@ public class PerunUserInfoService implements UserInfoService {
 
 	private boolean shouldFillAttrs(Map<String, PerunAttributeValue> userAttributeValues) {
 		return perunOidcConfig.isFillMissingUserAttrs() &&
-				(userAttributeValues.isEmpty()
-						|| userAttributeValues.containsValue(null)
-						|| userAttributeValues.containsValue(PerunAttributeValue.NULL));
+				(userAttributeValues.isEmpty() || userAttributeValues.containsValue(null));
 	}
 
 }

@@ -123,7 +123,7 @@ public class EntitlementSource extends GroupNamesSource {
 	private void fillForwardedEntitlements(ClaimSourceProduceContext pctx, Set<String> entitlements) {
 		PerunAttributeValue forwardedEntitlementsVal = pctx.getPerunAdapter()
 				.getUserAttributeValue(pctx.getPerunUserId(), this.forwardedEntitlements);
-		if (forwardedEntitlementsVal != null && !PerunAttributeValue.NULL.equals(forwardedEntitlementsVal)) {
+		if (forwardedEntitlementsVal != null && !forwardedEntitlementsVal.isNullValue()) {
 			JsonNode eduPersonEntitlementJson = forwardedEntitlementsVal.valueAsJson();
 			for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
 				log.debug("Added forwarded entitlement: {}", eduPersonEntitlementJson.get(i).asText());

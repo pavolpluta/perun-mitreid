@@ -401,7 +401,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getUserAttributeValue(PerunUser user, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getUserAttributeValue(user.getId(), attrToFetch);
@@ -410,7 +410,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getUserAttributeValue(Long userId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getUserAttribute(userId, attrToFetch).getValue();
@@ -438,7 +438,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getFacilityAttributeValue(Facility facility, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getGroupAttributeValue(facility.getId(), attrToFetch);
@@ -447,7 +447,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getFacilityAttributeValue(Long facilityId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getFacilityAttribute(facilityId, attrToFetch).getValue();
@@ -475,7 +475,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getVoAttributeValue(Vo vo, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getVoAttributeValue(vo.getId(), attrToFetch);
@@ -484,7 +484,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getVoAttributeValue(Long voId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getFacilityAttribute(voId, attrToFetch).getValue();
@@ -512,7 +512,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getGroupAttributeValue(Group group, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getGroupAttributeValue(group.getId(), attrToFetch);
@@ -521,7 +521,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getGroupAttributeValue(Long groupId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getGroupAttribute(groupId, attrToFetch).getValue();
@@ -549,7 +549,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getResourceAttributeValue(Resource resource, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getResourceAttributeValue(resource.getId(), attrToFetch);
@@ -558,7 +558,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttributeValue getResourceAttributeValue(Long resourceId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttributeValue.NULL;
+			return null;
 		}
 
 		return this.getResourceAttribute(resourceId, attrToFetch).getValue();
@@ -585,7 +585,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getFacilityAttribute(Facility facility, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return this.getFacilityAttribute(facility.getId(), attrToFetch);
@@ -594,7 +594,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getFacilityAttribute(Long facilityId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return getAttribute(PerunEntityType.FACILITY, facilityId, attrToFetch);
@@ -621,7 +621,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getGroupAttribute(Group group, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return this.getGroupAttribute(group.getId(), attrToFetch);
@@ -630,7 +630,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getGroupAttribute(Long groupId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return getAttribute(PerunEntityType.GROUP, groupId, attrToFetch);
@@ -657,7 +657,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getUserAttribute(PerunUser user, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return this.getUserAttribute(user.getId(), attrToFetch);
@@ -666,7 +666,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getUserAttribute(Long userId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return getAttribute(PerunEntityType.USER, userId, attrToFetch);
@@ -693,7 +693,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getVoAttribute(Vo vo, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return this.getVoAttribute(vo.getId(), attrToFetch);
@@ -702,7 +702,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getVoAttribute(Long voId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return getAttribute(PerunEntityType.VO, voId, attrToFetch);
@@ -729,7 +729,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getResourceAttribute(Resource resource, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return this.getResourceAttribute(resource.getId(), attrToFetch);
@@ -738,7 +738,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	@Override
 	public PerunAttribute getResourceAttribute(Long resourceId, String attrToFetch) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		return getAttribute(PerunEntityType.RESOURCE, resourceId, attrToFetch);
@@ -1150,7 +1150,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 
 	private PerunAttribute getAttribute(PerunEntityType entity, Long entityId, String attributeName) {
 		if (!this.connectorRpc.isEnabled()) {
-			return PerunAttribute.NULL;
+			return null;
 		}
 
 		AttributeMapping mapping;

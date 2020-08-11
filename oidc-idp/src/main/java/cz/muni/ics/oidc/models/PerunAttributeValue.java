@@ -36,14 +36,11 @@ public class PerunAttributeValue {
 	public final static String MAP_TYPE = "java.util.LinkedHashMap";
 	public final static String LARGE_STRING_TYPE = "java.lang.LargeString";
 	public final static String LARGE_ARRAY_LIST_TYPE = "java.util.LargeArrayList";
-	public final static String NULL_TYPE = "null";
-	public final static PerunAttributeValue NULL = new PerunAttributeValue(NULL_TYPE, JsonNodeFactory.instance.nullNode());
 
 	private String type;
 	private Object value;
 
 	public PerunAttributeValue(String type, JsonNode value) {
-		super();
 		this.setType(type);
 		this.setValue(type, value);
 	}
@@ -107,22 +104,16 @@ public class PerunAttributeValue {
 	 */
 	public String valueAsString() {
 		if ((STRING_TYPE.equals(type) || LARGE_STRING_TYPE.equals(type))) {
-			if (value == null || value instanceof NullNode) {
+			if (isNullValue(value)) {
 				return null;
 			} else if (value instanceof String) {
 				return (String) value;
 			} else if (value instanceof TextNode) {
 				return ((TextNode) value).textValue();
 			}
-		} else if (NULL_TYPE.equals(type)) {
-			return null;
 		}
 
-		try {
-			return new ObjectMapper().writeValueAsString(value);
-		} catch (JsonProcessingException e) {
-			return "";
-		}
+		throw inconvertible(String.class);
 	}
 
 	/**
@@ -131,15 +122,13 @@ public class PerunAttributeValue {
 	 */
 	public Long valueAsLong() {
 		if (INTEGER_TYPE.equals(type)) {
-			if (value == null || value instanceof NullNode) {
+			if (isNullValue(value)) {
 				return null;
 			} else if (value instanceof Long) {
 				return (Long) value;
 			} else if (value instanceof NumericNode) {
 				return ((NumericNode) value).longValue();
 			}
-		} else if (NULL_TYPE.equals(type)) {
-			return null;
 		}
 
 		throw inconvertible(Long.class);
@@ -151,15 +140,13 @@ public class PerunAttributeValue {
 	 */
 	public boolean valueAsBoolean() {
 		if (BOOLEAN_TYPE.equals(type)) {
-			if (value == null || value instanceof NullNode) {
+			if (isNullValue(value)) {
 				return false;
 			} else if (value instanceof Boolean) {
 				return (boolean) value;
 			} else if (value instanceof BooleanNode) {
 				return ((BooleanNode) value).asBoolean();
 			}
-		} else if (NULL_TYPE.equals(type)) {
-			return false;
 		}
 
 		throw inconvertible(Boolean.class);
@@ -172,23 +159,16 @@ public class PerunAttributeValue {
 	@SuppressWarnings("unchecked")
 	public List<String> valueAsList() throws InconvertibleValueException {
 		if ((ARRAY_TYPE.equals(type) || LARGE_ARRAY_LIST_TYPE.equals(type))) {
-			if (value == null || value instanceof NullNode) {
+			if (isNullValue(value)) {
 				return new ArrayList<>();
 			} else if (value instanceof List) {
 				return (List<String>) value;
 			} else if (value instanceof ArrayNode) {
-				ObjectMapper mapper = new ObjectMapper();
-				try {
-					return mapper.readValue(
-							((ArrayNode) value).asText(),
-							mapper.getTypeFactory().constructCollectionType(List.class, String.class)
-					);
-				} catch (IOException e) {
-					throw new InconvertibleValueException("Cannot convert value of attribute to List", e);
-				}
+				List<String> arr = new ArrayList<>();
+				ArrayNode arrJson = (ArrayNode) value;
+				arrJson.forEach(item -> arr.add(item.asText()));
+				return arr;
 			}
-		} else if (NULL_TYPE.equals(type)) {
-			return null;
 		}
 
 		// we need to try convert it to string as LDAP does not distinguish between List and String.
@@ -213,23 +193,20 @@ public class PerunAttributeValue {
 	@SuppressWarnings("unchecked")
 	public Map<String, String> valueAsMap() throws InconvertibleValueException {
 		if (MAP_TYPE.equals(type)) {
-			if (value == null || value instanceof NullNode) {
+			if (isNullValue(value)) {
 				return new HashMap<>();
 			} else if (value instanceof Map) {
 				return (Map<String, String>) value;
 			} else if (value instanceof ObjectNode) {
-				ObjectMapper mapper = new ObjectMapper();
-				try {
-					return mapper.readValue(
-							((ObjectNode) value).asText(),
-							mapper.getTypeFactory().constructMapType(Map.class, String.class, String.class)
-					);
-				} catch (IOException e) {
-					throw new InconvertibleValueException("Cannot convert value of attribute to Map", e);
+				Map<String, String> res = new HashMap<>();
+				ObjectNode objJson = (ObjectNode) value;
+				Iterator<String> it = objJson.fieldNames();
+				while (it.hasNext()) {
+					String key = it.next();
+					res.put(key, objJson.get(key).asText());
 				}
+				return res;
 			}
-		} else if (NULL_TYPE.equals(type)) {
-			return null;
 		}
 
 		throw inconvertible(Map.class);
@@ -299,6 +276,21 @@ public class PerunAttributeValue {
 		}
 
 		return mapValue;
+	}
+
+	public boolean isNullValue() {
+		if (value == null || value instanceof NullNode) {
+			return true;
+		} else if (value instanceof JsonNode) {
+			JsonNode json = (JsonNode) value;
+			return json.isNull() || "null".equalsIgnoreCase(json.asText());
+		}
+
+		return false;
+	}
+
+	private static boolean isNullValue(Object value) {
+		return value == null || value instanceof NullNode;
 	}
 
 	private static boolean isNullValue(JsonNode value) {

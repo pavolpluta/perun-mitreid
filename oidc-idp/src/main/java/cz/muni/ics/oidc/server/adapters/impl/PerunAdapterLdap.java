@@ -148,7 +148,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 		boolean res = false;
 
 		PerunAttributeValue attrVal = getFacilityAttributeValue(facility, oidcCheckMembershipAttr);
-		if (attrVal != null && !PerunAttributeValue.NULL.equals(attrVal)) {
+		if (attrVal != null && !attrVal.isNullValue()) {
 			res = attrVal.valueAsBoolean();
 		}
 
@@ -291,7 +291,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	public PerunAttributeValue getUserAttributeValue(Long userId, String attrToFetch) {
 		Map<String, PerunAttributeValue> map = this.getUserAttributeValues(
 				userId, Collections.singletonList(attrToFetch));
-		return map.getOrDefault(attrToFetch, PerunAttributeValue.NULL);
+		return map.getOrDefault(attrToFetch, null);
 	}
 
 	@Override
@@ -314,7 +314,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	public PerunAttributeValue getFacilityAttributeValue(Long facilityId, String attrToFetch) {
 		Map<String, PerunAttributeValue> map = this.getFacilityAttributeValues(
 				facilityId, Collections.singletonList(attrToFetch));
-		return map.getOrDefault(attrToFetch, PerunAttributeValue.NULL);
+		return map.getOrDefault(attrToFetch, null);
 	}
 
 	@Override
@@ -337,7 +337,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	public PerunAttributeValue getVoAttributeValue(Long voId, String attrToFetch) {
 		Map<String, PerunAttributeValue> map = this.getVoAttributeValues(
 				voId, Collections.singletonList(attrToFetch));
-		return map.getOrDefault(attrToFetch, PerunAttributeValue.NULL);
+		return map.getOrDefault(attrToFetch, null);
 	}
 
 	@Override
@@ -360,7 +360,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	public PerunAttributeValue getGroupAttributeValue(Long groupId, String attrToFetch) {
 		Map<String, PerunAttributeValue> map = this.getGroupAttributeValues(
 				groupId, Collections.singletonList(attrToFetch));
-		return map.getOrDefault(attrToFetch, PerunAttributeValue.NULL);
+		return map.getOrDefault(attrToFetch, null);
 	}
 
 	@Override
@@ -383,7 +383,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	public PerunAttributeValue getResourceAttributeValue(Long resourceId, String attrToFetch) {
 		Map<String, PerunAttributeValue> map = this.getResourceAttributeValues(
 				resourceId, Collections.singletonList(attrToFetch));
-		return map.getOrDefault(attrToFetch, PerunAttributeValue.NULL);
+		return map.getOrDefault(attrToFetch, null);
 	}
 
 	@Override
@@ -460,7 +460,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	public Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
 		Set<String> result = new HashSet<>();
 		PerunAttributeValue attrVal = getFacilityAttributeValue(facility, capabilitiesAttrName);
-		if (PerunAttributeValue.NULL.equals(attrVal) && attrVal.valueAsList() != null) {
+		if (attrVal != null && !attrVal.isNullValue() && attrVal.valueAsList() != null) {
 			result = new HashSet<>(attrVal.valueAsList());
 		}
 
@@ -657,18 +657,20 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	private PerunAttributeValue parseValue(Attribute attr, AttributeMapping mapping) {
 		PerunAttrValueType type = mapping.getAttrType();
 		boolean isNull = (attr == null || attr.get() == null || attr.get().isNull());
-		if (isNull && PerunAttrValueType.BOOLEAN.equals(type)) {
-			return new PerunAttributeValue(PerunAttributeValue.BOOLEAN_TYPE, jsonNodeFactory.booleanNode(false));
-		} else if (isNull && PerunAttrValueType.ARRAY.equals(type)) {
-			return new PerunAttributeValue(PerunAttributeValue.ARRAY_TYPE, jsonNodeFactory.arrayNode());
-		} else if (isNull && PerunAttrValueType.LARGE_ARRAY.equals(type)) {
-			return new PerunAttributeValue(PerunAttributeValue.LARGE_ARRAY_LIST_TYPE, jsonNodeFactory.arrayNode());
-		} else if (isNull && PerunAttrValueType.MAP_JSON.equals(type)) {
-			return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE, jsonNodeFactory.objectNode());
-		} else if (isNull && PerunAttrValueType.MAP_KEY_VALUE.equals(type)) {
-			return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE, jsonNodeFactory.objectNode());
-		} else if (isNull) {
-			return PerunAttributeValue.NULL;
+		if (isNull) {
+			if (PerunAttrValueType.BOOLEAN.equals(type)) {
+				return new PerunAttributeValue(PerunAttributeValue.BOOLEAN_TYPE, jsonNodeFactory.booleanNode(false));
+			} else if (PerunAttrValueType.ARRAY.equals(type)) {
+				return new PerunAttributeValue(PerunAttributeValue.ARRAY_TYPE, jsonNodeFactory.arrayNode());
+			} else if (PerunAttrValueType.LARGE_ARRAY.equals(type)) {
+				return new PerunAttributeValue(PerunAttributeValue.LARGE_ARRAY_LIST_TYPE, jsonNodeFactory.arrayNode());
+			} else if (PerunAttrValueType.MAP_JSON.equals(type)) {
+				return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE, jsonNodeFactory.objectNode());
+			} else if (PerunAttrValueType.MAP_KEY_VALUE.equals(type)) {
+				return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE, jsonNodeFactory.objectNode());
+			} else {
+				return null;
+			}
 		}
 
 		switch (type) {

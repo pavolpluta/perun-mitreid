@@ -196,7 +196,7 @@ public class RpcMapper {
 				PerunAttribute attribute = attributesAsMap.get(attrKey);
 				res.put(mapping.getIdentifier(), attribute);
 			} else {
-				res.put(mapping.getIdentifier(), PerunAttribute.NULL);
+				res.put(mapping.getIdentifier(), null);
 			}
 		}
 

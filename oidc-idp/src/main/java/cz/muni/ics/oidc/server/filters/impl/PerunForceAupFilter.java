@@ -176,7 +176,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         Map<String, Aup> aupsToApprove= new LinkedHashMap<>();
 
         PerunAttributeValue userAupsAttr = perunAdapter.getUserAttributeValue(user.getId(), perunUserAupsAttrName);
-        if (perunOidcConfig.isFillMissingUserAttrs() && PerunAttributeValue.NULL.equals(userAupsAttr)) {
+        if (perunOidcConfig.isFillMissingUserAttrs() && (userAupsAttr == null || userAupsAttr.isNullValue())) {
             userAupsAttr = perunAdapter.getAdapterFallback().getUserAttributeValue(user.getId(), perunUserAupsAttrName);
         }
         Map<String, List<Aup>> userAups = convertToMapKeyToListOfAups(userAupsAttr.valueAsMap());
@@ -184,13 +184,13 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         PerunAttributeValue requestedAupsAttr = facilityAttributes.get(perunFacilityRequestedAupsAttrName);
         PerunAttributeValue facilityVoShortNamesAttr = facilityAttributes.get(perunFacilityVoShortNamesAttrName);
 
-        if (requestedAupsAttr != null && !PerunAttributeValue.NULL.equals(requestedAupsAttr)
-                && requestedAupsAttr.valueAsList() != null && !requestedAupsAttr.valueAsList().isEmpty()) {
+        if (requestedAupsAttr != null && !requestedAupsAttr.isNullValue() && requestedAupsAttr.valueAsList() != null
+                && !requestedAupsAttr.valueAsList().isEmpty()) {
             Map<String, Aup> orgAupsToApprove = getOrgAupsToApprove(requestedAupsAttr.valueAsList(), userAups);
             mergeAupMaps(aupsToApprove, orgAupsToApprove);
         }
 
-        if (facilityVoShortNamesAttr != null && !PerunAttributeValue.NULL.equals(facilityVoShortNamesAttr)
+        if (facilityVoShortNamesAttr != null && !facilityVoShortNamesAttr.isNullValue()
                 && facilityVoShortNamesAttr.valueAsList() != null && !facilityVoShortNamesAttr.valueAsList().isEmpty()) {
             Map<String, Aup> voAupsToApprove = getVoAupsToApprove(facilityVoShortNamesAttr.valueAsList(), userAups);
             mergeAupMaps(aupsToApprove, voAupsToApprove);
