@@ -48,7 +48,7 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 		log.debug("modifying ID token");
 		String userId = accessToken.getAuthenticationHolder().getAuthentication().getName();
 		String clientId = request.getClientId();
-		log.trace("userId={},clientId={}", userId, clientId);
+		log.debug("userId={},clientId={}", userId, clientId);
 
 		Set<String> scopes = accessToken.getScope();
 		Set<String> authorizedClaims = translator.getClaimsForScopeSet(scopes);
@@ -58,7 +58,7 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 			String claimKey = claim.getKey();
 			JsonElement claimValue = claim.getValue();
 			if (claimValue != null && !claimValue.isJsonNull() && authorizedClaims.contains(claimKey) && idTokenClaims.contains(claimKey)) {
-				log.trace("adding to ID token claim {} with value {}", claimKey, claimValue);
+				log.debug("adding to ID token claim {} with value {}", claimKey, claimValue);
 				idClaims.claim(claimKey, gson2jsonsmart(claimValue));
 			}
 		}
@@ -66,7 +66,7 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 		if (request.getRequestParameters() != null && request.getRequestParameters().containsKey("acr_values")) {
 			String acr = getAuthnContextClass(client.getClientId(), sub, request.getRequestParameters());
 			if (acr != null) {
-				log.trace("adding to ID token claim acr with value {}", acr);
+				log.debug("adding to ID token claim acr with value {}", acr);
 				idClaims.claim("acr", acr);
 			}
 		}

@@ -36,7 +36,7 @@ public class PerunScopeClaimTranslationService implements ScopeClaimTranslationS
 	 * Default constructor; initializes scopesToClaims map
 	 */
 	public PerunScopeClaimTranslationService() {
-		log.trace("initialized");
+		log.debug("initialized");
 		scopesToClaims.put("openid", "sub");
 
 		scopesToClaims.put("profile", "name");

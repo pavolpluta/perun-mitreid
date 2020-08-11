@@ -52,7 +52,7 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 		}
 
 		perunAdapter = ctx.getPerunAdapter();
-		log.trace("Initialized UserInfo modifier FilterGroups: {}", this.toString());
+		log.debug("Initialized UserInfo modifier FilterGroups: {}", this.toString());
 	}
 
 	@Override
@@ -80,13 +80,13 @@ public class FilterEduPersonEntitlement implements UserInfoModifier {
 			for (JsonNode jsonNode : eduPersonEntitlementArrayNode) {
 				String value = jsonNode.textValue();
 				if (facilityGroupNamesInAarcFormat.contains(value)) {
-					log.trace("Entitlement {} has been found, keep it", value);
+					log.debug("Entitlement {} has been found, keep it", value);
 					result.add(value);
 				} else if (!(value.startsWith(prefix) && value.endsWith(authority))) {
-					log.trace("Entitlement {} is not issued by our data repository, keep it", value);
+					log.debug("Entitlement {} is not issued by our data repository, keep it", value);
 					result.add(value);
 				} else {
-					log.trace("Entitlement {} filtered out", value);
+					log.debug("Entitlement {} filtered out", value);
 				}
 			}
 		}

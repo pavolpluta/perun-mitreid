@@ -43,7 +43,7 @@ public class WebHtmlClasses {
 		try (InputStreamReader isr = new InputStreamReader(Objects.requireNonNull(
 				getClass().getClassLoader().getResourceAsStream(resourceFileName)),StandardCharsets.UTF_8)) {
 			webHtmlClassesProps.load(isr);
-			log.trace("Loaded web html classes file: {}", resourceFileName);
+			log.debug("Loaded web html classes file: {}", resourceFileName);
 		} catch (IOException e) {
 			log.warn("Exception caught when reading {}", resourceFileName, e);
 		}
@@ -53,7 +53,7 @@ public class WebHtmlClasses {
 				new FileInputStream(customFileName), StandardCharsets.UTF_8
 		)) {
 			webHtmlClassesProps.load(isr);
-			log.trace("Loaded web html classes file: {}", customFileName);
+			log.debug("Loaded web html classes file: {}", customFileName);
 		} catch (FileNotFoundException e) {
 			log.warn("File: {} not found", customFileName);
 			e.printStackTrace();

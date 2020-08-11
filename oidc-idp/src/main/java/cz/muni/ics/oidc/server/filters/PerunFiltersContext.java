@@ -56,7 +56,7 @@ public class PerunFiltersContext {
 	private PerunRequestFilter loadFilter(String filterName) {
 		String propPrefix = PerunFiltersContext.PREFIX + filterName;
 		String filterClass = properties.getProperty(propPrefix + FILTER_CLASS, null);
-		log.trace("Loading class {} for filter: {}", filterClass, filterName);
+		log.debug("Loading class {} for filter: {}", filterClass, filterName);
 		if (filterClass == null) {
 			return null;
 		}
