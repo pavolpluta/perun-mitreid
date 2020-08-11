@@ -104,7 +104,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		AttributeMapping mapping = this.getFacilityAttributesMappingService().getByName(oidcClientIdAttr);
+		AttributeMapping mapping = this.getFacilityAttributesMappingService().getMappingByIdentifier(oidcClientIdAttr);
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("attributeName", mapping.getRpcName());
@@ -120,7 +120,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return false;
 		}
 
-		AttributeMapping mapping = this.getFacilityAttributesMappingService().getByName(oidcCheckMembershipAttr);
+		AttributeMapping mapping = this.getFacilityAttributesMappingService().getMappingByIdentifier(oidcCheckMembershipAttr);
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put("facility", facility.getId());
@@ -921,19 +921,19 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		Set<AttributeMapping> mappings;
 		switch (entity) {
 			case USER: mappings = this.getUserAttributesMappingService()
-					.getMappingsForAttrNames(attrsToFetch);
+					.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case FACILITY: mappings = this.getFacilityAttributesMappingService()
-					.getMappingsForAttrNames(attrsToFetch);
+					.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case VO: mappings = this.getVoAttributesMappingService()
-					.getMappingsForAttrNames(attrsToFetch);
+					.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case GROUP: mappings = this.getGroupAttributesMappingService()
-					.getMappingsForAttrNames(attrsToFetch);
+					.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case RESOURCE: mappings = this.getResourceAttributesMappingService()
-					.getMappingsForAttrNames(attrsToFetch);
+					.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			default: mappings  = new HashSet<>();
 				break;
@@ -1117,7 +1117,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 
 		Map<String, Object> map = new LinkedHashMap<>();
 		Set<AttributeMapping> mappings = this.getGroupAttributesMappingService()
-				.getMappingsForAttrNames(attrNames);
+				.getMappingsByIdentifiers(attrNames);
 		List<String> rpcNames = mappings.stream().map(AttributeMapping::getRpcName).collect(Collectors.toList());
 		map.put("resource", resource.getId());
 		map.put("attrNames", rpcNames);
@@ -1156,19 +1156,19 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		AttributeMapping mapping;
 		switch (entity) {
 			case USER: mapping = this.getUserAttributesMappingService()
-					.getByName(attributeName);
+					.getMappingByIdentifier(attributeName);
 				break;
 			case FACILITY: mapping = this.getFacilityAttributesMappingService()
-					.getByName(attributeName);
+					.getMappingByIdentifier(attributeName);
 				break;
 			case VO: mapping = this.getVoAttributesMappingService()
-					.getByName(attributeName);
+					.getMappingByIdentifier(attributeName);
 				break;
 			case GROUP: mapping = this.getGroupAttributesMappingService()
-					.getByName(attributeName);
+					.getMappingByIdentifier(attributeName);
 				break;
 			case RESOURCE: mapping = this.getResourceAttributesMappingService()
-					.getByName(attributeName);
+					.getMappingByIdentifier(attributeName);
 				break;
 			default:
 				throw new IllegalArgumentException("Unrecognized entity");

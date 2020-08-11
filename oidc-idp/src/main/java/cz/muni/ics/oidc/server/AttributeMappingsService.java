@@ -2,20 +2,16 @@ package cz.muni.ics.oidc.server;
 
 
 import cz.muni.ics.oidc.models.AttributeMapping;
-import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.enums.PerunAttrValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Service providing methods to use AttributeMapping objects when fetching attributes.
@@ -52,62 +48,40 @@ public class AttributeMappingsService {
 		}
 	}
 
-	public void add(AttributeMapping attribute) {
-		attributeMap.put(attribute.getIdentifier(), attribute);
-	}
-
-	public AttributeMapping getByName(String name) {
-		return attributeMap.getOrDefault(name, null);
-	}
-
-	public List<AttributeMapping> getMappingsForAttrNames(String... attrNames) {
-
-		List<AttributeMapping> mappings = new ArrayList<>();
-		String[] attrNamesArr;
-
-		if (attrNames != null && (attrNamesArr = attrNames.clone()) != null) {
-			mappings = new ArrayList<>();
-			for (String attrName : attrNamesArr) {
-				if (attributeMap.containsKey(attrName)) {
-					mappings.add(attributeMap.get(attrName));
-				}
-			}
+	/**
+	 * Get AttributeMapping based on the given internal identifier of attribute.
+	 * @param identifier String identifier of the attribute.
+	 * @return AttributeMapping. If invalid identifier is passed (null or unknown) an exception is thrown.
+	 */
+	public AttributeMapping getMappingByIdentifier(String identifier) {
+		if (!attributeMap.containsKey(identifier)) {
+			throw new IllegalArgumentException("Unknown identifier, check your configuration");
 		}
 
-		return mappings;
+		return attributeMap.get(identifier);
 	}
 
-	public Set<AttributeMapping> getMappingsForAttrNames(Collection<String> attrNames) {
+	/**
+	 * Get Set of AttributeMapping based on the given internal identifiers of attributes.
+	 * @param identifiers Collection of Strings
+	 * @return Set of AttributeMapping. If invalid identifier is passed inside the collection, this identifier is ignored.
+	 */
+	public Set<AttributeMapping> getMappingsByIdentifiers(Collection<String> identifiers) {
+		log.trace("getMappingsForAttrNames({})", identifiers);
+
 		Set<AttributeMapping> mappings = new HashSet<>();
-
-		if (attrNames != null) {
-			for (String attrName : attrNames) {
-				if (attributeMap.containsKey(attrName)) {
-					mappings.add(attributeMap.get(attrName));
+		if (identifiers != null) {
+			for (String identifier : identifiers) {
+				try {
+					mappings.add(getMappingByIdentifier(identifier));
+				} catch (IllegalArgumentException e) {
+					log.warn("Caught {} when getting mappings, check your configuration for identifier {}",
+							e.getClass(), identifier, e);
 				}
 			}
 		}
-		return mappings;
-	}
 
-	public List<AttributeMapping> getAttributeMappingsToFetch(Map<String, PerunAttributeValue> fetched, Collection<String> allToFetch) {
-		if (allToFetch == null) {
-			throw new IllegalArgumentException("AllToFetch cannot be null");
-		}
-
-		List<AttributeMapping> mappings;
-
-		if (fetched == null || fetched.keySet().isEmpty()) {
-			mappings = allToFetch.stream()
-					.map(attributeMap::get)
-					.collect(Collectors.toList());
-		} else {
-			mappings = allToFetch.stream()
-					.filter(attrKey -> (!fetched.containsKey(attrKey) || fetched.get(attrKey) == null))
-					.map(attributeMap::get)
-					.collect(Collectors.toList());
-		}
-
+		log.trace("getMappingsForAttrNames({}) returns: {}", identifiers, mappings);
 		return mappings;
 	}
 

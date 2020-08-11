@@ -137,7 +137,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 			return new Facility(id, name, description);
 		};
 
-		AttributeMapping mapping = this.getFacilityAttributesMappingService().getByName(oidcClientIdAttr);
+		AttributeMapping mapping = this.getFacilityAttributesMappingService().getMappingByIdentifier(oidcClientIdAttr);
 
 		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_FACILITY), equal(mapping.getLdapName(), clientId));
 		return connectorLdap.searchFirst(null, filter, scope, attributes, mapper);
@@ -200,7 +200,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 			groupIdFilters[i++] = equal(PERUN_GROUP_ID, String.valueOf(id));
 		}
 
-		AttributeMapping affiliationsMapping = getGroupAttributesMappingService().getByName(groupAffiliationsAttr);
+		AttributeMapping affiliationsMapping = getGroupAttributesMappingService().getMappingByIdentifier(groupAffiliationsAttr);
 
 		FilterBuilder filterBuilder = and(equal(OBJECT_CLASS, PERUN_GROUP), or(groupIdFilters));
 		String[] attributes = new String[] { affiliationsMapping.getLdapName() };
@@ -397,7 +397,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_RESOURCE),
 				equal(PERUN_FACILITY_ID, String.valueOf(facility.getId())));
 
-		AttributeMapping capabilitiesMapping = getResourceAttributesMappingService().getByName(capabilitiesAttrName);
+		AttributeMapping capabilitiesMapping = getResourceAttributesMappingService().getMappingByIdentifier(capabilitiesAttrName);
 		List<String> attributes = new ArrayList<>();
 		attributes.add(ASSIGNED_GROUP_ID);
 		if (capabilitiesMapping != null) {
@@ -747,23 +747,23 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 		switch (entity) {
 			case USER:
 				mappings = this.getUserAttributesMappingService()
-						.getMappingsForAttrNames(attrsToFetch);
+						.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case FACILITY:
 				mappings = this.getFacilityAttributesMappingService()
-						.getMappingsForAttrNames(attrsToFetch);
+						.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case VO:
 				mappings = this.getVoAttributesMappingService()
-						.getMappingsForAttrNames(attrsToFetch);
+						.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case GROUP:
 				mappings = this.getGroupAttributesMappingService()
-						.getMappingsForAttrNames(attrsToFetch);
+						.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			case RESOURCE:
 				mappings = this.getResourceAttributesMappingService()
-						.getMappingsForAttrNames(attrsToFetch);
+						.getMappingsByIdentifiers(attrsToFetch);
 				break;
 			default:
 				log.error("Unknown ENTITY {}", entity);
