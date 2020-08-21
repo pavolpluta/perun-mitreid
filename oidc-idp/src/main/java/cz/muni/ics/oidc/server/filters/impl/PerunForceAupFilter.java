@@ -286,7 +286,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
                     continue;
                 }
 
-                List<Aup> aups = Arrays.asList(mapper.readValue(voAupAttr.valueAsString(), Aup[].class));
+                List<Aup> aups = Arrays.asList(mapper.readValue(voAupAttr.valueAsList().toString(), Aup[].class));
                 if (!aups.isEmpty()) {
                     voAups.put(voShortName, aups);
                 }
