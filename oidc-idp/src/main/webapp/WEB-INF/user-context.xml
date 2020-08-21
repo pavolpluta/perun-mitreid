@@ -111,7 +111,7 @@
 		<property name="properties">
 			<props>
 				<prop key="user.attribute_names.fixedList">openid_sub,profile_preferred_username,profile_given_name,profile_middle_name,profile_family_name,profile_name,profile_zoneinfo,profile_locale,email_email,address_address_formatted,phone_phone,aups</prop>
-				<prop key="facility.attribute_names.fixedList">checkGroupMembership,allowRegistration,registrationUrl,dynamicRegistration,clientId,voShortNames,wayfFilter,wayfEFilter,requestedAups</prop>
+				<prop key="facility.attribute_names.fixedList">checkGroupMembership,allowRegistration,registrationUrl,dynamicRegistration,clientId,voShortNames,wayfFilter,wayfEFilter,requestedAups,capabilities</prop>
 				<prop key="group.attribute_names.fixedList"/>
 				<prop key="vo.attribute_names.fixedList">aup</prop>
 				<prop key="resource.attribute_names.fixedList">capabilities</prop>

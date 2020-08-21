@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 - refactored AttributeMappingsService
 - appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined
 - Refactored logback configuration, see README for options 
+- appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined
+### Fixed
+- Fixed missing mapping for the attribute "capabilities" in facility
 
 ## [2.0.0]
 ### Added
