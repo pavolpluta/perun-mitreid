@@ -25,6 +25,12 @@ Following are the options for customization of logging when building
   - logging facility: -Dlog.facility=facility
     - default: LOCAL7
 - logging to file
-  - file path specification: -Dlog.file.path=/var/log/oidc/perun-mitreid.log
+  - file path specification: -Dlog.file=${catalina.base}/logs/${CONTEXT_NAME}
+  - file extension: -Dlog.file-extension=log
+  - file trace extension: -Dlog.trace.file-extension=trace
+  - file times extension: -Dlog.times.file-extension=times
 - logging to rolling-file
-  - file path specification: -Dlog.rolling-file.path=${catalina.base}/logs/${CONTEXT_NAME}.log
+  - file path specification: -Dlog.rolling-file=${catalina.base}/logs/${CONTEXT_NAME}
+  - file extension: -Dlog.file-extension=log
+  - file trace extension: -Dlog.trace.file-extension=trace
+  - file times extension: -Dlog.times.file-extension=times

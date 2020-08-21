@@ -19,8 +19,12 @@
 		<log.facility>LOCAL7</log.facility>
 		<log.level>info</log.level>
 		<!--suppress UnresolvedMavenProperty -->
-		<log.rolling-file.path>${catalina.base}/logs/${CONTEXT_NAME}.log</log.rolling-file.path>
-		<log.file.path>/var/log/oidc/perun-mitreid.log</log.file.path>
+		<log.rolling-file>${catalina.base}/logs/${CONTEXT_NAME}</log.rolling-file>
+		<!--suppress UnresolvedMavenProperty -->
+		<log.file>${catalina.base}/logs/${CONTEXT_NAME}</log.file>
+		<log.trace.file-extension>trace</log.trace.file-extension>
+		<log.file-extension>log</log.file-extension>
+		<log.times.file-extension>times</log.times.file-extension>
 		<final.name>oidc</final.name>
 	</properties>
 

@@ -1,15 +1,14 @@
 <configuration packagingData="true" debug="false" scan="false" scanPeriod="30 seconds">
 	<contextName>${log.contextName}</contextName>
 	<property name="PATTERN"
-			  value="%boldYellow([%X{sessionID}]) %boldBlue(%cn) : %highlight(%-5level) %cyan(%logger{40}) - %m%n%xException" />
+			  value="[%X{sessionID}] %cn : %-5level %logger{40} - %m%n%xException" />
 
 	<!-- ROLLING FILE -->
 	<appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>${log.rolling-file.path}</file>
+		<file>${log.rolling-file}.${log.file-extension}</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>${log.rolling-file.path}.%d{yyyy-MM-dd}</fileNamePattern>
+			<fileNamePattern>${log.rolling-file}.${log.file-extension}.%d{yyyy-MM-dd}</fileNamePattern>
 		</rollingPolicy>
-		<withJansi>true</withJansi>
 		<encoder>
 			<pattern>${PATTERN}</pattern>
 		</encoder>
@@ -18,21 +17,19 @@
 		</filter>
 	</appender>
 	<appender name="ROLLING_FILE_TIMES" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>${log.rolling-file.path}.times</file>
+		<file>${log.rolling-file}.${log.times.file-extension}</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>${log.rolling-file.path}.times.%d{yyyy-MM-dd}</fileNamePattern>
+			<fileNamePattern>${log.rolling-file}.${log.times.file-extension}.%d{yyyy-MM-dd}</fileNamePattern>
 		</rollingPolicy>
-		<withJansi>true</withJansi>
 		<encoder>
 			<pattern>${PATTERN}</pattern>
 		</encoder>
 	</appender>
 	<appender name="ROLLING_FILE_TRACE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>${log.rolling-file.path}.trace</file>
+		<file>${log.rolling-file}.${log.trace.file-extension}</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-			<fileNamePattern>${log.rolling-file.path}.trace.%d{yyyy-MM-dd}</fileNamePattern>
+			<fileNamePattern>${log.rolling-file}.${log.trace.file-extension}.%d{yyyy-MM-dd}</fileNamePattern>
 		</rollingPolicy>
-		<withJansi>true</withJansi>
 		<encoder>
 			<pattern>${PATTERN}</pattern>
 		</encoder>
@@ -45,8 +42,7 @@
 
 	<!-- FILE -->
 	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>${log.file.path}</file>
-		<withJansi>true</withJansi>
+		<file>${log.file}.${log.file-extension}</file>
 		<encoder>
 			<pattern>${PATTERN}</pattern>
 		</encoder>
@@ -55,15 +51,13 @@
 		</filter>
 	</appender>
 	<appender name="FILE_TIMES" class="ch.qos.logback.core.FileAppender">
-		<file>${log.file.path}.times</file>
-		<withJansi>true</withJansi>
+		<file>${log.file}.${log.times.file-extension}</file>
 		<encoder>
 			<pattern>${PATTERN}</pattern>
 		</encoder>
 	</appender>
 	<appender name="FILE_TRACE" class="ch.qos.logback.core.FileAppender">
-		<file>${log.file.path}.trace</file>
-		<withJansi>true</withJansi>
+		<file>${log.file}.${log.trace.file-extension}</file>
 		<encoder>
 			<pattern>${PATTERN}</pattern>
 		</encoder>
@@ -80,36 +74,23 @@
 		<facility>${log.facility}</facility>
 		<throwableExcluded>true</throwableExcluded>
 		<suffixPattern>${PATTERN}</suffixPattern>
-		<withJansi>true</withJansi>
-		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-			<level>DEBUG</level>
-		</filter>
-	</appender>
-	<appender name="SYSLOG_TIMES" class="ch.qos.logback.classic.net.SyslogAppender">
-		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
-		<facility>${log.facility}</facility>
-		<throwableExcluded>true</throwableExcluded>
-		<suffixPattern>${PATTERN}</suffixPattern>
-		<withJansi>true</withJansi>
-	</appender>
-	<appender name="SYSLOG_TRACE" class="ch.qos.logback.classic.net.SyslogAppender">
-		<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
-		<facility>${log.facility}</facility>
-		<throwableExcluded>true</throwableExcluded>
-		<suffixPattern>${PATTERN}</suffixPattern>
-		<withJansi>true</withJansi>
-		<filter class="ch.qos.logback.classic.filter.LevelFilter">
-			<level>TRACE</level>
-			<onMatch>ACCEPT</onMatch>
-			<onMismatch>DENY</onMismatch>
-		</filter>
 	</appender>
 
-	<root>
-		<priority value="debug"/>
-		<appender-ref ref="${log.to}_TRACE"/>
-		<appender-ref ref="${log.to}"/>
-	</root>
+	<if condition='"${log.to}".equalsIgnoreCase("SYSLOG")'>
+		<then>
+			<root level="${log.level}">
+				<appender-ref ref="${log.to}"/>
+			</root>
+		</then>
+		<else>
+			<root level="${log.level}">
+				<priority value="debug"/>
+				<appender-ref ref="${log.to}_TRACE"/>
+				<appender-ref ref="${log.to}_TIMES"/>
+				<appender-ref ref="${log.to}"/>
+			</root>
+		</else>
+	</if>
 
 	<!-- keep Spring quiet -->
 	<logger name="org.springframework" level="warn"/>
@@ -123,7 +104,11 @@
 	<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 	<logger name="cz.muni.ics.oidc" level="${log.level}"/>
 	<logger name="cz.muni.ics.oidc.aop.ExecutionTimeLoggingAspect" level="trace">
-		<appender-ref ref="${log.to}_TIMES" />
+		<if condition='!"${log.to}".equalsIgnoreCase("SYSLOG")'>
+			<then>
+				<appender-ref ref="${log.to}_TIMES" />
+			</then>
+		</if>
 	</logger>
 	<logger name="org.mitre.openid.connect.web.EndSessionEndpoint" level="${log.level}"/>
 	<logger name="net.javacrumbs.shedlock" level="error"/>

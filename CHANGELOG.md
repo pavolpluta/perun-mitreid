@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 - logging at TRACE level via the Aspects
 ### Changed
 - refactored AttributeMappingsService
-- appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined 
+- appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined
+- Refactored logback configuration, see README for options 
 
 ## [2.0.0]
 ### Added
