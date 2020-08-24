@@ -309,12 +309,12 @@ public class PerunAdapterImpl extends PerunAdapter {
     }
 
     @Override
-    public Set<String> getResourceCapabilities(Facility facility, Set<String> groupNames, String capabilitiesAttrName) {
+    public Set<String> getCapabilities(Facility facility, Set<String> groupNames, String facilityCapabilitiesAttrName, String resourceCapabilitiesAttrName) {
         try {
-            return this.getAdapterPrimary().getResourceCapabilities(facility, groupNames, capabilitiesAttrName);
+            return this.getAdapterPrimary().getCapabilities(facility, groupNames, facilityCapabilitiesAttrName, resourceCapabilitiesAttrName);
         } catch (UnsupportedOperationException e) {
             if (this.isCallFallback()) {
-                return this.getAdapterFallback().getResourceCapabilities(facility, groupNames, capabilitiesAttrName);
+                return this.getAdapterFallback().getCapabilities(facility, groupNames, facilityCapabilitiesAttrName, resourceCapabilitiesAttrName);
             } else {
                 throw e;
             }
@@ -322,12 +322,12 @@ public class PerunAdapterImpl extends PerunAdapter {
     }
 
     @Override
-    public Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
+    public Set<String> getCapabilities(Facility facility, Map<Long, String> idToGnameMap, String facilityCapabilitiesAttrName, String resourceCapabilitiesAttrName) {
         try {
-            return this.getAdapterPrimary().getFacilityCapabilities(facility, capabilitiesAttrName);
+            return this.getAdapterPrimary().getCapabilities(facility, idToGnameMap, facilityCapabilitiesAttrName, resourceCapabilitiesAttrName);
         } catch (UnsupportedOperationException e) {
             if (this.isCallFallback()) {
-                return this.getAdapterFallback().getFacilityCapabilities(facility, capabilitiesAttrName);
+                return this.getAdapterFallback().getCapabilities(facility, idToGnameMap, facilityCapabilitiesAttrName, resourceCapabilitiesAttrName);
             } else {
                 throw e;
             }

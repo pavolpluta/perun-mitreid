@@ -51,6 +51,7 @@ import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.ME
 import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.O;
 import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.OBJECT_CLASS;
 import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.PERUN_FACILITY;
+import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.PERUN_FACILITY_DN;
 import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.PERUN_FACILITY_ID;
 import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.PERUN_GROUP;
 import static cz.muni.ics.oidc.server.adapters.impl.PerunAdapterLdapConstants.PERUN_GROUP_ID;
@@ -387,84 +388,45 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	}
 
 	@Override
-	public Set<String> getResourceCapabilities(Facility facility, Set<String> groupNames, String capabilitiesAttrName) {
-		Set<String> result = new HashSet<>();
-
+	public Set<String> getCapabilities(Facility facility, Set<String> groupNames,
+									   String facilityCapabilitiesAttrName,
+									   String resourceCapabilitiesAttrName)
+	{
 		if (facility == null) {
-			return result;
+			return new HashSet<>();
+		} else if (groupNames == null || groupNames.isEmpty()) {
+			return new HashSet<>();
 		}
-
-		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_RESOURCE),
-				equal(PERUN_FACILITY_ID, String.valueOf(facility.getId())));
-
-		AttributeMapping capabilitiesMapping = getResourceAttributesMappingService().getMappingByIdentifier(capabilitiesAttrName);
-		List<String> attributes = new ArrayList<>();
-		attributes.add(ASSIGNED_GROUP_ID);
-		if (capabilitiesMapping != null) {
-			attributes.add(capabilitiesMapping.getLdapName());
-		}
-
-		EntryMapper<CapabilitiesAssignedGroupsPair> mapper = e -> {
-			Set<String> capabilities = new HashSet<>();
-			Set<Long> groupIds = new HashSet<>();
-
-			if (!checkHasAttributes(e, attributes.toArray(new String[] {}))) {
-				return new CapabilitiesAssignedGroupsPair(capabilities, groupIds);
-			}
-
-			if (capabilitiesMapping != null) {
-				Attribute capabilitiesAttr = e.get(capabilitiesMapping.getLdapName());
-				if (capabilitiesAttr != null) {
-					capabilitiesAttr.iterator().forEachRemaining(v -> capabilities.add(v.getString()));
-				}
-			}
-
-			Attribute assignedGroupIds = e.get(ASSIGNED_GROUP_ID);
-			if (assignedGroupIds != null) {
-				assignedGroupIds.iterator().forEachRemaining(v -> groupIds.add(Long.parseLong(v.getString())));
-			}
-
-			return new CapabilitiesAssignedGroupsPair(capabilities, groupIds);
-		};
-
-		List<CapabilitiesAssignedGroupsPair> capabilitiesAssignedGroupsPairs = connectorLdap.search(null, filter,
-				SearchScope.SUBTREE, attributes.toArray(new String[] {}), mapper);
-		log.debug("Found capabilities groups pairs: {}", capabilitiesAssignedGroupsPairs);
-
-		capabilitiesAssignedGroupsPairs = capabilitiesAssignedGroupsPairs.stream()
-				.filter(pair -> pair != null
-						&& pair.assignedGroupIds != null
-						&& !pair.assignedGroupIds.isEmpty()
-						&& pair.capabilities != null
-						&& !pair.capabilities.isEmpty())
-				.collect(Collectors.toList());
-		log.debug("Filtered capabilities groups pairs: {}", capabilitiesAssignedGroupsPairs);
 
 		Set<Long> groupIdsFromGNames = getGroupsByUniqueGroupNames(groupNames).stream()
 				.map(Group::getId).collect(Collectors.toSet());
-		log.debug("Group IDs: {}", groupIdsFromGNames);
 
-		for (CapabilitiesAssignedGroupsPair pair: capabilitiesAssignedGroupsPairs) {
-			log.debug("Processing capability pair: {}", pair);
-			Set<Long> ids = pair.assignedGroupIds;
-			if (! Collections.disjoint(groupIdsFromGNames, ids)) {
-				log.debug("Added all capabilities form pair: {}", pair);
-				result.addAll(pair.capabilities);
-			}
+		FilterBuilder[] parts = new FilterBuilder[groupIdsFromGNames.size()];
+		int i = 0;
+		for (Long gid : groupIdsFromGNames) {
+			parts[i] = equal(ASSIGNED_GROUP_ID, String.valueOf(gid));
+			i++;
 		}
-
-		return result;
+		return getCapabilities(facility, facilityCapabilitiesAttrName, resourceCapabilitiesAttrName, parts);
 	}
 
 	@Override
-	public Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
-		Set<String> result = new HashSet<>();
-		PerunAttributeValue attrVal = getFacilityAttributeValue(facility, capabilitiesAttrName);
-		if (attrVal != null && !attrVal.isNullValue() && attrVal.valueAsList() != null) {
-			result = new HashSet<>(attrVal.valueAsList());
+	public Set<String> getCapabilities(Facility facility, Map<Long, String> idToGnameMap,
+									   String facilityCapabilitiesAttrName, String resourceCapabilitiesAttrName)
+	{
+		if (facility == null) {
+			return new HashSet<>();
+		} else if (idToGnameMap == null || idToGnameMap.isEmpty()) {
+			return new HashSet<>();
 		}
 
-		return result;
+		FilterBuilder[] parts = new FilterBuilder[idToGnameMap.size()];
+		int i = 0;
+		for (Long gid : idToGnameMap.keySet()) {
+			parts[i] = equal(ASSIGNED_GROUP_ID, String.valueOf(gid));
+			i++;
+		}
+		return getCapabilities(facility, facilityCapabilitiesAttrName, resourceCapabilitiesAttrName, parts);
 	}
 
 	@Override
@@ -784,21 +746,52 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 				.toArray(new String[]{});
 	}
 
-	private static class CapabilitiesAssignedGroupsPair {
-		private Set<String> capabilities;
-		private Set<Long> assignedGroupIds;
-
-		public CapabilitiesAssignedGroupsPair(Set<String> capabilities, Set<Long> groupIds) {
-			this.capabilities = capabilities;
-			this.assignedGroupIds = groupIds;
+	private Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
+		Set<String> result = new HashSet<>();
+		PerunAttributeValue attrVal = getFacilityAttributeValue(facility, capabilitiesAttrName);
+		if (attrVal != null && !attrVal.isNullValue() && attrVal.valueAsList() != null) {
+			result = new HashSet<>(attrVal.valueAsList());
 		}
 
-		@Override
-		public String toString() {
-			return "CapabilitiesAssignedGroupsPair{" +
-					"capabilities='" + capabilities + '\'' +
-					", assignedGroupIds='" + assignedGroupIds + "'}";
+		return result;
+	}
+
+	private Set<String> getCapabilities(Facility facility, String facilityCapabilitiesAttrName,
+										String resourceCapabilitiesAttrName, FilterBuilder[] parts) {
+		String facilityDN = PERUN_FACILITY_ID + '=' + facility.getId() + ',' + connectorLdap.getBaseDN();
+		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_RESOURCE), equal(PERUN_FACILITY_DN, facilityDN), or(parts));
+		AttributeMapping capabilitiesMapping = getResourceAttributesMappingService().getMappingByIdentifier(resourceCapabilitiesAttrName);
+		String[] attributes = new String[] { capabilitiesMapping.getLdapName(), ASSIGNED_GROUP_ID };
+		EntryMapper<Set<String>> mapper = e -> {
+			Set<String> capabilities = new HashSet<>();
+			if (!checkHasAttributes(e, attributes)) {
+				return new HashSet<>();
+			}
+
+			Attribute capabilitiesAttr = e.get(capabilitiesMapping.getLdapName());
+			if (capabilitiesAttr != null) {
+				capabilitiesAttr.iterator().forEachRemaining(v -> capabilities.add(v.getString()));
+			}
+
+			return capabilities;
+		};
+		List<Set<String>> resourceCaps = connectorLdap.search(null, filter, SearchScope.SUBTREE, attributes, mapper);
+		Set<String> capabilities = new HashSet<>();
+		boolean includeFacilityCapabilities = false;
+		if (resourceCaps != null && !resourceCaps.isEmpty()) {
+			// if the mapper returns at least one entry, user is a member of some group assigned to the facility
+			includeFacilityCapabilities = true;
+			resourceCaps.stream()
+					.filter(Objects::nonNull)
+					.forEach(capabilities::addAll);
 		}
+
+		if (facilityCapabilitiesAttrName != null && includeFacilityCapabilities ) {
+			Set<String> facilityCapabilities = this.getFacilityCapabilities(facility, facilityCapabilitiesAttrName);
+			capabilities.addAll(facilityCapabilities);
+		}
+
+		return capabilities;
 	}
 
 }

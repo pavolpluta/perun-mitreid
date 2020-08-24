@@ -13,7 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -72,7 +73,7 @@ public class EntitlementSource extends GroupNamesSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		JsonNode groupNamesJson = super.produceValueWithoutReplacing(pctx);
+		Map<Long, String> idToGnameMap = super.produceValueWithoutReplacing(pctx);
 		Set<String> entitlements = new TreeSet<>();
 
 		Facility facility = null;
@@ -80,20 +81,19 @@ public class EntitlementSource extends GroupNamesSource {
 			facility = pctx.getPerunAdapter().getFacilityByClientId(pctx.getClient().getClientId());
 		}
 
-		if (groupNamesJson != null) {
-			fillEntitlementsFromGroupNames(groupNamesJson, entitlements);
+		if (idToGnameMap != null && !idToGnameMap.values().isEmpty()) {
+			this.fillEntitlementsFromGroupNames(idToGnameMap.values(), entitlements);
+			log.trace("Added entitlements for group names, current value: {}", entitlements);
 		}
 
-		if (facility != null && ClaimUtils.isPropSet(this.facilityCapabilities)) {
-			fillFacilityCapabilities(facility, pctx, entitlements);
-		}
-
-		if (facility != null && ClaimUtils.isPropSet(this.resourceCapabilities)) {
-			fillResourceCapabilities(facility, pctx, groupNamesJson, entitlements);
+		if (facility != null) {
+			this.fillCapabilities(facility, pctx, idToGnameMap, entitlements);
+			log.trace("Added entitlements for capabilities, current value: {}", entitlements);
 		}
 
 		if (ClaimUtils.isPropSet(this.forwardedEntitlements)) {
-			fillForwardedEntitlements(pctx, entitlements);
+			this.fillForwardedEntitlements(pctx, entitlements);
+			log.trace("Added forwarded entitlements, current value: {}", entitlements);
 		}
 
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
@@ -104,16 +104,12 @@ public class EntitlementSource extends GroupNamesSource {
 		return result;
 	}
 
-	private void fillResourceCapabilities(Facility facility, ClaimSourceProduceContext pctx,
-										  JsonNode groupNamesJson, Set<String> entitlements) {
-		ArrayNode groupNamesArrayNode = (ArrayNode) groupNamesJson;
-		Set<String> groupNames = new HashSet<>();
-		for (JsonNode groupName: groupNamesArrayNode) {
-			groupNames.add(groupName.textValue());
-		}
-
+	private void fillCapabilities(Facility facility, ClaimSourceProduceContext pctx,
+								  Map<Long, String> idToGnameMap, Set<String> entitlements) {
 		Set<String> resultCapabilities = pctx.getPerunAdapter()
-				.getResourceCapabilities(facility, groupNames, resourceCapabilities);
+				.getCapabilities(facility, idToGnameMap,
+						ClaimUtils.isPropSet(this.facilityCapabilities) ? facilityCapabilities : null,
+						ClaimUtils.isPropSet(this.resourceCapabilities)? resourceCapabilities: null);
 
 		for (String capability : resultCapabilities) {
 			entitlements.add(wrapCapabilityToAARC(capability));
@@ -132,23 +128,13 @@ public class EntitlementSource extends GroupNamesSource {
 		}
 	}
 
-	private void fillFacilityCapabilities(Facility facility, ClaimSourceProduceContext pctx, Set<String> entitlements) {
-		Set<String> resultCapabilities = pctx.getPerunAdapter()
-				.getFacilityCapabilities(facility, facilityCapabilities);
-		for (String capability : resultCapabilities) {
-			entitlements.add(wrapCapabilityToAARC(capability));
-		}
-	}
-
-	private void fillEntitlementsFromGroupNames(JsonNode groupNamesJson, Set<String> entitlements) {
-		ArrayNode groupNamesArrayNode = (ArrayNode) groupNamesJson;
-		for (JsonNode arrItem: groupNamesArrayNode) {
-			if (arrItem == null || arrItem.isNull()) {
+	private void fillEntitlementsFromGroupNames(Collection<String> groupNames, Set<String> entitlements) {
+		for (String fullGname: groupNames) {
+			if (fullGname == null || fullGname.trim().isEmpty()) {
 				continue;
 			}
 
-			String value = arrItem.textValue();
-			String[] parts = value.split(":", 2);
+			String[] parts = fullGname.split(":", 2);
 			if (parts.length == 2 && StringUtils.hasText(parts[1]) && MEMBERS.equals(parts[1])) {
 				parts[1] = parts[1].replace(MEMBERS, "");
 			}

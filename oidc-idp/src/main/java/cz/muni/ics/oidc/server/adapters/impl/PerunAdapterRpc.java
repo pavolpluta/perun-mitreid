@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -745,67 +744,76 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 	}
 
 	@Override
-	public Set<String> getResourceCapabilities(Facility facility, Set<String> groupNames, String capabilitiesAttrName) {
+	public Set<String> getCapabilities(Facility facility, Set<String> groupNames,
+									   String facilityCapabilitiesAttrName,
+									   String resourceCapabilitiesAttrName)
+	{
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashSet<>();
 		}
 
 		if (facility == null) {
-			return new LinkedHashSet<>();
+			return new HashSet<>();
 		}
 
-		List<Resource> resources = getAssignedResources(facility);
-		Set<String> capabilities = new LinkedHashSet<>();
+		Set<String> capabilities = new HashSet<>();
+		Set<String> resourceGroupNames = new HashSet<>();
 
-		for (Resource resource : resources) {
-			PerunAttributeValue attrValue = getResourceAttributeValue(resource.getId(), capabilitiesAttrName);
+		if (null != resourceCapabilitiesAttrName) {
+			List<Resource> resources = this.getAssignedResources(facility);
+			for (Resource resource : resources) {
+				PerunAttributeValue attrValue = this.getResourceAttributeValue(resource.getId(), resourceCapabilitiesAttrName);
 
-			List<String> resourceCapabilities = attrValue.valueAsList();
-			if (resourceCapabilities == null || resourceCapabilities.size() == 0) {
-				continue;
-			}
-			List<Group> groups = getAssignedGroups(resource.getId());
-			for (Group group : groups) {
-				String groupName = group.getName();
-				if ("members".equals(groupName)) {
-					log.debug("Group is members, continue with special handling");
-					groupName = "";
-					if (resource.getVo() != null) {
-						groupName = resource.getVo().getShortName();
+				List<String> resourceCapabilities = attrValue.valueAsList();
+				if (resourceCapabilities == null || resourceCapabilities.size() == 0) {
+					continue;
+				}
+				List<Group> groups = this.getAssignedGroups(resource.getId());
+				for (Group group : groups) {
+					resourceGroupNames.add(group.getName());
+					String groupName = group.getName();
+					if ("members".equals(groupName)) {
+						groupName = "";
+						if (resource.getVo() != null) {
+							groupName = resource.getVo().getShortName();
+						}
+					} else if (resource.getVo() != null) {
+						groupName = resource.getVo().getShortName() + ':' + groupName;
 					}
-				} else if (resource.getVo() != null) {
-					groupName = resource.getVo().getShortName() + ':' + groupName;
-				}
-				group.setUniqueGroupName(groupName);
-				log.debug("Constructed unique groupName: {}", groupName);
+					group.setUniqueGroupName(groupName);
 
-				if (groupNames.contains(groupName)) {
-					log.debug("Group found in user's group, add capabilities");
-					capabilities.addAll(resourceCapabilities);
-					break;
+					if (groupNames.contains(groupName)) {
+						log.trace("Group [{}] found in users groups, add capabilities [{}]", groupName, resourceCapabilities);
+						capabilities.addAll(resourceCapabilities);
+					} else {
+						log.trace("Group [{}] not found in users groups, continue to the next one", groupName);
+					}
 				}
-				log.debug("Group not found, continue to the next one");
 			}
+		}
+
+		if (null != facilityCapabilitiesAttrName && !Collections.disjoint(groupNames, resourceGroupNames)) {
+			Set<String> facilityCapabilities = this.getFacilityCapabilities(facility, facilityCapabilitiesAttrName);
+			capabilities.addAll(facilityCapabilities);
 		}
 
 		return capabilities;
 	}
 
 	@Override
-	public Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
+	public Set<String> getCapabilities(Facility facility, Map<Long, String> idToGnameMap,
+									   String facilityCapabilitiesAttrName, String resourceCapabilitiesAttrName)
+	{
 		if (!this.connectorRpc.isEnabled()) {
 			return new HashSet<>();
 		}
 
-		Set<String> capabilities = new HashSet<>();
-		if (facility != null) {
-			PerunAttributeValue attr = getFacilityAttributeValue(facility, capabilitiesAttrName);
-			if (attr != null && attr.valueAsList() != null) {
-				capabilities = new HashSet<>(attr.valueAsList());
-			}
+		if (facility == null) {
+			return new HashSet<>();
 		}
 
-		return capabilities;
+		return this.getCapabilities(facility, new HashSet<>(idToGnameMap.values()), facilityCapabilitiesAttrName,
+				resourceCapabilitiesAttrName);
 	}
 
 	@Override
@@ -1193,4 +1201,21 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		JsonNode response = connectorRpc.post(USERS_MANAGER, "getUserExtSources", map);
 		return RpcMapper.mapUserExtSources(response);
 	}
+
+	private Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {
+		if (!this.connectorRpc.isEnabled()) {
+			return new HashSet<>();
+		}
+
+		Set<String> capabilities = new HashSet<>();
+		if (facility != null) {
+			PerunAttributeValue attr = getFacilityAttributeValue(facility, capabilitiesAttrName);
+			if (attr != null && attr.valueAsList() != null) {
+				capabilities = new HashSet<>(attr.valueAsList());
+			}
+		}
+
+		return capabilities;
+	}
+
 }

@@ -9,9 +9,11 @@ All notable changes to this project will be documented in this file.
 - appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined
 - Refactored logback configuration, see README for options 
 - appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined
+- optimized a bit procedure in LDAP for getting resource capabilities
 ### Fixed
 - Fixed missing mapping for the attribute "capabilities" in facility
 - Fixed InconvertibleValueException in AUP filter 
+- fixed generating of facility capabilities, now if the user is not in any group assigned to facility, he/she will not receive facility capability 
 
 ## [2.0.0]
 ### Added

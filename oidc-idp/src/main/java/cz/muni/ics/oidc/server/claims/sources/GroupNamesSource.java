@@ -14,9 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Source fetches all unique group names in context of user and facility. If no facility exists for the client, empty
@@ -34,15 +35,20 @@ public class GroupNamesSource extends ClaimSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		return produceValue(pctx, true);
+		Map<Long, String> idToNameMap = this.produceValue(pctx, true);
+		ArrayNode arr = JsonNodeFactory.instance.arrayNode();
+		new HashSet<>(idToNameMap.values()).forEach(arr::add);
+
+		log.debug("Produced groupNames: {}", arr);
+		return arr;
 	}
 
-	protected JsonNode produceValueWithoutReplacing(ClaimSourceProduceContext pctx) {
+	protected Map<Long, String> produceValueWithoutReplacing(ClaimSourceProduceContext pctx) {
 		log.debug("producing value without trimming 'members'");
 		return produceValue(pctx, false);
 	}
 
-	private JsonNode produceValue(ClaimSourceProduceContext pctx, boolean trimMembers) {
+	private Map<Long, String> produceValue(ClaimSourceProduceContext pctx, boolean trimMembers) {
 		PerunAdapter perunConnector = pctx.getPerunAdapter();
 		ClientDetailsEntity client = pctx.getClient();
 		Facility facility = null;
@@ -60,7 +66,7 @@ public class GroupNamesSource extends ClaimSource {
 			log.debug("Found user groups: {}", userGroups);
 		}
 
-		Set<String> groups = new TreeSet<>();
+		Map<Long, String> idToNameMap = new HashMap<>();
 		userGroups.forEach(g -> {
 			String uniqueName = g.getUniqueGroupName();
 			if (trimMembers && StringUtils.hasText(uniqueName) && "members".equals(g.getName())) {
@@ -68,17 +74,10 @@ public class GroupNamesSource extends ClaimSource {
 				g.setUniqueGroupName(uniqueName);
 			}
 
-			groups.add(g.getUniqueGroupName());
+			idToNameMap.put(g.getId(), g.getUniqueGroupName());
 		});
 
-		ArrayNode result = JsonNodeFactory.instance.arrayNode();
-		for (String groupName: groups) {
-			result.add(groupName);
-		}
-
-		log.debug("produced groupNames: {}", result);
-		return result;
+		return idToNameMap;
 	}
-
 
 }

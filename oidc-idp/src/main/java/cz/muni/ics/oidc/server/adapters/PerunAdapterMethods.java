@@ -245,20 +245,26 @@ public interface PerunAdapterMethods {
 	PerunAttributeValue getGroupAttributeValue(Long groupId, String attrToFetch);
 
 	/**
-	 * Gets the resource capabilities
+	 * Gets the capabilities
 	 * @param facility Facility representing client
-	 * @param capabilitiesAttrName String name of attribute
-	 * @return set of resource capabilities assigned on resources
+	 * @param groupNames Names of groups the user is member of.
+	 * @param facilityCapabilitiesAttrName String name of attribute containing facility capabilities. Pass null for ignore.
+	 * @param resourceCapabilitiesAttrName String name of attribute containing resource capabilities. Pass null for ignore.
+	 * @return set of capabilities assigned on resources
 	 */
-	Set<String> getResourceCapabilities(Facility facility, Set<String> groupNames, String capabilitiesAttrName);
+	Set<String> getCapabilities(Facility facility, Set<String> groupNames, String facilityCapabilitiesAttrName,
+								String resourceCapabilitiesAttrName);
 
 	/**
-	 * Gets the facility capabilities
+	 * Gets the capabilities
 	 * @param facility Facility representing client
-	 * @param capabilitiesAttrName String name of attribute
-	 * @return set of resource capabilities assigned on facility
+	 * @param idToGnameMap Map of ID to name of the groups user is member of.
+	 * @param facilityCapabilitiesAttrName String name of attribute containing facility capabilities. Pass null for ignore.
+	 * @param resourceCapabilitiesAttrName String name of attribute containing resource capabilities. Pass null for ignore.
+	 * @return set of capabilities assigned on resources
 	 */
-	Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName);
+	Set<String> getCapabilities(Facility facility, Map<Long, String> idToGnameMap, String facilityCapabilitiesAttrName,
+								String resourceCapabilitiesAttrName);
 
 	/**
 	 * Fetch resource attribute values

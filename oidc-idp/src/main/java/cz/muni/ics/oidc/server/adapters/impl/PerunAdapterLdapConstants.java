@@ -33,6 +33,7 @@ public class PerunAdapterLdapConstants {
 
     // FACILITY
     public static final String PERUN_FACILITY = "perunFacility";
+    public static final String PERUN_FACILITY_DN = "perunFacilityDn";
     public static final String PERUN_FACILITY_ID = "perunFacilityId";
     public static final String ASSIGNED_GROUP_ID = "assignedGroupId";
     
