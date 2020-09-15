@@ -41,7 +41,6 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
 
     private final static Logger log = LoggerFactory.getLogger(PerunAccessTokenEnhancer.class);
 
-
     @Autowired
     private ConfigurationPropertiesBean configBean;
 
@@ -58,6 +57,12 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
     @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private OIDCTokenService connectTokenService;
+
+    private AccessTokenClaimsModifier accessTokenClaimsModifier;
+
+    public void setAccessTokenClaimsModifier(AccessTokenClaimsModifier accessTokenClaimsModifier) {
+        this.accessTokenClaimsModifier = accessTokenClaimsModifier;
+    }
 
     /**
      * Exact copy from ConnectTokenEnhancer with added hooks.
@@ -116,8 +121,7 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
             log.warn("Request for ID token when no user is present.");
         }
 
-
-        logHook(token, authentication);
+        this.logHook(token, authentication);
         return token;
     }
 
@@ -131,13 +135,9 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
         if (log.isDebugEnabled()) log.debug("access token: {}", token.getValue());
     }
 
-    private AccessTokenClaimsModifier accessTokenClaimsModifier;
-
-    public void setAccessTokenClaimsModifier(AccessTokenClaimsModifier accessTokenClaimsModifier) {
-        this.accessTokenClaimsModifier = accessTokenClaimsModifier;
-    }
-
-    private void accessTokenClaimsHook(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo) {
+    private void accessTokenClaimsHook(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken,
+                                       OAuth2Authentication authentication, UserInfo userInfo)
+    {
         if (accessTokenClaimsModifier != null) {
             accessTokenClaimsModifier.modifyClaims(sub, builder, accessToken, authentication, userInfo);
         }
@@ -145,14 +145,17 @@ public class PerunAccessTokenEnhancer implements TokenEnhancer {
 
     @FunctionalInterface
     public interface AccessTokenClaimsModifier {
-        void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo);
+        void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken,
+                          OAuth2Authentication authentication, UserInfo userInfo);
     }
 
     public static class NoOpAccessTokenClaimsModifier implements AccessTokenClaimsModifier {
-
         @Override
-        public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken, OAuth2Authentication authentication, UserInfo userInfo) {
+        public void modifyClaims(String sub, JWTClaimsSet.Builder builder, OAuth2AccessToken accessToken,
+                                 OAuth2Authentication authentication, UserInfo userInfo)
+        {
             log.debug("no modification");
         }
     }
+
 }

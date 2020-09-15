@@ -1,5 +1,6 @@
 package cz.muni.ics.oidc.aop;
 
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.slf4j.Logger;
 
@@ -13,26 +14,31 @@ import java.sql.Timestamp;
 public class LoggingUtils {
 
     /**
-     * Log at TRACE level start and end of method.
+     * Log at TRACE level end of method.
      * @param log Logger object.
-     * @param pjp proceeding join point.
+     * @param jp Join point.
      * @return Value returned by the methods.
-     * @throws Throwable throw exception by the method execution.
      */
-    public static Object logExecutionStartAndEnd(Logger log, ProceedingJoinPoint pjp) throws Throwable {
-        String className = pjp.getSignature().getClass().getSimpleName();
-        String methodName = pjp.getSignature().getName();
-        Object[] args = pjp.getArgs();
+    public static Object logExecutionEnd(Logger log, JoinPoint jp, Object result) {
+        String className = jp.getTarget().getClass().getName();
+        String methodName = jp.getSignature().getName();
+        Object[] args = jp.getArgs();
+        log.trace("{}.{}({}) returns: {}", className, methodName, args.length > 0 ? args : "", result);
+        return result;
+    }
 
-        log.trace("{}.{}({})", className, methodName, args.length > 0 ? args : "");
-        try {
-            Object result = pjp.proceed();
-            log.trace("{}.{}({}) returns: {}", className, methodName, args.length > 0 ? args : "", result);
-            return result;
-        } catch (Throwable e) {
-            log.warn("{}.{}({}) has thrown {}", className, methodName, args.length > 0 ? args : "", e.getClass(), e);
-            throw e;
-        }
+    /**
+     * Log at TRACE level end of method.
+     * @param log Logger object.
+     * @param jp Join point.
+     * @throws Throwable thrown exception by the method execution.
+     */
+    public static void logExecutionException(Logger log, JoinPoint jp, Throwable t) throws Throwable {
+        String className = jp.getTarget().getClass().getName();
+        String methodName = jp.getSignature().getName();
+        Object[] args = jp.getArgs();
+        log.warn("{}.{}({}) has thrown {}", className, methodName, args.length > 0 ? args : "", t.getClass(), t);
+        throw t;
     }
 
     /**

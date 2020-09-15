@@ -45,9 +45,9 @@ public abstract class PerunRequestFilter {
     private static final String CLIENT_IDS = "clientIds";
     private static final String SUBS = "subs";
 
-    private static final    RequestMatcher requestMatcher = new AntPathRequestMatcher(AUTHORIZE_REQ_PATTERN);
+    private static final RequestMatcher requestMatcher = new AntPathRequestMatcher(AUTHORIZE_REQ_PATTERN);
 
-    private String filterName;
+    private final String filterName;
     private Set<String> clientIds = new HashSet<>();
     private Set<String> subs = new HashSet<>();
 
@@ -75,9 +75,10 @@ public abstract class PerunRequestFilter {
      * @return boolean if filter was successfully done
      * @throws IOException this exception could be thrown because of failed or interrupted I/O operation
      */
-    protected abstract boolean process(ServletRequest request, ServletResponse response) throws IOException;
+    protected abstract boolean process(ServletRequest request, ServletResponse response, FilterParams params)
+            throws IOException;
 
-    public boolean doFilter(ServletRequest req, ServletResponse res) throws IOException {
+    public boolean doFilter(ServletRequest req, ServletResponse res, FilterParams params) throws IOException {
         HttpServletRequest request = (HttpServletRequest) req;
         // skip everything that's not an authorize URL
         if (!requestMatcher.matches(request)) {
@@ -86,7 +87,7 @@ public abstract class PerunRequestFilter {
         }
         if (!skip(request)) {
             log.debug("Executing filter: {}", filterName);
-            return process(req, res);
+            return this.process(req, res, params);
         } else {
             log.debug("Filter: {} has been skipped", filterName);
             return true;

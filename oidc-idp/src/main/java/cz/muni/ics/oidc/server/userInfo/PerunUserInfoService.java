@@ -51,6 +51,11 @@ public class PerunUserInfoService implements UserInfoService {
 
 	private static final Logger log = LoggerFactory.getLogger(PerunUserInfoService.class);
 
+	private static final String CUSTOM_CLAIM = "custom.claim.";
+	private static final String SOURCE = ".source";
+	private static final String CLASS = ".class";
+	private static final String MODIFIER = ".modifier";
+
 	@Autowired
 	private ClientDetailsEntityService clientService;
 
@@ -60,10 +65,7 @@ public class PerunUserInfoService implements UserInfoService {
 	@Autowired
 	private PerunOidcConfig perunOidcConfig;
 
-	private static final String CUSTOM_CLAIM = "custom.claim.";
-	private static final String SOURCE = ".source";
-	private static final String CLASS = ".class";
-	private static final String MODIFIER = ".modifier";
+	private final LoadingCache<UserClientPair, UserInfo> cache;
 
 	private PerunAdapter perunAdapter;
 	private Properties properties;
@@ -84,7 +86,7 @@ public class PerunUserInfoService implements UserInfoService {
 	private List<PerunCustomClaimDefinition> customClaims = new ArrayList<>();
 	private UserInfoModifierContext userInfoModifierContext;
 
-	private Set<String> userAttrNames = new HashSet<>();
+	private final Set<String> userAttrNames = new HashSet<>();
 
 	public void setProperties(Properties properties) {
 		this.properties = properties;
@@ -190,6 +192,10 @@ public class PerunUserInfoService implements UserInfoService {
 		this.customClaimNames = customClaimNames;
 	}
 
+	public List<PerunCustomClaimDefinition> getCustomClaims() {
+		return customClaims;
+	}
+
 	@PostConstruct
 	public void postInit() {
 		log.debug("trying to load modifier for attribute.openid.sub");
@@ -214,6 +220,54 @@ public class PerunUserInfoService implements UserInfoService {
 		}
 
 		this.userInfoModifierContext = new UserInfoModifierContext(properties, perunAdapter);
+	}
+
+	@Override
+	public UserInfo getByUsernameAndClientId(String username, String clientId) {
+		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
+		if (client == null) {
+			log.warn("did not found client with id {}", clientId);
+			return null;
+		}
+
+		UserInfo userInfo;
+		try {
+			userInfo = cache.get(new UserClientPair(username, clientId, client));
+			log.debug("loaded UserInfo from cache for '{}'/'{}'", userInfo.getName(), client.getClientName());
+			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, clientId);
+		} catch (ExecutionException e) {
+			log.error("cannot get user from cache", e);
+			return null;
+		}
+
+		return userInfo;
+	}
+
+	@Override
+	public UserInfo getByUsername(String username) {
+		UserInfo userInfo;
+		try {
+			userInfo = cache.get(new UserClientPair(username));
+			log.debug("loaded UserInfo from cache for '{}'", userInfo.getName());
+			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, null);
+		} catch (UncheckedExecutionException | ExecutionException e) {
+			log.error("cannot get user from cache", e);
+			return null;
+		}
+
+		return userInfo;
+	}
+
+	@Override
+	public UserInfo getByEmailAddress(String email) {
+		throw new RuntimeException("PerunUserInfoService.getByEmailAddress() not implemented");
+	}
+
+	public PerunUserInfoService() {
+		this.cache = CacheBuilder.newBuilder()
+				.maximumSize(100)
+				.expireAfterAccess(60, TimeUnit.SECONDS)
+				.build(cacheLoader);
 	}
 
 	private ClaimModifier loadClaimValueModifier(String propertyPrefix) {
@@ -275,60 +329,8 @@ public class PerunUserInfoService implements UserInfoService {
 		}
 	}
 
-	public List<PerunCustomClaimDefinition> getCustomClaims() {
-		return customClaims;
-	}
-
-	@Override
-	public UserInfo getByUsernameAndClientId(String username, String clientId) {
-		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
-		if (client == null) {
-			log.warn("did not found client with id {}", clientId);
-			return null;
-		}
-
-		UserInfo userInfo;
-		try {
-			userInfo = cache.get(new UserClientPair(username, clientId, client));
-			log.debug("loaded UserInfo from cache for '{}'/'{}'", userInfo.getName(), client.getClientName());
-			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, clientId);
-		} catch (ExecutionException e) {
-			log.error("cannot get user from cache", e);
-			return null;
-		}
-
-		return userInfo;
-	}
-
-	@Override
-	public UserInfo getByUsername(String username) {
-		UserInfo userInfo;
-		try {
-			userInfo = cache.get(new UserClientPair(username));
-			log.debug("loaded UserInfo from cache for '{}'", userInfo.getName());
-			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, null);
-		} catch (UncheckedExecutionException | ExecutionException e) {
-			log.error("cannot get user from cache", e);
-			return null;
-		}
-
-		return userInfo;
-	}
-
-	@Override
-	public UserInfo getByEmailAddress(String email) {
-		throw new RuntimeException("PerunUserInfoService.getByEmailAddress() not implemented");
-	}
-
-	public PerunUserInfoService() {
-		this.cache = CacheBuilder.newBuilder()
-				.maximumSize(100)
-				.expireAfterAccess(60, TimeUnit.SECONDS)
-				.build(cacheLoader);
-	}
-
 	private static class UserClientPair {
-		private long userId;
+		private final long userId;
 		private String clientId;
 		private ClientDetailsEntity client;
 
@@ -373,8 +375,6 @@ public class PerunUserInfoService implements UserInfoService {
 			return "(" + "userId=" + userId + "," + (client == null ? "null" : "client=" + clientId + " '" + client.getClientName()) + "')";
 		}
 	}
-
-	private LoadingCache<UserClientPair, UserInfo> cache;
 
 	@SuppressWarnings("FieldCanBeLocal")
 	private CacheLoader<UserClientPair, UserInfo> cacheLoader = new CacheLoader<UserClientPair, UserInfo>() {

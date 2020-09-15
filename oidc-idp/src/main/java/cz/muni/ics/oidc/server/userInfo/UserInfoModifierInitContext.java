@@ -33,4 +33,5 @@ public class UserInfoModifierInitContext {
 	public void setPerunAdapter(PerunAdapter perunAdapter) {
 		this.perunAdapter = perunAdapter;
 	}
+
 }

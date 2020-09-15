@@ -1,7 +1,8 @@
 package cz.muni.ics.oidc.aop;
 
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
+import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,9 +14,14 @@ public class ServerLoggingAspect {
 
     public static final Logger log = LoggerFactory.getLogger(ServerLoggingAspect.class);
 
-    @Around("execution(* cz.muni.ics.oidc.server..* (..))")
-    public Object logAroundMethodWithParams(ProceedingJoinPoint pjp) throws Throwable {
-        return LoggingUtils.logExecutionStartAndEnd(log, pjp);
+    @AfterReturning(value = "execution(* cz.muni.ics.oidc.server..* (..))", returning = "result")
+    public Object logAroundMethodWithParams(JoinPoint jp, Object result) {
+        return LoggingUtils.logExecutionEnd(log, jp, result);
+    }
+
+    @AfterThrowing(value = "execution(* cz.muni.ics.oidc.server..* (..))", throwing = "t")
+    public void logAroundMethodWithParams(JoinPoint jp, Throwable t) throws Throwable {
+        LoggingUtils.logExecutionException(log, jp, t);
     }
 
 }

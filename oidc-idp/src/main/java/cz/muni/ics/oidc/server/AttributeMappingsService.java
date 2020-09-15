@@ -10,8 +10,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Service providing methods to use AttributeMapping objects when fetching attributes.
@@ -40,11 +42,11 @@ public class AttributeMappingsService {
 		attributeMap = new HashMap<>();
 
 		if (attrIdentifiersFixed != null) {
-			initAttrMappings(attrIdentifiersFixed, attrMappingsProperties);
+			this.initAttrMappings(attrIdentifiersFixed, attrMappingsProperties);
 		}
 
 		if (attrIdentifiersCustom != null) {
-			initAttrMappings(attrIdentifiersCustom, attrMappingsProperties);
+			this.initAttrMappings(attrIdentifiersCustom, attrMappingsProperties);
 		}
 	}
 
@@ -54,8 +56,10 @@ public class AttributeMappingsService {
 	 * @return AttributeMapping. If invalid identifier is passed (null or unknown) an exception is thrown.
 	 */
 	public AttributeMapping getMappingByIdentifier(String identifier) {
-		if (!attributeMap.containsKey(identifier)) {
-			throw new IllegalArgumentException("Unknown identifier, check your configuration");
+		if (identifier == null) {
+			throw new IllegalArgumentException("Identifier cannot be null");
+		} else if (!attributeMap.containsKey(identifier)) {
+			return null;
 		}
 
 		return attributeMap.get(identifier);
@@ -67,8 +71,6 @@ public class AttributeMappingsService {
 	 * @return Set of AttributeMapping. If invalid identifier is passed inside the collection, this identifier is ignored.
 	 */
 	public Set<AttributeMapping> getMappingsByIdentifiers(Collection<String> identifiers) {
-		log.trace("getMappingsForAttrNames({})", identifiers);
-
 		Set<AttributeMapping> mappings = new HashSet<>();
 		if (identifiers != null) {
 			for (String identifier : identifiers) {
@@ -81,8 +83,7 @@ public class AttributeMappingsService {
 			}
 		}
 
-		log.trace("getMappingsForAttrNames({}) returns: {}", identifiers, mappings);
-		return mappings;
+		return mappings.stream().filter(Objects::nonNull).collect(Collectors.toSet());
 	}
 
 	private void initAttrMappings(String[] attributeIdentifiers, Properties attrProperties) {

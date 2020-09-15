@@ -4,32 +4,24 @@ import com.google.common.base.Strings;
 import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.server.filters.FilterParams;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
-import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
 import org.mitre.oauth2.model.ClientDetailsEntity;
-import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-
-import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_CLIENT_ID;
 
 
 /**
@@ -70,20 +62,12 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 	private final String serviceProvidersMapTableName;
 	/* END OF CONFIGURATION OPTIONS */
 
-	private final RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
-
-	private final OAuth2RequestFactory authRequestFactory;
-	private final ClientDetailsEntityService clientService;
 	private final DataSource mitreIdStats;
 	private final PerunOidcConfig config;
 
 	public ProxyStatisticsFilter(PerunRequestFilterParams params) {
 		super(params);
-
 		BeanUtil beanUtil = params.getBeanUtil();
-
-		this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
-		this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
 		this.mitreIdStats = beanUtil.getBean("mitreIdStats", DataSource.class);
 		this.config = beanUtil.getBean(PerunOidcConfig.class);
 
@@ -96,10 +80,10 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 	}
 
 	@Override
-	protected boolean process(ServletRequest req, ServletResponse res) {
+	protected boolean process(ServletRequest req, ServletResponse res, FilterParams params) {
 		HttpServletRequest request = (HttpServletRequest) req;
 
-		ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
+		ClientDetailsEntity client = params.getClient();
 		if (client == null) {
 			log.debug("Could not fetch client, skip to next filter");
 			return true;
@@ -116,16 +100,12 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		String idpEntityIdFromRequest = (String) request.getAttribute(idpEntityIdAttributeName);
 		String idpNameFromRequest = (String) request.getAttribute(idpNameAttributeName);
 
-		String idpEntityId = changeEncodingOfParam(idpEntityIdFromRequest,
-				StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8);
-		String idpName = changeEncodingOfParam(idpNameFromRequest,
-				StandardCharsets.ISO_8859_1, StandardCharsets.UTF_8);
-
+		String idpEntityId = this.changeParamEncoding(idpEntityIdFromRequest);
+		String idpName = this.changeParamEncoding(idpNameFromRequest);
 
 		String userId = request.getUserPrincipal().getName();
-		insertLogin(idpEntityId, idpName, clientIdentifier, clientName, userId);
-
-		logUserLogin(request);
+		this.insertLogin(idpEntityId, idpName, clientIdentifier, clientName, userId);
+		this.logUserLogin(idpEntityId, client, request);
 
 		return true;
 	}
@@ -214,33 +194,23 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		}
 	}
 
-	private String changeEncodingOfParam(String original, Charset source, Charset destination) {
+	private String changeParamEncoding(String original) {
 		if (original != null && !original.isEmpty()) {
-			byte[] sourceBytes = original.getBytes(source);
-			return new String(sourceBytes, destination);
+			byte[] sourceBytes = original.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+			return new String(sourceBytes, java.nio.charset.StandardCharsets.UTF_8);
 		}
 
 		return null;
 	}
 
-	private void logUserLogin(HttpServletRequest req) {
-		String clientId = req.getParameter(PARAM_CLIENT_ID);
-
-		if (clientId == null || clientId.isEmpty()) {
-			return;
-		}
-
-		ClientDetailsEntity client = clientService.loadClientByClientId(clientId);
-		if (client == null) {
-			return;
-		}
-
+	private void logUserLogin(String sourceIdp, ClientDetailsEntity client, HttpServletRequest req) {
 		PerunPrincipal perunPrincipal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
 		if (perunPrincipal == null) {
 			return;
 		}
 
 		log.info("User identity: {}, service: {}, serviceName: {}, via IdP: {}", perunPrincipal.getExtLogin(),
-				client.getClientId(), client.getClientName(), perunPrincipal.getExtSourceName() );
+				client.getClientId(), client.getClientName(), sourceIdp);
 	}
+
 }

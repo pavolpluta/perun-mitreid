@@ -6,18 +6,12 @@ import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
-import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.server.filters.FilterParams;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
-import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
-import org.mitre.oauth2.model.ClientDetailsEntity;
-import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.ServletRequest;
@@ -71,24 +65,14 @@ public class ValidUserFilter extends PerunRequestFilter {
 	private final Set<Long> prodEnvVos;
 	/* END OF CONFIGURATION OPTIONS */
 
-	private final RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
-
 	private final PerunAdapter perunAdapter;
-	private final OAuth2RequestFactory authRequestFactory;
-	private final ClientDetailsEntityService clientService;
 	private final FacilityAttrsConfig facilityAttrsConfig;
-	private final PerunOidcConfig perunOidcConfig;
 
 	public ValidUserFilter(PerunRequestFilterParams params) {
 		super(params);
-
 		BeanUtil beanUtil = params.getBeanUtil();
-
 		this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
-		this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
-		this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
 		this.facilityAttrsConfig = beanUtil.getBean(FacilityAttrsConfig.class);
-		this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
 
 		this.allEnvGroups = this.getIdsFromParam(params, ALL_ENV_GROUPS);
 		this.allEnvVos = this.getIdsFromParam(params, ALL_ENV_VOS);
@@ -99,14 +83,14 @@ public class ValidUserFilter extends PerunRequestFilter {
 	}
 
 	@Override
-	protected boolean process(ServletRequest req, ServletResponse res) {
+	protected boolean process(ServletRequest req, ServletResponse res, FilterParams params) {
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
 
 		Set<Long> additionalVos = new HashSet<>();
 		Set<Long> additionalGroups = new HashSet<>();
 
-		PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
+		PerunUser user = params.getUser();
 
 		if (user == null || user.getId() == null) {
 			log.warn("No user or his/her ID from Perun found -- found user obj = {}", user);
@@ -114,19 +98,7 @@ public class ValidUserFilter extends PerunRequestFilter {
 			return true;
 		}
 
-		ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
-		if (client == null) {
-			log.debug("Could not fetch client, skip to next filter");
-			return true;
-		}
-
-		String clientIdentifier = client.getClientId();
-		if (clientIdentifier == null) {
-			log.debug("Could not fetch client because we do not have the identifier... Skip to next filter");
-			return true;
-		}
-
-		Facility facility = perunAdapter.getFacilityByClientId(clientIdentifier);
+		Facility facility = params.getFacility();
 		if (facility != null && facility.getId() != null) {
 			PerunAttributeValue isTestSp = perunAdapter.getFacilityAttributeValue(facility.getId(), facilityAttrsConfig.getTestSpAttr());
 			log.debug("Service in test env: {}", isTestSp);
@@ -146,7 +118,7 @@ public class ValidUserFilter extends PerunRequestFilter {
 			Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(
 					facility, facilityAttrsConfig.getMembershipAttrNames());
 
-			FiltersUtils.redirectUserCannotAccess(request, response, facility, user, client.getClientId(),
+			FiltersUtils.redirectUserCannotAccess(request, response, facility, user, params.getClientIdentifier(),
 					facilityAttrsConfig, facilityAttributes, perunAdapter);
 			return false;
 		}

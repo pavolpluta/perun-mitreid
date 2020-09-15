@@ -26,16 +26,15 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthenticationUserDetailsService.class);
 
-	private static GrantedAuthority ROLE_USER = new SimpleGrantedAuthority("ROLE_USER");
-	private static GrantedAuthority ROLE_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
+	private static final GrantedAuthority ROLE_USER = new SimpleGrantedAuthority("ROLE_USER");
+	private static final GrantedAuthority ROLE_ADMIN = new SimpleGrantedAuthority("ROLE_ADMIN");
 
+	private final List<Long> adminIds = new ArrayList<>();
 	private PerunAdapter perunAdapter;
 
 	public void setPerunAdapter(PerunAdapter perunAdapter) {
 		this.perunAdapter = perunAdapter;
 	}
-
-	private List<Long> adminIds = new ArrayList<>();
 
 	public void setAdmins(List<String> admins) {
 		for (String id : admins) {
@@ -43,10 +42,6 @@ public class PerunAuthenticationUserDetailsService implements AuthenticationUser
 			adminIds.add(l);
 			log.debug("added user {} as admin", l);
 		}
-	}
-
-	public PerunAuthenticationUserDetailsService() {
-		log.info("initialized");
 	}
 
 	/**

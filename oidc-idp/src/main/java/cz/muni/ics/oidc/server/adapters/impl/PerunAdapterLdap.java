@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Strings;
 import cz.muni.ics.oidc.exceptions.InconvertibleValueException;
 import cz.muni.ics.oidc.models.AttributeMapping;
 import cz.muni.ics.oidc.models.Facility;
@@ -588,8 +587,8 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 
 	private Map<String, PerunAttributeValue> getAttributeValues(String dnPrefix, Collection<String> attrsToFetch,
 																PerunEntityType entity) {
-		Set<AttributeMapping> mappings = getMappingsForAttrNames(entity, attrsToFetch);
-		String[] attributes = getAttributesFromMappings(mappings);
+		Set<AttributeMapping> mappings = this.getMappingsForAttrNames(entity, attrsToFetch);
+		String[] attributes = this.getAttributesFromMappings(mappings);
 
 		Map<String, PerunAttributeValue> res = new HashMap<>();
 		if (attributes.length != 0) {
@@ -770,13 +769,11 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	}
 
 	private String[] getAttributesFromMappings(Set<AttributeMapping> mappings) {
-		return mappings
-				.stream()
+		return mappings.stream()
 				.map(AttributeMapping::getLdapName)
 				.distinct()
-				.filter(e -> !Strings.isNullOrEmpty(e))
 				.collect(Collectors.toList())
-				.toArray(new String[]{});
+				.toArray(new String[] {});
 	}
 
 	private Set<String> getFacilityCapabilities(Facility facility, String capabilitiesAttrName) {

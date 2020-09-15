@@ -21,9 +21,9 @@ public class UserInfoModifierContext {
 
 	private static final String MODIFIER_CLASS = ".class";
 
-	private Properties properties;
-	private PerunAdapter perunAdapter;
-	private List<UserInfoModifier> modifiers;
+	private final Properties properties;
+	private final PerunAdapter perunAdapter;
+	private final List<UserInfoModifier> modifiers;
 
 	public UserInfoModifierContext(Properties properties, PerunAdapter perunAdapter) {
 		this.properties = properties;
@@ -80,4 +80,5 @@ public class UserInfoModifierContext {
 			return null;
 		}
 	}
+
 }

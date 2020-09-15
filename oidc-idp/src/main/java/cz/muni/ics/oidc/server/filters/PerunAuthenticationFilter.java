@@ -1,8 +1,8 @@
 package cz.muni.ics.oidc.server.filters;
 
 import cz.muni.ics.oidc.models.Facility;
-import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
+import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.PerunAcrRepository;
 import cz.muni.ics.oidc.server.PerunPrincipal;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
@@ -56,41 +56,38 @@ import static org.mitre.oauth2.model.RegisteredClientFields.CLIENT_ID;
 public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessingFilter {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthenticationFilter.class);
+	private final AntPathRequestMatcher unapprovedMatcher = new AntPathRequestMatcher(
+			PerunUnapprovedController.UNAPPROVED_MAPPING);
 
-	AntPathRequestMatcher matcher = new AntPathRequestMatcher(PerunUnapprovedController.UNAPPROVED_MAPPING);
-
-	@Autowired
-	private PerunAdapter perunAdapter;
-
-	@Autowired
-	private FacilityAttrsConfig facilityAttrsConfig;
-
-	@Autowired
-	private PerunOidcConfig config;
+	private final PerunAdapter perunAdapter;
+	private final FacilityAttrsConfig facilityAttrsConfig;
+	private final PerunOidcConfig config;
+	private final PerunAcrRepository acrRepository;
 
 	@Autowired
-	private PerunAcrRepository acrRepository;
+	public PerunAuthenticationFilter(PerunAdapter perunAdapter, FacilityAttrsConfig facilityAttrsConfig,
+									 PerunOidcConfig config, PerunAcrRepository acrRepository) {
+		this.perunAdapter = perunAdapter;
+		this.facilityAttrsConfig = facilityAttrsConfig;
+		this.config = config;
+		this.acrRepository = acrRepository;
+	}
 
 	@Override
-	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse res = (HttpServletResponse) response;
 
 		PerunPrincipal principal = FiltersUtils.extractPerunPrincipal(req, config.getProxyExtSourceName());
 		String clientId = req.getParameter(CLIENT_ID);
 		String redirectURL = null;
-		if (mfaRequestedAndNotPerformedYet(req)) {
-			// MFA - go to login with forceAuthn and also add loggedOut (as otherwise it would match the ACR again)
-			log.debug("MFA requested, force login");
-			redirectURL = buildLoginURL(req, clientId, true, true);
+		if (this.mfaRequestedAndNotPerformedYet(req)) {
+			redirectURL = this.buildMfaAuthenticationUrl(req, clientId);
 		} else if (req.getParameter(PARAM_FORCE_AUTHN) != null) {
-			// FORCE AUTHENTICATION - go to login with forceAuthn, it wil get removed and will not match when returned back
-			log.debug("Force login");
-			redirectURL = buildLoginURL(req, clientId, true, false);
+			redirectURL = this.buildForceAuthenticationUrl(req, clientId);
 		} else if (principal == null || principal.getExtLogin() == null || principal.getExtSourceName() == null) {
-			// AUTHENTICATE
-			log.debug("User not logged in, redirecting to login page");
-			redirectURL = buildLoginURL(req, clientId, false, false);
+			redirectURL = this.buildAuthenticationUrl(req, clientId);
 		}
 
 		if (redirectURL != null) {
@@ -98,7 +95,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			res.sendRedirect(redirectURL);
 		} else {
 			log.debug("User is logged in");
-			if (principal == null &&  !matcher.matches(req)) {
+			if (principal == null && !unapprovedMatcher.matches(req)) {
 				//user is logged in, but we cannot find him in Perun
 				log.debug("User logged in, no principal found");
 				FiltersUtils.redirectUnapproved(req, res, clientId);
@@ -110,26 +107,17 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 					//user is logged in, but we cannot find him in Perun
 					user = null;
 				}
-
-				if (user == null && !matcher.matches(req)) {
+				if (user == null && !unapprovedMatcher.matches(req)) {
 					log.debug("User logged in, no user found in Perun for principal {}", principal);
 					FiltersUtils.redirectUnapproved(req, res, clientId);
 					return;
 				}
-
 				if (principal != null && req.getParameter(Acr.PARAM_ACR) != null) {
 					storeAcr(principal, req);
 				}
 			}
-
 			super.doFilter(request, response, chain);
 		}
-	}
-
-	private boolean mfaRequestedAndNotPerformedYet(HttpServletRequest req) {
-		return req.getParameter(Acr.PARAM_ACR) != null
-				&& req.getParameter(Acr.PARAM_ACR).contains(REFEDS_MFA)
-				&& req.getParameter(PARAM_LOGGED_OUT) == null;
 	}
 
 	/**
@@ -220,8 +208,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			}
 		}
 
-		String authnContextClassRef = joiner.toString().trim().isEmpty() ? null : joiner.toString();
-		return authnContextClassRef;
+		return joiner.toString().trim().isEmpty() ? null : joiner.toString();
 	}
 
 	private String buildStringURL(String base, Map<String, String> params) throws UnsupportedEncodingException {
@@ -254,13 +241,13 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			}
 
 			if (facility != null) {
-				filterAttributes = getFacilityFilterAttributes(facility);
+				filterAttributes = this.getFacilityFilterAttributes(facility);
 			}
 		}
 
 		String idpEntityId = null;
-		String idpFilter = extractIdpFilter(req, filterAttributes);
-		String idpEfilter = extractIdpEFilter(req, filterAttributes);
+		String idpFilter = this.extractIdpFilter(req, filterAttributes);
+		String idpEfilter = this.extractIdpEFilter(req, filterAttributes);
 
 		if (req.getParameter(PARAM_WAYF_IDP) != null) {
 			idpEntityId = req.getParameter(PARAM_WAYF_IDP);
@@ -287,7 +274,6 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	}
 
 	private String extractIdpEFilter(HttpServletRequest req, Map<String, PerunAttributeValue> filterAttributes) {
-		log.debug("extractIdpEFilter");
 		String result = null;
 		if (req.getParameter(PARAM_WAYF_EFILTER) != null) {
 			result = req.getParameter(PARAM_WAYF_EFILTER);
@@ -297,13 +283,10 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 				result = filterAttribute.valueAsString();
 			}
 		}
-
-		log.debug("extractIdpEFilter returns: {}", result);
 		return result;
 	}
 
 	private String extractIdpFilter(HttpServletRequest req, Map<String, PerunAttributeValue> filterAttributes) {
-		log.debug("extractIdpFilter");
 		String result = null;
 		if (req.getParameter(PARAM_WAYF_FILTER) != null) {
 			result = req.getParameter(PARAM_WAYF_FILTER);
@@ -314,19 +297,44 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			}
 		}
 
-		log.debug("extractIdpFilter returns: {}", result);
 		return result;
 	}
 
 	private Map<String, PerunAttributeValue> getFacilityFilterAttributes(Facility facility) {
-		log.debug("getFacilityFilterAttributes({})", facility);
-		List<String> attrsToFetch = new ArrayList<>();
-		attrsToFetch.add(facilityAttrsConfig.getWayfEFilterAttr());
-		attrsToFetch.add(facilityAttrsConfig.getWayfFilterAttr());
+		if (facility != null && facility.getId() != null) {
+			List<String> attrsToFetch = new ArrayList<>();
+			attrsToFetch.add(facilityAttrsConfig.getWayfEFilterAttr());
+			attrsToFetch.add(facilityAttrsConfig.getWayfFilterAttr());
+			return perunAdapter.getFacilityAttributeValues(facility, attrsToFetch);
+		}
+		return new HashMap<>();
+	}
 
-		Map<String, PerunAttributeValue> result = perunAdapter.getFacilityAttributeValues(facility, attrsToFetch);
-		log.debug("getFacilityFilterAttributes returns: {}", result);
-		return result;
+	private boolean mfaRequestedAndNotPerformedYet(HttpServletRequest req) {
+		return req.getParameter(Acr.PARAM_ACR) != null
+				&& req.getParameter(Acr.PARAM_ACR).contains(REFEDS_MFA)
+				&& req.getParameter(PARAM_LOGGED_OUT) == null;
+	}
+
+	private String buildMfaAuthenticationUrl(HttpServletRequest req, String clientId)
+			throws UnsupportedEncodingException
+	{
+		log.debug("MFA requested, force login");
+		return this.buildLoginURL(req, clientId, true, true);
+	}
+
+	private String buildForceAuthenticationUrl(HttpServletRequest req, String clientId)
+			throws UnsupportedEncodingException
+	{
+		log.debug("Force login");
+		return this.buildLoginURL(req, clientId, true, false);
+	}
+
+	private String buildAuthenticationUrl(HttpServletRequest req, String clientId)
+			throws UnsupportedEncodingException
+	{
+		log.debug("User not logged in, redirecting to login page");
+		return this.buildLoginURL(req, clientId, false, false);
 	}
 
 }

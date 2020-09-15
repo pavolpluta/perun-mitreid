@@ -23,18 +23,21 @@ public class PerunAuthenticationSuccessHandler implements AuthenticationSuccessH
 	private final static Logger log = LoggerFactory.getLogger(PerunAuthenticationSuccessHandler.class);
 
 	@Override
-	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+										Authentication authentication)
+	{
 		//must create timestamp
 		Date authTimestamp = new Date();
 		request.getSession().setAttribute(AUTH_TIMESTAMP, authTimestamp);
 		//just logging
-		if(authentication instanceof PreAuthenticatedAuthenticationToken) {
+		if (authentication instanceof PreAuthenticatedAuthenticationToken) {
 			PreAuthenticatedAuthenticationToken token = (PreAuthenticatedAuthenticationToken) authentication;
 			Object details = token.getDetails();
-			if(details instanceof WebAuthenticationDetails) {
+			if (details instanceof WebAuthenticationDetails) {
 				WebAuthenticationDetails webDetails = (WebAuthenticationDetails) details;
-				log.info("successful authentication, remote IP address {}",webDetails.getRemoteAddress());
+				log.info("successful authentication, remote IP address {}", webDetails.getRemoteAddress());
 			}
 		}
 	}
+
 }

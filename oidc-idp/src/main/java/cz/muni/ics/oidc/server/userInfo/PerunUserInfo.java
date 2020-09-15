@@ -22,17 +22,16 @@ public class PerunUserInfo extends DefaultUserInfo {
 
 	private final static Logger log = LoggerFactory.getLogger(PerunUserInfo.class);
 
-	private Map<String, JsonNode> customClaims = new LinkedHashMap<>();
+	private final Map<String, JsonNode> customClaims = new LinkedHashMap<>();
+	private JsonObject obj;
 
 	public Map<String, JsonNode> getCustomClaims() {
 		return customClaims;
 	}
 
-	private JsonObject obj;
-
 	@Override
 	public JsonObject toJson() {
-		if(obj==null) {
+		if (obj == null) {
 			//delegate standard claims to DefaultUserInfo
 			obj = super.toJson();
 			//add custom claims

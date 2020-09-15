@@ -7,9 +7,9 @@ package cz.muni.ics.oidc.server.connectors;
  */
 public class Affiliation {
 
-	private String source;
-	private String value;
-	private long asserted;
+	private final String source;
+	private final String value;
+	private final long asserted;
 
 	public Affiliation(String source, String value, long asserted) {
 		this.source = source;
@@ -37,4 +37,5 @@ public class Affiliation {
 				", asserted=" + asserted +
 				'}';
 	}
+
 }

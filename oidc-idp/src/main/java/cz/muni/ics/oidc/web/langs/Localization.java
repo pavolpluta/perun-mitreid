@@ -28,13 +28,13 @@ public class Localization {
 
 	private Map<String, String> localizationEntries;
 	private Map<String, Properties> localizationFiles;
-	private String localizationFilesPath;
-	private List<String> enabledLanguages;
+	private final String localizationFilesPath;
+	private final List<String> enabledLanguages;
 
 	public Localization(PerunOidcConfig perunOidcConfig) {
 		this.enabledLanguages = perunOidcConfig.getAvailableLangs();
 		this.localizationFilesPath = perunOidcConfig.getLocalizationFilesPath();
-		initEntriesAndFiles();
+		this.initEntriesAndFiles();
 	}
 
 	public Map<String, String> getLocalizationEntries() {

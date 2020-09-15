@@ -19,7 +19,9 @@ public class MDCFilter extends GenericFilterBean {
     private static final String SESSION_ID = "sessionID";
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+            throws IOException, ServletException
+    {
         try {
             HttpServletRequest req = (HttpServletRequest) servletRequest;
             if (req.getSession() != null) {

@@ -1,7 +1,6 @@
 <configuration packagingData="true" debug="false" scan="false" scanPeriod="30 seconds">
 	<contextName>${log.contextName}</contextName>
-	<property name="PATTERN"
-			  value="[%X{sessionID}] %cn : %-5level %logger{40} - %m%n%xException" />
+	<property name="PATTERN" value="[%X{sessionID}] %cn : %-5level %logger{40} - %m%n%xException" />
 
 	<!-- ROLLING FILE -->
 	<appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -103,6 +102,7 @@
 	<logger name="org.mitre" level="info"/>
 	<!-- PASSED FROM POM.XML / MAVEN BUILD PROPS -->
 	<logger name="cz.muni.ics.oidc" level="${log.level}"/>
+	<logger name="cz.muni.ics.oidc.aop.WebLoggingAspect" level="debug"/>
 	<logger name="cz.muni.ics.oidc.aop.ExecutionTimeLoggingAspect" level="trace">
 		<if condition='!"${log.to}".equalsIgnoreCase("SYSLOG")'>
 			<then>

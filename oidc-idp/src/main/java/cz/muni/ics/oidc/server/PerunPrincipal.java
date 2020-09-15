@@ -8,8 +8,8 @@ package cz.muni.ics.oidc.server;
  */
 public class PerunPrincipal {
 
-	private String extLogin;
-	private String extSourceName;
+	private final String extLogin;
+	private final String extSourceName;
 
 	public PerunPrincipal(String extLogin, String extSourceName) {
 		this.extLogin = extLogin;
@@ -31,4 +31,5 @@ public class PerunPrincipal {
 				", extSourceName='" + extSourceName + '\'' +
 				'}';
 	}
+
 }

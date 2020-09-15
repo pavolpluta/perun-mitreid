@@ -24,9 +24,8 @@ public class FacilityAttrsConfig {
 	private String wayfFilterAttr;
 	private String wayfEFilterAttr;
 	private String testSpAttr;
-
-	private Set<String> membershipAttrNames = new HashSet<>();
-	private Set<String> filterAttrNames = new HashSet<>();
+	private final Set<String> membershipAttrNames = new HashSet<>();
+	private final Set<String> filterAttrNames = new HashSet<>();
 
 	public String getCheckGroupMembershipAttr() {
 		return checkGroupMembershipAttr;
@@ -126,4 +125,5 @@ public class FacilityAttrsConfig {
 		log.info("IDP E-Filter attr mapped to urn: {}", wayfEFilterAttr);
 		log.info("Test SP attr mapped to urn: {}", testSpAttr);
 	}
+
 }

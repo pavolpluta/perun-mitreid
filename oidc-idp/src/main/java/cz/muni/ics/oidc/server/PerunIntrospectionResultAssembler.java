@@ -23,25 +23,30 @@ public class PerunIntrospectionResultAssembler extends DefaultIntrospectionResul
 
 	private final static Logger log = LoggerFactory.getLogger(PerunIntrospectionResultAssembler.class);
 
-	public PerunIntrospectionResultAssembler(ConfigurationPropertiesBean configBean, ScopeClaimTranslationService translator) {
+	private final ConfigurationPropertiesBean configBean;
+	private final ScopeClaimTranslationService translator;
+
+	public PerunIntrospectionResultAssembler(ConfigurationPropertiesBean configBean,
+											 ScopeClaimTranslationService translator)
+	{
 		this.configBean = configBean;
 		this.translator = translator;
 	}
 
-	private ConfigurationPropertiesBean configBean;
-	private ScopeClaimTranslationService translator;
-
 	@Override
-	public Map<String, Object> assembleFrom(OAuth2AccessTokenEntity accessToken, UserInfo userInfo, Set<String> resourceServerScopes) {
+	public Map<String, Object> assembleFrom(OAuth2AccessTokenEntity accessToken, UserInfo userInfo,
+											Set<String> resourceServerScopes)
+	{
 		log.info("adding claims at Introspection endpoint for client {}({}) and user {}({})",
-				accessToken.getClient().getClientId(), accessToken.getClient().getClientName(), userInfo.getSub(), userInfo.getName());
+				accessToken.getClient().getClientId(), accessToken.getClient().getClientName(), userInfo.getSub(),
+				userInfo.getName());
 		Map<String, Object> map = super.assembleFrom(accessToken, userInfo, resourceServerScopes);
 		Set<String> accessTokenScopes = accessToken.getScope();
 		Set<String> scopes = Sets.intersection(resourceServerScopes, accessTokenScopes);
 		log.debug("resource server scopes: {}", resourceServerScopes);
 		log.debug("access token scopes   : {}", accessTokenScopes);
 		log.debug("common scopes         : {}", scopes);
-		addDataToResponse(map, userInfo, scopes);
+		this.addDataToResponse(map, userInfo, scopes);
 		return map;
 	}
 

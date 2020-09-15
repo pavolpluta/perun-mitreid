@@ -9,18 +9,13 @@ import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.server.filters.FilterParams;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
-import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
 import cz.muni.ics.oidc.web.controllers.AupController;
-import org.mitre.oauth2.model.ClientDetailsEntity;
-import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.oauth2.provider.OAuth2RequestFactory;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -75,21 +70,14 @@ public class PerunForceAupFilter extends PerunRequestFilter {
     private final String perunFacilityVoShortNamesAttrName;
     /* END OF CONFIGURATION PROPERTIES */
 
-    private final RequestMatcher requestMatcher = new AntPathRequestMatcher(PerunFilterConstants.AUTHORIZE_REQ_PATTERN);
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private final OAuth2RequestFactory authRequestFactory;
-    private final ClientDetailsEntityService clientService;
     private final PerunAdapter perunAdapter;
     private final PerunOidcConfig perunOidcConfig;
 
     public PerunForceAupFilter(PerunRequestFilterParams params) {
         super(params);
-
         BeanUtil beanUtil = params.getBeanUtil();
-
-        this.authRequestFactory = beanUtil.getBean(OAuth2RequestFactory.class);
-        this.clientService = beanUtil.getBean(ClientDetailsEntityService.class);
         this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
         this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
 
@@ -101,7 +89,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
     }
 
     @Override
-    protected boolean process(ServletRequest req, ServletResponse res) throws IOException {
+    protected boolean process(ServletRequest req, ServletResponse res, FilterParams params) throws IOException {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
@@ -112,23 +100,14 @@ public class PerunForceAupFilter extends PerunRequestFilter {
             return true;
         }
 
-        ClientDetailsEntity client = FiltersUtils.extractClient(requestMatcher, request, authRequestFactory, clientService);
-        if (client == null) {
-            log.warn("Could not extract client");
-            log.debug("Skipping to next filter");
-            return true;
-        }
-
-        String clientIdentifier = client.getClientId();
-
-        Facility facility = perunAdapter.getFacilityByClientId(clientIdentifier);
+        Facility facility = params.getFacility();
         if (facility == null) {
-            log.warn("Could not find facility with clientID: {}", clientIdentifier);
             log.debug("Skipping to next filter");
             return true;
         }
 
-        List<String> attrsToFetch = new ArrayList<>(Arrays.asList(perunFacilityRequestedAupsAttrName, perunFacilityVoShortNamesAttrName));
+        List<String> attrsToFetch = new ArrayList<>(
+                Arrays.asList(perunFacilityRequestedAupsAttrName, perunFacilityVoShortNamesAttrName));
         Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(facility, attrsToFetch);
 
         if (facilityAttributes == null) {

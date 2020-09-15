@@ -4,13 +4,14 @@ import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
-import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.server.filters.FilterParams;
 import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
 import cz.muni.ics.oidc.web.controllers.ControllerUtils;
 import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
+import org.apache.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,16 +62,11 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
     /* END OF CONFIGURATION PROPERTIES */
 
     private final PerunAdapter perunAdapter;
-    private final PerunOidcConfig perunOidcConfig;
 
     public PerunIsCesnetEligibleFilter(PerunRequestFilterParams params) {
         super(params);
-
         BeanUtil beanUtil = params.getBeanUtil();
-
         this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
-        this.perunOidcConfig = beanUtil.getBean(PerunOidcConfig.class);
-
         this.isCesnetEligibleAttrName = params.getProperty(IS_CESNET_ELIGIBLE_ATTR_NAME);
         this.isCesnetEligibleScope = params.getProperty(IS_CESNET_ELIGIBLE_SCOPE);
         int validityPeriodParam = 12;
@@ -86,7 +82,7 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
     }
 
     @Override
-    protected boolean process(ServletRequest req, ServletResponse res) {
+    protected boolean process(ServletRequest req, ServletResponse res, FilterParams params) {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
@@ -96,14 +92,13 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
             return true;
         }
 
-        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
+        PerunUser user = params.getUser();
         if (user == null) {
             log.warn("Could not extract user from request, skip to the next filter");
             return true;
         }
 
-        String reason;
-
+        String reason = REASON_NOT_SET;
         PerunAttributeValue attrValue = perunAdapter.getUserAttributeValue(user.getId(), isCesnetEligibleAttrName);
         if (attrValue != null) {
             LocalDateTime timeStamp;
@@ -122,21 +117,17 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
             } else {
                 reason = REASON_EXPIRED;
             }
-        } else {
-            reason = REASON_NOT_SET;
         }
 
         log.debug("Value of the attribute is invalid, redirecting to unauthorized");
-        redirect(request, response, reason);
-
+        this.redirect(request, response, reason);
         return false;
     }
 
     private void redirect(HttpServletRequest req, HttpServletResponse res, String reason) {
         Map<String, String> params = new HashMap<>();
 
-        String targetURL = FiltersUtils.buildRequestURL(req,
-                Collections.singletonMap(PARAM_FORCE_AUTHN, "true"));
+        String targetURL = FiltersUtils.buildRequestURL(req, Collections.singletonMap(PARAM_FORCE_AUTHN, "true"));
         params.put(PARAM_TARGET, targetURL);
         params.put(PARAM_REASON, reason);
 
@@ -144,7 +135,7 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
                 PerunUnapprovedController.UNAPPROVED_IS_CESNET_ELIGIBLE_MAPPING, params);
         res.reset();
         res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-        res.setHeader("Location", redirectUrl);
+        res.setHeader(HttpHeaders.LOCATION, redirectUrl);
     }
 
 }

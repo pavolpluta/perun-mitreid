@@ -1,8 +1,6 @@
 package cz.muni.ics.oidc.server;
 
 import org.mitre.openid.connect.models.Acr;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +16,8 @@ import java.time.Instant;
  * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
  */
 @Repository
-@Transactional(value="defaultTransactionManager")
+@Transactional(value = "defaultTransactionManager")
 public class PerunAcrRepository {
-
-	private static final Logger log = LoggerFactory.getLogger(PerunAcrRepository.class);
 
 	@PersistenceContext(unitName="defaultPersistenceUnit")
 	private EntityManager manager;
@@ -68,4 +64,5 @@ public class PerunAcrRepository {
 		query.setParameter(Acr.PARAM_EXPIRES_AT, Instant.now().toEpochMilli());
 		query.executeUpdate();
 	}
+
 }

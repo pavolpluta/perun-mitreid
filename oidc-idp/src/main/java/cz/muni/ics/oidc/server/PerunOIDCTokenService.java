@@ -32,19 +32,26 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 	private static final Logger log = LoggerFactory.getLogger(PerunOIDCTokenService.class);
 
 	@Autowired
-	private UserInfoService userInfoService;
+	private final UserInfoService userInfoService;
+	private final ScopeClaimTranslationService translator;
+	private final PerunOidcConfig perunOidcConfig;
+	private final PerunAcrRepository acrRepository;
 
-	@Autowired
-	private ScopeClaimTranslationService translator;
+	private final Gson gson = new Gson();
 
-	@Autowired
-	private PerunOidcConfig perunOidcConfig;
-
-	@Autowired
-	private PerunAcrRepository acrRepository;
+	public PerunOIDCTokenService(UserInfoService userInfoService, ScopeClaimTranslationService translator,
+								 PerunOidcConfig perunOidcConfig, PerunAcrRepository acrRepository)
+	{
+		this.userInfoService = userInfoService;
+		this.translator = translator;
+		this.perunOidcConfig = perunOidcConfig;
+		this.acrRepository = acrRepository;
+	}
 
 	@Override
-	protected void addCustomIdTokenClaims(JWTClaimsSet.Builder idClaims, ClientDetailsEntity client, OAuth2Request request, String sub, OAuth2AccessTokenEntity accessToken) {
+	protected void addCustomIdTokenClaims(JWTClaimsSet.Builder idClaims, ClientDetailsEntity client, OAuth2Request request,
+										  String sub, OAuth2AccessTokenEntity accessToken)
+	{
 		log.debug("modifying ID token");
 		String userId = accessToken.getAuthenticationHolder().getAuthentication().getName();
 		String clientId = request.getClientId();
@@ -54,10 +61,13 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 		Set<String> authorizedClaims = translator.getClaimsForScopeSet(scopes);
 		Set<String> idTokenClaims = translator.getClaimsForScopeSet(perunOidcConfig.getIdTokenScopes());
 
-		for (Map.Entry<String, JsonElement> claim : userInfoService.getByUsernameAndClientId(userId, clientId).toJson().entrySet()) {
+		for (Map.Entry<String, JsonElement> claim : userInfoService.getByUsernameAndClientId(userId,
+				clientId).toJson().entrySet()) {
 			String claimKey = claim.getKey();
 			JsonElement claimValue = claim.getValue();
-			if (claimValue != null && !claimValue.isJsonNull() && authorizedClaims.contains(claimKey) && idTokenClaims.contains(claimKey)) {
+			if (claimValue != null && !claimValue.isJsonNull() && authorizedClaims.contains(claimKey)
+					&& idTokenClaims.contains(claimKey))
+			{
 				log.debug("adding to ID token claim {} with value {}", claimKey, claimValue);
 				idClaims.claim(claimKey, gson2jsonsmart(claimValue));
 			}
@@ -85,8 +95,6 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 
 		return authnContextClass;
 	}
-
-	private Gson gson = new Gson();
 
 	/**
 	 * Converts claim values from com.google.gson.JsonElement to net.minidev.json.JSONObject or primitive value

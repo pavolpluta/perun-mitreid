@@ -79,9 +79,6 @@ public class PerunConnectorLdap implements DisposableBean {
 		return config;
 	}
 
-	/**
-	 * Invoked by a BeanFactory on destruction of a Spring bean.
-	 */
 	@Override
 	public void destroy() {
 		if (!pool.isClosed()) {
@@ -91,25 +88,25 @@ public class PerunConnectorLdap implements DisposableBean {
 
 	/**
 	 * Search for the first entry that satisfies criteria.
-	 * @param dnPrefix Prefix to be added to the base DN. (i.e. ou=People)
-	 *                 ! DO NOT END WITH A COMMA !
+	 * @param dnPrefix Prefix to be added to the base DN. (i.e. ou=People) !DO NOT END WITH A COMMA!
 	 * @param filter Filter for entries
-	 * @param scope Seearch scope
+	 * @param scope Search scope
 	 * @param attributes Attributes to be fetch for entry
 	 * @param entryMapper Mapper of entries to the target class T
 	 * @param <T> Class that the result should be mapped to.
 	 * @return Found entry mapped to target class
 	 */
 	@LogTimes
-	public <T> T searchFirst(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes, EntryMapper<T> entryMapper) {
+	public <T> T searchFirst(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes,
+							 EntryMapper<T> entryMapper)
+	{
 		Dn fullDn = getFullDn(dnPrefix);
 		return ldap.searchFirst(fullDn, filter, scope, attributes, entryMapper);
 	}
 
 	/**
 	 * Perform lookup for the entry that satisfies criteria.
-	 * @param dnPrefix Prefix to be added to the base DN. (i.e. ou=People)
-	 *                 ! DO NOT END WITH A COMMA !
+	 * @param dnPrefix Prefix to be added to the base DN. (i.e. ou=People) !DO NOT END WITH A COMMA!
 	 * @param attributes Attributes to be fetch for entry
 	 * @param entryMapper Mapper of entries to the target class T
 	 * @param <T> Class that the result should be mapped to.
@@ -123,17 +120,18 @@ public class PerunConnectorLdap implements DisposableBean {
 
 	/**
 	 * Search for the entries satisfy criteria.
-	 * @param dnPrefix Prefix to be added to the base DN. (i.e. ou=People)
-	 *                 ! DO NOT END WITH A COMMA !
+	 * @param dnPrefix Prefix to be added to the base DN. (i.e. ou=People) !DO NOT END WITH A COMMA!
 	 * @param filter Filter for entries
-	 * @param scope Seearch scope
+	 * @param scope Search scope
 	 * @param attributes Attributes to be fetch for entry
 	 * @param entryMapper Mapper of entries to the target class T
 	 * @param <T> Class that the result should be mapped to.
 	 * @return List of found entries mapped to target class
 	 */
 	@LogTimes
-	public <T> List<T> search(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes, EntryMapper<T> entryMapper) {
+	public <T> List<T> search(String dnPrefix, FilterBuilder filter, SearchScope scope, String[] attributes,
+							  EntryMapper<T> entryMapper)
+	{
 		Dn fullDn = getFullDn(dnPrefix);
 		return ldap.search(fullDn, filter, scope, attributes, entryMapper);
 	}
@@ -146,4 +144,5 @@ public class PerunConnectorLdap implements DisposableBean {
 
 		return ldap.newDn(dn);
 	}
+
 }
