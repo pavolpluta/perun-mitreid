@@ -23,6 +23,7 @@ public class FacilityAttrsConfig {
 	private String voShortNamesAttr;
 	private String wayfFilterAttr;
 	private String wayfEFilterAttr;
+	private String testSpAttr;
 
 	private Set<String> membershipAttrNames = new HashSet<>();
 	private Set<String> filterAttrNames = new HashSet<>();
@@ -105,6 +106,14 @@ public class FacilityAttrsConfig {
 		return filterAttrNames;
 	}
 
+	public String getTestSpAttr() {
+		return testSpAttr;
+	}
+
+	public void setTestSpAttr(String testSpAttr) {
+		this.testSpAttr = testSpAttr;
+	}
+
 	@PostConstruct
 	public void postInit() {
 		log.info("Facility attributes initialized");
@@ -115,5 +124,6 @@ public class FacilityAttrsConfig {
 		log.info("Vo short names attr mapped to urn: {}", voShortNamesAttr);
 		log.info("IDP Filter attr mapped to urn: {}", wayfFilterAttr);
 		log.info("IDP E-Filter attr mapped to urn: {}", wayfEFilterAttr);
+		log.info("Test SP attr mapped to urn: {}", testSpAttr);
 	}
 }

@@ -359,4 +359,20 @@ public class PerunAdapterImpl extends PerunAdapter {
             }
         }
     }
+
+    @Override
+    public boolean isValidMemberInGroupsAndVos(Long userId, Set<Long> mandatoryVos, Set<Long> mandatoryGroups,
+                                               Set<Long> envVos, Set<Long> envGroups) {
+        try {
+            return this.getAdapterPrimary().isValidMemberInGroupsAndVos(userId, mandatoryVos, mandatoryGroups,
+                    envVos, envGroups);
+        } catch (UnsupportedOperationException e) {
+            if (this.isCallFallback()) {
+                return this.getAdapterFallback().isValidMemberInGroupsAndVos(userId, mandatoryVos, mandatoryGroups,
+                        envVos, envGroups);
+            } else {
+                throw e;
+            }
+        }
+    }
 }

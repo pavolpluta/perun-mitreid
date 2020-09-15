@@ -16,6 +16,7 @@ import cz.muni.ics.oidc.models.Vo;
 import cz.muni.ics.oidc.models.enums.PerunAttrValueType;
 import cz.muni.ics.oidc.models.enums.PerunEntityType;
 import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.adapters.PerunAdapterMethods;
 import cz.muni.ics.oidc.server.adapters.PerunAdapterMethodsLdap;
 import cz.muni.ics.oidc.server.connectors.Affiliation;
@@ -454,6 +455,35 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 		return getGroupIdsWhereUserIsMember(userId, voId);
 	}
 
+	@Override
+	public boolean isValidMemberInGroupsAndVos(Long userId, Set<Long> mandatoryVos, Set<Long> mandatoryGroups,
+											   Set<Long> envVos, Set<Long> envGroups) {
+		final Set<Long> foundGroupIds = new HashSet<>();
+		final Set<Long> foundVoIds = new HashSet<>();
+		String dnPrefix = getDnPrefixForUserId(userId);
+		String[] attributes = new String[] { MEMBER_OF };
+		EntryMapper<Void> mapper = e -> {
+			if (checkHasAttributes(e, attributes)) {
+				Attribute a = e.get(MEMBER_OF);
+				a.iterator().forEachRemaining(id -> {
+					String fullVal = id.getString();
+					String[] parts = fullVal.split(",", 3);
+
+					String groupId = parts[0];
+					groupId = groupId.replace(PERUN_GROUP_ID + '=', "");
+					foundGroupIds.add(Long.parseLong(groupId));
+					String voIdStr = parts[1];
+					voIdStr = voIdStr.replace(PERUN_VO_ID + '=', "");
+					foundVoIds.add(Long.parseLong(voIdStr));
+				});
+			}
+			return null;
+		};
+		connectorLdap.lookup(dnPrefix, attributes, mapper);
+
+		return PerunAdapter.decideAccess(foundVoIds, foundGroupIds, mandatoryVos, mandatoryGroups, envVos, envGroups);
+	}
+
 	private List<Group> getGroups(Collection<?> objects, String objectAttribute) {
 		List<Group> result;
 		if (objects == null || objects.size() <= 0) {
@@ -503,7 +533,7 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	}
 
 	private Set<Long> getGroupIdsWhereUserIsMember(Long userId, Long voId) {
-		FilterBuilder filter = and(equal(OBJECT_CLASS, PERUN_USER),equal(PERUN_USER_ID, String.valueOf(userId)));
+		String dnPrefix = getDnPrefixForUserId(userId);
 		String[] attributes = new String[] { MEMBER_OF };
 		EntryMapper<Set<Long>> mapper = e -> {
 			Set<Long> ids = new HashSet<>();
@@ -519,8 +549,8 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 					String voIdStr = parts[1];
 					voIdStr = voIdStr.replace(PERUN_VO_ID + '=', "");
 
-					if (voId == null || voId.equals(Long.valueOf(voIdStr))) {
-						ids.add(Long.valueOf(groupId));
+					if (voId == null || voId.equals(Long.parseLong(voIdStr))) {
+						ids.add(Long.parseLong(groupId));
 					}
 				});
 			}
@@ -528,8 +558,11 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 			return ids;
 		};
 
-		List<Set<Long>> memberGroupIdsAll = connectorLdap.search(null, filter, SearchScope.SUBTREE, attributes, mapper);
-		return memberGroupIdsAll.stream().flatMap(Set::stream).collect(Collectors.toSet());
+		return connectorLdap.lookup(dnPrefix, attributes, mapper);
+	}
+
+	private String getDnPrefixForUserId(Long userId) {
+		return PERUN_USER_ID + '=' + userId + ",ou=People";
 	}
 
 	private Set<Long> getGroupIdsWithAccessToFacility(Long facilityId) {

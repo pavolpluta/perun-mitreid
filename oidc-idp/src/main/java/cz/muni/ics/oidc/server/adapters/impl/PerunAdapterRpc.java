@@ -6,6 +6,7 @@ import cz.muni.ics.oidc.models.AttributeMapping;
 import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Member;
+import cz.muni.ics.oidc.models.Model;
 import cz.muni.ics.oidc.models.PerunAttribute;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
@@ -16,6 +17,7 @@ import cz.muni.ics.oidc.models.enums.MemberStatus;
 import cz.muni.ics.oidc.models.enums.PerunEntityType;
 import cz.muni.ics.oidc.models.mappers.RpcMapper;
 import cz.muni.ics.oidc.server.PerunPrincipal;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.adapters.PerunAdapterMethods;
 import cz.muni.ics.oidc.server.adapters.PerunAdapterMethodsRpc;
 import cz.muni.ics.oidc.server.connectors.Affiliation;
@@ -851,6 +853,25 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		}
 
 		return groups;
+	}
+
+	@Override
+	public boolean isValidMemberInGroupsAndVos(Long userId, Set<Long> mandatoryVos, Set<Long> mandatoryGroups,
+											   Set<Long> envVos, Set<Long> envGroups) {
+		List<Member> members = getMembersByUser(userId);
+		Set<Long> foundVoIds = new HashSet<>();
+		Set<Long> foundGroupIds = new HashSet<>();
+		boolean skipGroups = mandatoryGroups.isEmpty() && envGroups.isEmpty();
+		for (Member m: members) {
+			if (MemberStatus.VALID.equals(m.getStatus())) {
+				foundVoIds.add(m.getVoId());
+			}
+			if (!skipGroups) {
+				foundGroupIds.addAll(getMemberGroups(m.getId()).stream().map(Model::getId).collect(Collectors.toList()));
+			}
+		}
+
+		return PerunAdapter.decideAccess(foundVoIds, foundGroupIds, mandatoryVos, mandatoryGroups, envVos, envGroups);
 	}
 
 	private Member getMemberByUser(Long userId, Long voId) {

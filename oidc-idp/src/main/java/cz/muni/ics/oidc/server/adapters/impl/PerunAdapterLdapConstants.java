@@ -26,6 +26,7 @@ public class PerunAdapterLdapConstants {
     // VO
     public static final String PERUN_VO = "perunVO";
     public static final String PERUN_VO_ID = "perunVoId";
+    public static final String MEMBER_OF_PERUN_VO = "memberOfPerunVo";
 
     // RESOURCE
     public static final String PERUN_RESOURCE = "perunResource";

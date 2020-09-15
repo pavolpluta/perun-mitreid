@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - logging at TRACE level via the Aspects
+- implemented new filter which decides if user can access the service or not
+  - no matter if service has requested check, this filter is run always if configured
+- logging at TRACE level via the Aspects 
 ### Changed
 - refactored AttributeMappingsService
 - appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined

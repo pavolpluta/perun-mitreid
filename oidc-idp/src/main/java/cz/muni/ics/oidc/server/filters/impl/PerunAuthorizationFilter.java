@@ -2,7 +2,6 @@ package cz.muni.ics.oidc.server.filters.impl;
 
 import cz.muni.ics.oidc.BeanUtil;
 import cz.muni.ics.oidc.models.Facility;
-import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.configurations.FacilityAttrsConfig;
@@ -11,9 +10,6 @@ import cz.muni.ics.oidc.server.filters.FiltersUtils;
 import cz.muni.ics.oidc.server.filters.PerunFilterConstants;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilter;
 import cz.muni.ics.oidc.server.filters.PerunRequestFilterParams;
-import cz.muni.ics.oidc.web.controllers.ControllerUtils;
-import cz.muni.ics.oidc.web.controllers.PerunUnapprovedController;
-import cz.muni.ics.oidc.web.controllers.PerunUnapprovedRegistrationController;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
 import org.slf4j.Logger;
@@ -26,12 +22,6 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Authorization filter. Decides if user can access the service based on his/hers
@@ -80,6 +70,10 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 		}
 
 		String clientIdentifier = client.getClientId();
+		if (clientIdentifier == null) {
+			log.debug("Could not fetch client because we do not have the identifier... Skip to next filter");
+			return true;
+		}
 
 		Facility facility = perunAdapter.getFacilityByClientId(clientIdentifier);
 		if (facility == null) {
@@ -95,94 +89,7 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 			return true;
 		}
 
-		return decideAccess(facility, user, request, response, clientIdentifier);
-	}
-
-	private boolean decideAccess(Facility facility, PerunUser user, HttpServletRequest request,
-								 HttpServletResponse response, String clientIdentifier) {
-		Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(
-				facility, facilityAttrsConfig.getMembershipAttrNames());
-
-		if (! facilityAttributes.get(facilityAttrsConfig.getCheckGroupMembershipAttr()).valueAsBoolean()) {
-			log.debug("Membership check not requested, skipping filter");
-			return true;
-		}
-
-		boolean canAccess = perunAdapter.canUserAccessBasedOnMembership(facility, user.getId());
-		if (canAccess) {
-			// allow access, continue with chain
-			log.info("User allowed to access the service");
-			return true;
-		} else if (facilityAttributes.get(facilityAttrsConfig.getAllowRegistrationAttr()).valueAsBoolean()) {
-			log.info("User not allowed to access the service");
-			boolean canRegister = perunAdapter.getAdapterRpc().groupWhereCanRegisterExists(facility);
-			if (canRegister) {
-				PerunAttributeValue customRegUrlAttr = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr());
-				if (customRegUrlAttr != null && customRegUrlAttr.getValue()!= null) {
-					String customRegUrl = facilityAttributes.get(
-							facilityAttrsConfig.getRegistrationURLAttr()).valueAsString();
-					customRegUrl = validateUrl(customRegUrl);
-					if (customRegUrl != null) {
-						// redirect to custom registration URL
-						log.debug("Redirect to custom registration URL: {}", customRegUrl);
-						response.reset();
-						response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-						response.setHeader("Location", customRegUrl);
-						return false;
-					}
-				}
-
-				if (facilityAttributes.get(facilityAttrsConfig.getDynamicRegistrationAttr()).valueAsBoolean()) {
-					// redirect to registration form
-					log.debug("Redirect to registration form");
-					Map<String, String> params = new HashMap<>();
-					params.put("client_id", clientIdentifier);
-					params.put("facility_id", facility.getId().toString());
-					params.put("user_id", String.valueOf(user.getId()));
-					String redirectUrl = ControllerUtils.createRedirectUrl(request, PerunFilterConstants.AUTHORIZE_REQ_PATTERN,
-							PerunUnapprovedRegistrationController.REGISTRATION_CONTINUE_MAPPING, params);
-					response.reset();
-					response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-					response.setHeader("Location", redirectUrl);
-					return false;
-				}
-			}
-		}
-
-		// cannot register, redirect to unapproved
-		log.debug("redirect to unapproved");
-		FiltersUtils.redirectUnapproved(request, response, clientIdentifier);
-		return false;
-	}
-
-	private String validateUrl(String customRegUrl) {
-		if (customRegUrl == null || customRegUrl.isEmpty()) {
-			return null;
-		}
-
-		if (!customRegUrl.startsWith("http://") && !customRegUrl.startsWith("https://")) {
-			customRegUrl = "https://" + customRegUrl;
-		}
-
-		try {
-			URL url = new URL(customRegUrl);
-			URLConnection conn = url.openConnection();
-			conn.connect();
-			return customRegUrl;
-		} catch (IOException e) {
-			//this is ok, we can try to replace https:// with http://
-		}
-
-		customRegUrl = customRegUrl.replace("https://", "http://");
-
-		try {
-			URL url = new URL(customRegUrl);
-			URLConnection conn = url.openConnection();
-			conn.connect();
-			return customRegUrl;
-		} catch (IOException e) {
-			return null;
-		}
+		return FiltersUtils.decideAccess(facility, user, request, response, clientIdentifier, perunAdapter, facilityAttrsConfig);
 	}
 
 }

@@ -1,5 +1,8 @@
 package cz.muni.ics.oidc.server.adapters;
 
+import java.util.Collections;
+import java.util.Set;
+
 /**
  * Interface for getting data from Perun interfaces.
  * Used for fetching necessary data about users, services etc.
@@ -55,6 +58,25 @@ public abstract class PerunAdapter implements PerunAdapterMethods {
 
 	public void setCallFallback(boolean callFallback) {
 		this.callFallback = callFallback;
+	}
+
+	public static boolean decideAccess(Set<Long> foundVoIds, Set<Long> foundGroupIds, Set<Long> mandatoryVos,
+									   Set<Long> mandatoryGroups, Set<Long> envVos, Set<Long> envGroups) {
+		boolean res = true;
+		if (!mandatoryVos.isEmpty()) {
+			res = !Collections.disjoint(foundVoIds, mandatoryVos);
+		}
+		if (!mandatoryGroups.isEmpty()) {
+			res = res && !Collections.disjoint(foundGroupIds, mandatoryGroups);
+		}
+		if (!envVos.isEmpty()) {
+			res = res && !Collections.disjoint(foundVoIds, envVos);
+		}
+		if (!envGroups.isEmpty()) {
+			res = res && !Collections.disjoint(foundGroupIds, envGroups);
+		}
+
+		return res;
 	}
 
 }

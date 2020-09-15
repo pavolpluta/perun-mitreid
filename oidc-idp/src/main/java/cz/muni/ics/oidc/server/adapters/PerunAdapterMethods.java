@@ -309,4 +309,20 @@ public interface PerunAdapterMethods {
 	 * @return List of groups IDs (filled or empty)
 	 */
 	Set<Long> getUserGroupsIds(Long userId, Long voId);
+
+	/**
+	 * Check if user is valid member of given VOs (identified by IDs)
+	 * @param userId ID of user in Perun
+	 * @param mandatoryVos Set of IDs identifying the VOs
+	 * @param mandatoryGroups Set of IDs identifying the Groups
+	 * @param envVos Set of IDs identifying the VOs
+	 * @param envGroups Set of IDs identifying the Groups
+	 * @return returns TRUE if:
+	 * 	User is member of at least one specified mandatory VO, and
+	 * 	User is member of at least one specified mandatory GROUP, and
+	 * 	User is member of at least one specified env VO, and
+	 * 	User is member of at least one specified env GROUP.
+	 * 	Returns FALSE otherwise.
+	 */
+	boolean isValidMemberInGroupsAndVos(Long userId, Set<Long> mandatoryVos, Set<Long> mandatoryGroups, Set<Long> envVos, Set<Long> envGroups);
 }
