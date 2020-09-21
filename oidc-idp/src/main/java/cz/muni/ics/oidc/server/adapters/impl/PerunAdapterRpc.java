@@ -934,7 +934,9 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		for (Map.Entry<String, PerunAttribute> attrPair: attributeMap.entrySet()) {
 			String attrName = attrPair.getKey();
 			PerunAttribute attr = attrPair.getValue();
-			resultMap.put(attrName, attr.toPerunAttributeValue());
+			if (attr != null) {
+				resultMap.put(attrName, attr.toPerunAttributeValue());
+			}
 		}
 
 		return resultMap;
