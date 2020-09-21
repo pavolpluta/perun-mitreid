@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [v2.1.0]
 ### Added
 - logging at TRACE level via the Aspects
 - implemented new filter which decides if user can access the service or not
@@ -13,6 +15,8 @@ All notable changes to this project will be documented in this file.
 - Refactored logback configuration, see README for options 
 - appender for each type of logging (syslog/file/roll_file) which logs only the trace level via the Aspects is now defined
 - optimized a bit procedure in LDAP for getting resource capabilities
+- optimized filters - pass some things in parameters
+- refactored PerunAttribute and value
 ### Fixed
 - Fixed missing mapping for the attribute "capabilities" in facility
 - Fixed InconvertibleValueException in AUP filter 
@@ -254,6 +258,7 @@ All notable changes to this project will be documented in this file.
 First release of modified MITREid server which uses Shibboleth for authentication and reads user data from Perun system. It also has support for new scopes and claims, for extension of released access tokens, and for releasing user claims from introspection endpoint.
 
 [Unreleased]: https://github.com/CESNET/perun-mitreid/tree/master
+[v2.1.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v2.1.0
 [v2.0.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v2.0.0
 [v1.25.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.2
 [v1.25.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.1
