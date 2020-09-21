@@ -296,7 +296,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 				List<Group> memberGroups = getMemberGroups(member.getId());
 				for (Group group : memberGroups) {
 					PerunAttributeValue attrValue = this.getGroupAttributeValue(group, groupAffiliationsAttr);
-					if (attrValue.getValue() != null) {
+					if (attrValue != null && attrValue.valueAsString() != null) {
 						long linuxTime = System.currentTimeMillis() / 1000L;
 						for (String value : attrValue.valueAsList()) {
 							Affiliation affiliation = new Affiliation(null, value, linuxTime);
@@ -414,7 +414,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		return this.getUserAttribute(userId, attrToFetch).getValue();
+		return this.getUserAttribute(userId, attrToFetch).toPerunAttributeValue();
 	}
 
 	@Override
@@ -451,7 +451,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		return this.getFacilityAttribute(facilityId, attrToFetch).getValue();
+		return this.getFacilityAttribute(facilityId, attrToFetch).toPerunAttributeValue();
 	}
 
 	@Override
@@ -488,7 +488,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		return this.getFacilityAttribute(voId, attrToFetch).getValue();
+		return this.getFacilityAttribute(voId, attrToFetch).toPerunAttributeValue();
 	}
 
 	@Override
@@ -525,7 +525,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		return this.getGroupAttribute(groupId, attrToFetch).getValue();
+		return this.getGroupAttribute(groupId, attrToFetch).toPerunAttributeValue();
 	}
 
 	@Override
@@ -562,7 +562,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		return this.getResourceAttribute(resourceId, attrToFetch).getValue();
+		return this.getResourceAttribute(resourceId, attrToFetch).toPerunAttributeValue();
 	}
 
 	@Override
@@ -934,7 +934,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		for (Map.Entry<String, PerunAttribute> attrPair: attributeMap.entrySet()) {
 			String attrName = attrPair.getKey();
 			PerunAttribute attr = attrPair.getValue();
-			resultMap.put(attrName, attr.getValue());
+			resultMap.put(attrName, attr.toPerunAttributeValue());
 		}
 
 		return resultMap;

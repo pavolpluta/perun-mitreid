@@ -107,16 +107,18 @@ public class AupController {
 
         try {
             PerunAttribute userAupsAttr = perunAdapter.getAdapterRpc().getUserAttribute(userId, userAupsAttrName);
-            Map<String, String> userAupsAttrValue = userAupsAttr.getValue().valueAsMap();
-            if (userAupsAttrValue == null) {
-                userAupsAttrValue = new LinkedHashMap<>();
+            if (userAupsAttr != null) {
+                Map<String, String> userAupsAttrValue = new LinkedHashMap<>();
+                if (userAupsAttr.valueAsMap() != null) {
+                    userAupsAttrValue = userAupsAttr.valueAsMap();
+                }
+
+                ObjectNode userAupsAttrAsObjNode = mapper.convertValue(userAupsAttrValue, ObjectNode.class);
+
+                ObjectNode userAttrValueUpdated = updateUserAupsAttrValue(userAupsAttrAsObjNode, aupsToApproveJsonObject);
+                userAupsAttr.setValue(userAupsAttr.getType(), userAttrValueUpdated);
+                perunAdapter.getAdapterRpc().setUserAttribute(userId, userAupsAttr);
             }
-
-            ObjectNode userAupsAttrAsObjNode = mapper.convertValue(userAupsAttrValue, ObjectNode.class);
-
-            ObjectNode userAttrValueUpdated = updateUserAupsAttrValue(userAupsAttrAsObjNode, aupsToApproveJsonObject);
-            userAupsAttr.getValue().setValue(userAupsAttr.getType(), userAttrValueUpdated);
-            perunAdapter.getAdapterRpc().setUserAttribute(userId, userAupsAttr);
         } catch (Exception e) {
             log.warn("Exception when storing aup, probably RPC not reachable", e);
         }

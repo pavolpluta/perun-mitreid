@@ -279,7 +279,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			result = req.getParameter(PARAM_WAYF_EFILTER);
 		} else if (filterAttributes.get(facilityAttrsConfig.getWayfEFilterAttr()) != null) {
 			PerunAttributeValue filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfEFilterAttr());
-			if (filterAttribute.getValue() != null) {
+			if (filterAttribute != null && filterAttribute.valueAsString() != null) {
 				result = filterAttribute.valueAsString();
 			}
 		}
@@ -292,7 +292,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			result = req.getParameter(PARAM_WAYF_FILTER);
 		} else if (filterAttributes.get(facilityAttrsConfig.getWayfFilterAttr()) != null) {
 			PerunAttributeValue filterAttribute = filterAttributes.get(facilityAttrsConfig.getWayfFilterAttr());
-			if (filterAttribute.getValue() != null) {
+			if (filterAttribute != null && filterAttribute.valueAsString() != null) {
 				result = filterAttribute.valueAsString();
 			}
 		}

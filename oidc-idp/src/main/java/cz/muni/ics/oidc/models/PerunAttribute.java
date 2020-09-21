@@ -1,80 +1,191 @@
 package cz.muni.ics.oidc.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.util.Objects;
+import org.springframework.util.StringUtils;
 
 /**
  * Perun Attribute model
  *
- * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ * @author Dominik Frantisek Bucik <bucik@.ics.muni.cz>
+ * @author Ondrej Ernst <ondra.ernst@gmail.com>
  */
-public class PerunAttribute extends PerunAttributeDefinition {
+public class PerunAttribute extends PerunAttributeValueAwareModel {
 
-	private PerunAttributeValue value;
-	private String valueCreatedAt;
-	private String valueModifiedAt;
+    private Long id;
+    private String friendlyName;
+    private String namespace;
+    private String description;
+    private String displayName;
+    private boolean writable;
+    private boolean unique;
+    private String entity;
+    private String baseFriendlyName;
+    private String friendlyNameParameter;
+    private final String beanName = "Attribute";
+    private String valueCreatedAt;
+    private String valueModifiedAt;
 
-	public PerunAttributeValue getValue() {
-		return value;
-	}
+    public PerunAttribute(Long id, String friendlyName, String namespace, String description, String type,
+                          String displayName, boolean writable, boolean unique, String entity, String baseFriendlyName,
+                          String friendlyNameParameter, JsonNode value, String valueCreatedAt, String valueModifiedAt)
+    {
+        super(type, value);
+        this.setId(id);
+        this.setFriendlyName(friendlyName);
+        this.setNamespace(namespace);
+        this.setDescription(description);
+        this.setType(type);
+        this.setDisplayName(displayName);
+        this.setWritable(writable);
+        this.setUnique(unique);
+        this.setEntity(entity);
+        this.setBaseFriendlyName(baseFriendlyName);
+        this.setFriendlyNameParameter(friendlyNameParameter);
+        this.setValue(type, value);
+    }
 
-	public void setValue(PerunAttributeValue value) {
-		this.value = value;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public String getValueCreatedAt() {
-		return valueCreatedAt;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setValueCreatedAt(String valueCreatedAt) {
-		this.valueCreatedAt = valueCreatedAt;
-	}
+    public String getFriendlyName() {
+        return friendlyName;
+    }
 
-	public String getValueModifiedAt() {
-		return valueModifiedAt;
-	}
+    public void setFriendlyName(String friendlyName) {
+        if (!StringUtils.hasText(friendlyName)) {
+            throw new IllegalArgumentException("friendlyName cannot be empty");
+        }
 
-	public void setValueModifiedAt(String valueModifiedAt) {
-		this.valueModifiedAt = valueModifiedAt;
-	}
+        this.friendlyName = friendlyName;
+    }
 
-	@Override
-	@JsonIgnore
-	public String getUrn() {
-		return super.getUrn();
-	}
+    public String getNamespace() {
+        return namespace;
+    }
 
-	@Override
-	public String toString() {
-		return "PerunAttribute{" +
-				"value=" + value +
-				", valueCreatedAt='" + valueCreatedAt + '\'' +
-				", valueModifiedAt='" + valueModifiedAt + '\'' +
-				'}';
-	}
+    public void setNamespace(String namespace) {
+        if (!StringUtils.hasText(namespace)) {
+            throw new IllegalArgumentException("namespace cannot be empty");
+        }
 
-	@Override
-	public boolean equals(Object o) {
-		if (this == o) return true;
-		if (o == null || getClass() != o.getClass()) return false;
-		if (!super.equals(o)) return false;
-		PerunAttribute attribute = (PerunAttribute) o;
-		return Objects.equals(value, attribute.value) &&
-				Objects.equals(valueCreatedAt, attribute.valueCreatedAt) &&
-				Objects.equals(valueModifiedAt, attribute.valueModifiedAt);
-	}
+        this.namespace = namespace;
+    }
 
-	@Override
-	public int hashCode() {
-		return Objects.hash(super.hashCode(), value, valueCreatedAt, valueModifiedAt);
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public ObjectNode toJson() {
-		ObjectNode defInJson = super.toJson();
-		defInJson.set("value", value.valueAsJson());
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-		return defInJson;
-	}
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        if (!StringUtils.hasText(displayName)) {
+            throw new IllegalArgumentException("displayName cannot be empty");
+        }
+
+        this.displayName = displayName;
+    }
+
+    public boolean isWritable() {
+        return writable;
+    }
+
+    public void setWritable(boolean writable) {
+        this.writable = writable;
+    }
+
+    public boolean isUnique() {
+        return unique;
+    }
+
+    public void setUnique(boolean unique) {
+        this.unique = unique;
+    }
+
+    public String getEntity() {
+        return entity;
+    }
+
+    public void setEntity(String entity) {
+        if (!StringUtils.hasText(entity)) {
+            throw new IllegalArgumentException("entity cannot be empty");
+        }
+
+        this.entity = entity;
+    }
+
+    public String getBaseFriendlyName() {
+        return baseFriendlyName;
+    }
+
+    public void setBaseFriendlyName(String baseFriendlyName) {
+        this.baseFriendlyName = baseFriendlyName;
+    }
+
+    public String getFriendlyNameParameter() {
+        return friendlyNameParameter;
+    }
+
+    public void setFriendlyNameParameter(String friendlyNameParameter) {
+        this.friendlyNameParameter = friendlyNameParameter;
+    }
+
+    public String getValueCreatedAt() {
+        return valueCreatedAt;
+    }
+
+    public void setValueCreatedAt(String valueCreatedAt) {
+        this.valueCreatedAt = valueCreatedAt;
+    }
+
+    public String getValueModifiedAt() {
+        return valueModifiedAt;
+    }
+
+    public void setValueModifiedAt(String valueModifiedAt) {
+        this.valueModifiedAt = valueModifiedAt;
+    }
+
+    @JsonIgnore
+    public String getUrn() {
+        return this.namespace + ':' + this.friendlyName;
+    }
+
+    public ObjectNode toJson() {
+        ObjectNode node = JsonNodeFactory.instance.objectNode();
+
+        node.put("id", id);
+        node.put("friendlyName", friendlyName);
+        node.put("namespace", namespace);
+        node.put("type", super.getType());
+        node.put("displayName", displayName);
+        node.put("writable", writable);
+        node.put("unique", unique);
+        node.put("entity", entity);
+        node.put("beanName", beanName);
+        node.put("baseFriendlyName", baseFriendlyName);
+        node.put("friendlyName", friendlyName);
+        node.put("friendlyNameParameter", friendlyNameParameter);
+        node.set("value", this.valueAsJson());
+
+        return node;
+    }
+
+    public PerunAttributeValue toPerunAttributeValue() {
+        return new PerunAttributeValue(this.getUrn(), super.getType(), this.valueAsJson());
+    }
+
 }

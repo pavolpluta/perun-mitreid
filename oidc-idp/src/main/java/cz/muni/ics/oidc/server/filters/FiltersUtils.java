@@ -249,7 +249,7 @@ public class FiltersUtils {
 			boolean canRegister = perunAdapter.getAdapterRpc().groupWhereCanRegisterExists(facility);
 			if (canRegister) {
 				PerunAttributeValue customRegUrlAttr = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr());
-				if (customRegUrlAttr != null && customRegUrlAttr.getValue()!= null) {
+				if (customRegUrlAttr != null && customRegUrlAttr.valueAsString() != null) {
 					String customRegUrl = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr()).valueAsString();
 					customRegUrl = validateUrl(customRegUrl);
 					if (customRegUrl != null) {

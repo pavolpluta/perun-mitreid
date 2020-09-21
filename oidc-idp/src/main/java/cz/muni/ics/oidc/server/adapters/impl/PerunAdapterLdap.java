@@ -651,47 +651,31 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 	private PerunAttributeValue parseValue(Attribute attr, AttributeMapping mapping) {
 		PerunAttrValueType type = mapping.getAttrType();
 		boolean isNull = (attr == null || attr.get() == null || attr.get().isNull());
-		if (isNull) {
-			if (PerunAttrValueType.BOOLEAN.equals(type)) {
-				return new PerunAttributeValue(PerunAttributeValue.BOOLEAN_TYPE, jsonNodeFactory.booleanNode(false));
-			} else if (PerunAttrValueType.ARRAY.equals(type)) {
-				return new PerunAttributeValue(PerunAttributeValue.ARRAY_TYPE, jsonNodeFactory.arrayNode());
-			} else if (PerunAttrValueType.LARGE_ARRAY.equals(type)) {
-				return new PerunAttributeValue(PerunAttributeValue.LARGE_ARRAY_LIST_TYPE, jsonNodeFactory.arrayNode());
-			} else if (PerunAttrValueType.MAP_JSON.equals(type)) {
-				return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE, jsonNodeFactory.objectNode());
-			} else if (PerunAttrValueType.MAP_KEY_VALUE.equals(type)) {
-				return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE, jsonNodeFactory.objectNode());
-			} else {
-				return null;
-			}
-		}
-
 		switch (type) {
 			case STRING:
-				return new PerunAttributeValue(PerunAttributeValue.STRING_TYPE,
-						jsonNodeFactory.textNode(attr.get().getString()));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.STRING_TYPE,
+						isNull ? jsonNodeFactory.nullNode() : jsonNodeFactory.textNode(attr.get().getString()));
 			case LARGE_STRING:
-				return new PerunAttributeValue(PerunAttributeValue.LARGE_STRING_TYPE,
-						jsonNodeFactory.textNode(attr.get().getString()));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.LARGE_STRING_TYPE,
+						isNull ? jsonNodeFactory.nullNode() : jsonNodeFactory.textNode(attr.get().getString()));
 			case INTEGER:
-				return new PerunAttributeValue(PerunAttributeValue.INTEGER_TYPE,
-						jsonNodeFactory.numberNode(Long.parseLong(attr.get().getString())));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.INTEGER_TYPE,
+						isNull ? jsonNodeFactory.nullNode() : jsonNodeFactory.numberNode(Long.parseLong(attr.get().getString())));
 			case BOOLEAN:
-				return new PerunAttributeValue(PerunAttributeValue.BOOLEAN_TYPE,
-						jsonNodeFactory.booleanNode(Boolean.parseBoolean(attr.get().getString())));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.BOOLEAN_TYPE,
+						isNull ? jsonNodeFactory.booleanNode(false) : jsonNodeFactory.booleanNode(Boolean.parseBoolean(attr.get().getString())));
 			case ARRAY:
-				return new PerunAttributeValue(PerunAttributeValue.ARRAY_TYPE,
-						getArrNode(attr));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.ARRAY_TYPE,
+						isNull ? jsonNodeFactory.arrayNode() : getArrNode(attr));
 			case LARGE_ARRAY:
-				return new PerunAttributeValue(PerunAttributeValue.LARGE_ARRAY_LIST_TYPE,
-						getArrNode(attr));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.LARGE_ARRAY_LIST_TYPE,
+						isNull ? jsonNodeFactory.arrayNode() : getArrNode(attr));
 			case MAP_JSON:
-				return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE,
-						getMapNodeJson(attr));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.MAP_TYPE,
+						isNull ? jsonNodeFactory.objectNode() : getMapNodeJson(attr));
 			case MAP_KEY_VALUE:
-				return new PerunAttributeValue(PerunAttributeValue.MAP_TYPE,
-						getMapNodeSeparator(attr, mapping.getSeparator()));
+				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.MAP_TYPE,
+						isNull ? jsonNodeFactory.objectNode() : getMapNodeSeparator(attr, mapping.getSeparator()));
 			default:
 				throw new IllegalArgumentException("unrecognized type");
 		}

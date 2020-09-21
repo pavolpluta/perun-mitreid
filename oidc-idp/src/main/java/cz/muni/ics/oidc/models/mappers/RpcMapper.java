@@ -9,7 +9,6 @@ import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.Member;
 import cz.muni.ics.oidc.models.PerunAttribute;
-import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunUser;
 import cz.muni.ics.oidc.models.Resource;
 import cz.muni.ics.oidc.models.UserExtSource;
@@ -140,29 +139,25 @@ public class RpcMapper {
 	 * @return PerunAttribute mapped from JsonNode
 	 */
 	public static PerunAttribute mapAttribute(JsonNode jsonNode) {
-		PerunAttribute attribute = new PerunAttribute();
-
+		Long id  = jsonNode.get("id").asLong();
+		String friendlyName = jsonNode.get("friendlyName").asText();
+		String namespace = jsonNode.get("namespace").asText();
+		String description = jsonNode.get("description").asText();
 		String type = jsonNode.get("type").asText();
+		String displayName = jsonNode.get("displayName").asText();
+		boolean writable = jsonNode.get("writable").asBoolean();
+		boolean unique = jsonNode.get("unique").asBoolean();
+		String entity = jsonNode.get("entity").asText();
+		String baseFriendlyName = jsonNode.get("baseFriendlyName").asText();
+		String friendlyNameParameter = jsonNode.get("friendlyNameParameter").asText();
 		JsonNode value = jsonNode.get("value");
-		PerunAttributeValue attrVal = new PerunAttributeValue(type, value);
+		JsonNode valueCreatedAtJson = jsonNode.get("valueCreatedAt");
+		String valueCreatedAt = valueCreatedAtJson.isNull() ? null : valueCreatedAtJson.asText();
+		JsonNode valueModifiedAtJson = jsonNode.get("valueModifiedAt");
+		String valueModifiedAt = valueModifiedAtJson.isNull() ? null : valueModifiedAtJson.asText();
 
-		attribute.setId(jsonNode.get("id").asLong());
-		attribute.setFriendlyName(jsonNode.get("friendlyName").asText());
-		attribute.setNamespace(jsonNode.get("namespace").asText());
-		attribute.setDescription(jsonNode.get("description").asText());
-		attribute.setType(type);
-		attribute.setDisplayName(jsonNode.get("displayName").asText());
-		attribute.setWritable(jsonNode.get("writable").asBoolean());
-		attribute.setUnique(jsonNode.get("unique").asBoolean());
-		attribute.setBaseFriendlyName(jsonNode.get("baseFriendlyName").asText());
-		attribute.setFriendlyNameParameter(jsonNode.get("friendlyNameParameter").asText());
-		attribute.setValue(attrVal);
-		JsonNode valueCreatedAt = jsonNode.get("valueCreatedAt");
-		attribute.setValueCreatedAt(valueCreatedAt.isNull() ? null : valueCreatedAt.asText());
-		JsonNode valueModifiedAt = jsonNode.get("valueModifiedAt");
-		attribute.setValueModifiedAt(valueModifiedAt.isNull() ? null : valueModifiedAt.asText());
-
-		return attribute;
+		return new PerunAttribute(id, friendlyName, namespace, description, type, displayName, writable, unique,
+				entity, baseFriendlyName, friendlyNameParameter, value, valueCreatedAt, valueModifiedAt);
 	}
 
 	/**
