@@ -225,7 +225,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
         if (orgAupsAttr != null && !orgAupsAttr.isEmpty()) {
             for (Map.Entry<String, PerunAttribute> entry : orgAupsAttr.entrySet()) {
-                if (entry.getValue() != null && entry.getValue().valueAsList() != null) {
+                if (entry.getValue() != null && entry.getValue().valueAsString() != null) {
                     List<Aup> aups = Arrays.asList(mapper.readValue(entry.getValue().valueAsString(), Aup[].class));
                     orgAups.put(entry.getKey(), aups);
                 }
@@ -267,7 +267,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
                     continue;
                 }
 
-                List<Aup> aups = Arrays.asList(mapper.readValue(voAupAttr.valueAsList().toString(), Aup[].class));
+                List<Aup> aups = Arrays.asList(mapper.readValue(voAupAttr.valueAsString(), Aup[].class));
                 if (!aups.isEmpty()) {
                     voAups.put(voShortName, aups);
                 }
