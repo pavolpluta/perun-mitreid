@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Fixed
+- fixed bug when redirecting to the registration (no return after redirect has been called, user ended on unapproved no matter what)
 
 ## [v2.1.0]
 ### Added

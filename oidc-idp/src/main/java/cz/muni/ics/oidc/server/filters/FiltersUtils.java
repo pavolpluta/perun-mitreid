@@ -255,12 +255,14 @@ public class FiltersUtils {
 					if (customRegUrl != null) {
 						// redirect to custom registration URL
 						FiltersUtils.redirectToCustomRegUrl(response, customRegUrl);
+						return;
 					}
 				}
 
 				if (facilityAttributes.get(facilityAttrsConfig.getDynamicRegistrationAttr()).valueAsBoolean()) {
 					// redirect to registration form
 					FiltersUtils.redirectToRegistrationForm(request, response, clientIdentifier, facility, user);
+					return;
 				}
 			}
 		}
