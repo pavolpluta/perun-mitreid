@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- added possibility to specify, under which scopes being null the userInfo object gets generated again instead of being read from cache
+### Changed
+- set pool size for DB to 50 connections max (previously 10)
+- refactored scheduled tasks - simpler SQL statements, run less often
+### Fixed
+- fixed some little bugs and missing things for logging purposes
+- minimized time window under which the nodes could execute scheduled tasks concurrently
+
+## [v2.1.1]
 ### Fixed
 - fixed bug when redirecting to the registration (no return after redirect has been called, user ended on unapproved no matter what)
 
@@ -260,6 +270,7 @@ All notable changes to this project will be documented in this file.
 First release of modified MITREid server which uses Shibboleth for authentication and reads user data from Perun system. It also has support for new scopes and claims, for extension of released access tokens, and for releasing user claims from introspection endpoint.
 
 [Unreleased]: https://github.com/CESNET/perun-mitreid/tree/master
+[v2.1.1]: https://github.com/CESNET/perun-mitreid/releases/tag/v2.1.1
 [v2.1.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v2.1.0
 [v2.0.0]: https://github.com/CESNET/perun-mitreid/releases/tag/v2.0.0
 [v1.25.2]: https://github.com/CESNET/perun-mitreid/releases/tag/v1.25.2
