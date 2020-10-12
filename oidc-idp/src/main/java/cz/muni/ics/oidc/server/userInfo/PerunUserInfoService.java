@@ -8,6 +8,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
+import cz.muni.ics.oidc.models.PerunAttributeValueAwareModel;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.claims.ClaimModifier;
 import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
@@ -32,6 +33,7 @@ import javax.annotation.PostConstruct;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,9 @@ public class PerunUserInfoService implements UserInfoService {
 
 	@Autowired
 	private PerunOidcConfig perunOidcConfig;
+
+	private List<String> forceRegenerateUserinfoCustomClaims = new ArrayList<>();
+	private List<String> forceRegenerateUserinfoStandardClaims = new ArrayList<>();
 
 	private final LoadingCache<UserClientPair, UserInfo> cache;
 
@@ -192,6 +197,14 @@ public class PerunUserInfoService implements UserInfoService {
 		this.customClaimNames = customClaimNames;
 	}
 
+	public void setForceRegenerateUserinfoCustomClaims(String[] claims) {
+		this.forceRegenerateUserinfoCustomClaims = Arrays.asList(claims);
+	}
+
+	public void setForceRegenerateUserinfoStandardClaims(String[] claims) {
+		this.forceRegenerateUserinfoStandardClaims = Arrays.asList(claims);
+	}
+
 	public List<PerunCustomClaimDefinition> getCustomClaims() {
 		return customClaims;
 	}
@@ -230,11 +243,17 @@ public class PerunUserInfoService implements UserInfoService {
 			return null;
 		}
 
-		UserInfo userInfo;
+		PerunUserInfo userInfo;
 		try {
-			userInfo = cache.get(new UserClientPair(username, clientId, client));
+			UserClientPair cacheKey = new UserClientPair(username, clientId, client);
+			userInfo = (PerunUserInfo) cache.get(cacheKey);
+			if (!checkStandardClaims(userInfo) || !checkCustomClaims(userInfo)) {
+				log.info("Some required claim is null, regenerate userInfo");
+				cache.invalidate(cacheKey);
+				userInfo = (PerunUserInfo) cache.get(cacheKey);
+			}
 			log.debug("loaded UserInfo from cache for '{}'/'{}'", userInfo.getName(), client.getClientName());
-			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, clientId);
+			userInfo = userInfoModifierContext.modify(userInfo, clientId);
 		} catch (ExecutionException e) {
 			log.error("cannot get user from cache", e);
 			return null;
@@ -245,11 +264,17 @@ public class PerunUserInfoService implements UserInfoService {
 
 	@Override
 	public UserInfo getByUsername(String username) {
-		UserInfo userInfo;
+		PerunUserInfo userInfo;
 		try {
-			userInfo = cache.get(new UserClientPair(username));
+			UserClientPair cacheKey = new UserClientPair(username);
+			userInfo = (PerunUserInfo) cache.get(cacheKey);
+			if (!checkStandardClaims(userInfo) || !checkCustomClaims(userInfo)) {
+				log.info("Some required claim is null, regenerate userInfo");
+				cache.invalidate(cacheKey);
+				userInfo = (PerunUserInfo) cache.get(cacheKey);
+			}
 			log.debug("loaded UserInfo from cache for '{}'", userInfo.getName());
-			userInfo = userInfoModifierContext.modify((PerunUserInfo) userInfo, null);
+			userInfo = userInfoModifierContext.modify(userInfo, null);
 		} catch (UncheckedExecutionException | ExecutionException e) {
 			log.error("cannot get user from cache", e);
 			return null;
@@ -476,8 +501,98 @@ public class PerunUserInfoService implements UserInfoService {
 	};
 
 	private boolean shouldFillAttrs(Map<String, PerunAttributeValue> userAttributeValues) {
-		return perunOidcConfig.isFillMissingUserAttrs() &&
-				(userAttributeValues.isEmpty() || userAttributeValues.containsValue(null));
+		if (perunOidcConfig.isFillMissingUserAttrs()) {
+			if (userAttributeValues.isEmpty()) {
+				return true;
+			} else if (userAttributeValues.containsValue(null)) {
+				return true;
+			} else {
+				return !userAttributeValues.values().stream()
+						.filter(PerunAttributeValueAwareModel::isNullValue)
+						.collect(Collectors.toSet())
+						.isEmpty();
+			}
+		}
+		return false;
+	}
+
+	private boolean checkStandardClaims(PerunUserInfo userInfo) {
+		for (String claim: forceRegenerateUserinfoStandardClaims) {
+			switch (claim.toLowerCase()) {
+				case "sub": {
+					if (userInfo.getSub() == null) {
+						return false;
+					}
+				} break;
+				case "preferred_username": {
+					if (userInfo.getPreferredUsername() == null) {
+						return false;
+					}
+				} break;
+				case "given_name": {
+					if (userInfo.getGivenName() == null) {
+						return false;
+					}
+				} break;
+				case "family_name": {
+					if (userInfo.getFamilyName() == null) {
+						return false;
+					}
+				} break;
+				case "middle_name": {
+					if (userInfo.getMiddleName() == null) {
+						return false;
+					}
+				} break;
+				case "name": {
+					if (userInfo.getName() == null) {
+						return false;
+					}
+				} break;
+				case "email": {
+					if (userInfo.getEmail() == null) {
+						return false;
+					}
+				} break;
+				case "address_formatted": {
+					if (userInfo.getAddress() == null
+							|| userInfo.getAddress().getFormatted() == null)
+					{
+						return false;
+					}
+				} break;
+				case "phone": {
+					if (userInfo.getPhoneNumber() == null) {
+						return false;
+					}
+				} break;
+				case "zoneinfo": {
+					if (userInfo.getZoneinfo() == null) {
+						return false;
+					}
+				} break;
+				case "locale": {
+					if (userInfo.getLocale() == null) {
+						return false;
+					}
+				} break;
+			}
+		}
+
+		log.debug("All required standard claims are OK");
+		return true;
+	}
+
+	private boolean checkCustomClaims(PerunUserInfo userInfo) {
+		for (String claim: forceRegenerateUserinfoCustomClaims) {
+			if (userInfo.getCustomClaims().get(claim) == null ||
+					userInfo.getCustomClaims().get(claim).isNull()) {
+				return false;
+			}
+		}
+
+		log.debug("All required custom claims are OK");
+		return true;
 	}
 
 }

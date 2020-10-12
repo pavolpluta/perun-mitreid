@@ -80,6 +80,8 @@
 				<prop key="id_token.scopes">openid,profile,email,phone,address</prop>
 				<prop key="custom.claims">organization,eppns</prop>
 				<prop key="accessTokenClaimsModifier">cz.muni.ics.oidc.server.PerunAccessTokenEnhancer.NoOpAccessTokenClaimsModifier</prop>
+				<prop key="force.regenerate.userinfo.custom.claims" />
+				<prop key="force.regenerate.userinfo.standard.claims" />
 				<!-- UES ATTRS -->
 				<prop key="ues.orgUrl.attr">urn:perun:ues:attribute-def:def:organizationURL</prop>
 				<prop key="ues.affiliations.attr">urn:perun:ues:attribute-def:def:affiliation</prop>
@@ -310,6 +312,8 @@
 		<property name="localeAttribute" value="profile_locale"/>
 		<property name="properties" ref="coreProperties"/>
 		<property name="customClaimNames" value="#{'${custom.claims}'.split('\s*,\s*')}"/>
+		<property name="forceRegenerateUserinfoCustomClaims" value="#{'${force.regenerate.userinfo.custom.claims}'.split('\s*,\s*')}"/>
+		<property name="forceRegenerateUserinfoStandardClaims" value="#{'${force.regenerate.userinfo.standard.claims}'.split('\s*,\s*')}"/>
 	</bean>
 
 	<!-- replaces default translation service with our own for custom scope with custom claims. -->
