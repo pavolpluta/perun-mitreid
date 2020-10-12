@@ -14,6 +14,8 @@ import org.springframework.util.StringUtils;
  */
 public class PerunAttribute extends PerunAttributeValueAwareModel {
 
+    private static final String BEAN_NAME = "Attribute";
+
     private Long id;
     private String friendlyName;
     private String namespace;
@@ -24,7 +26,6 @@ public class PerunAttribute extends PerunAttributeValueAwareModel {
     private String entity;
     private String baseFriendlyName;
     private String friendlyNameParameter;
-    private final String beanName = "Attribute";
     private String valueCreatedAt;
     private String valueModifiedAt;
 
@@ -45,6 +46,8 @@ public class PerunAttribute extends PerunAttributeValueAwareModel {
         this.setBaseFriendlyName(baseFriendlyName);
         this.setFriendlyNameParameter(friendlyNameParameter);
         this.setValue(type, value);
+        this.setValueCreatedAt(valueCreatedAt);
+        this.setValueModifiedAt(valueModifiedAt);
     }
 
     public Long getId() {
@@ -175,7 +178,7 @@ public class PerunAttribute extends PerunAttributeValueAwareModel {
         node.put("writable", writable);
         node.put("unique", unique);
         node.put("entity", entity);
-        node.put("beanName", beanName);
+        node.put("beanName", BEAN_NAME);
         node.put("baseFriendlyName", baseFriendlyName);
         node.put("friendlyName", friendlyName);
         node.put("friendlyNameParameter", friendlyNameParameter);

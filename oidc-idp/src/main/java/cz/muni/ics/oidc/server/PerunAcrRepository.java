@@ -19,7 +19,7 @@ import java.time.Instant;
 @Transactional(value = "defaultTransactionManager")
 public class PerunAcrRepository {
 
-	@PersistenceContext(unitName="defaultPersistenceUnit")
+	@PersistenceContext(unitName = "defaultPersistenceUnit")
 	private EntityManager manager;
 
 	public Acr getActive(String sub, String clientId, String acr, String state) {
@@ -28,15 +28,14 @@ public class PerunAcrRepository {
 		query.setParameter(Acr.PARAM_CLIENT_ID, clientId);
 		query.setParameter(Acr.PARAM_ACR, acr);
 		query.setParameter(Acr.PARAM_STATE, state);
-		long currentEpochTime = Instant.now().toEpochMilli();
-		query.setParameter(Acr.PARAM_EXPIRES_AT, currentEpochTime);
-
+		query.setParameter(Acr.PARAM_EXPIRES_AT, now());
 		return query.getSingleResult();
 	}
 
 	public Acr getById(Long id) {
 		TypedQuery<Acr> query = manager.createNamedQuery(Acr.GET_BY_ID, Acr.class);
 		query.setParameter(Acr.PARAM_ID, id);
+		query.setParameter(Acr.PARAM_EXPIRES_AT, now());
 
 		return query.getSingleResult();
 	}
@@ -45,14 +44,12 @@ public class PerunAcrRepository {
 	public Acr store(Acr acr) {
 		Acr tmp = manager.merge(acr);
 		manager.flush();
-
 		return tmp;
 	}
 
 	@Transactional
 	public void remove(Long id) {
 		Acr acr = getById(id);
-
 		if (acr != null) {
 			manager.remove(acr);
 		}
@@ -61,8 +58,12 @@ public class PerunAcrRepository {
 	@Transactional
 	public void deleteExpired() {
 		Query query = manager.createNamedQuery(Acr.DELETE_EXPIRED);
-		query.setParameter(Acr.PARAM_EXPIRES_AT, Instant.now().toEpochMilli());
+		query.setParameter(Acr.PARAM_EXPIRES_AT, now());
 		query.executeUpdate();
+	}
+
+	private long now() {
+		return Instant.now().toEpochMilli();
 	}
 
 }

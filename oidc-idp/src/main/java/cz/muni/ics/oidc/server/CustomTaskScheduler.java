@@ -5,18 +5,18 @@ import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
-import org.mitre.oauth2.service.DeviceCodeService;
-import org.mitre.oauth2.service.OAuth2TokenEntityService;
-import org.mitre.oauth2.service.impl.DefaultOAuth2AuthorizationCodeService;
-import org.mitre.openid.connect.service.ApprovedSiteService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.sql.DataSource;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A custom scheduler for tasks with usage of ShedLock.
@@ -28,23 +28,18 @@ import javax.sql.DataSource;
 @EnableSchedulerLock(defaultLockAtMostFor = "30s")
 public class CustomTaskScheduler {
 
-	private final OAuth2TokenEntityService tokenEntityService;
-	private final ApprovedSiteService approvedSiteService;
-	private final DefaultOAuth2AuthorizationCodeService defaultOAuth2AuthorizationCodeService;
-	private final DeviceCodeService deviceCodeService;
-	private final PerunAcrRepository perunAcrRepository;
+	private static final long ONE_MINUTE = 60000L;
+
+	private static final Logger log = LoggerFactory.getLogger(CustomTaskScheduler.class);
+
+	private final CustomClearTasks customClearTasks;
 	private final DataSource dataSource;
 
 	@Autowired
-	public CustomTaskScheduler(OAuth2TokenEntityService tokenEntityService, ApprovedSiteService approvedSiteService,
-							   DefaultOAuth2AuthorizationCodeService defaultOAuth2AuthorizationCodeService,
-							   DeviceCodeService deviceCodeService, PerunAcrRepository perunAcrRepository,
-							   @Qualifier("dataSource") DataSource dataSource) {
-		this.tokenEntityService = tokenEntityService;
-		this.approvedSiteService = approvedSiteService;
-		this.defaultOAuth2AuthorizationCodeService = defaultOAuth2AuthorizationCodeService;
-		this.deviceCodeService = deviceCodeService;
-		this.perunAcrRepository = perunAcrRepository;
+	public CustomTaskScheduler(CustomClearTasks customClearTasks,
+							   @Qualifier("dataSource") DataSource dataSource)
+	{
+		this.customClearTasks = customClearTasks;
 		this.dataSource = dataSource;
 	}
 
@@ -53,39 +48,79 @@ public class CustomTaskScheduler {
 		return new JdbcTemplateLockProvider(this.dataSource);
 	}
 
-	@Scheduled(fixedDelay = 300000L, initialDelay = 600000L)
-	@SchedulerLock(name = "clearExpiredTokens")
-	public void clearExpiredTokens() {
-		LockAssert.assertLocked();
-		this.tokenEntityService.clearExpiredTokens();
-	}
-
-	@Scheduled(fixedDelay = 300000L, initialDelay = 600000L)
-	@SchedulerLock(name = "clearExpiredSites")
+	@Transactional(value = "defaultTransactionManager")
+	@Scheduled(fixedDelay = 60 * ONE_MINUTE, initialDelay = ONE_MINUTE)
+	@SchedulerLock(name = "clearExpiredSites", lockAtMostFor = "3590s", lockAtLeastFor = "3590s")
 	public void clearExpiredSites() {
-		LockAssert.assertLocked();
-		this.approvedSiteService.clearExpiredSites();
+		try {
+			LockAssert.assertLocked();
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+		long start = System.currentTimeMillis();
+		int count = this.customClearTasks.clearExpiredSites(TimeUnit.MINUTES.toMillis(15));
+		long execution = System.currentTimeMillis() - start;
+		log.info("clearExpiredSites took {}ms, deleted {} records", execution, count);
 	}
 
-	@Scheduled(fixedDelay = 300000L, initialDelay = 600000L)
-	@SchedulerLock(name = "clearExpiredAuthorizationCodes")
+	@Transactional(value = "defaultTransactionManager")
+	@Scheduled(fixedDelay = 60 * ONE_MINUTE, initialDelay = 12 * ONE_MINUTE)
+	@SchedulerLock(name = "clearExpiredTokens", lockAtMostFor = "3590s", lockAtLeastFor = "3590s")
+	public void clearExpiredTokens() {
+		try {
+			LockAssert.assertLocked();
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+		long start = System.currentTimeMillis();
+		int count = this.customClearTasks.clearExpiredTokens(TimeUnit.MINUTES.toMillis(15));
+		long execution = System.currentTimeMillis() - start;
+		log.info("clearExpiredTokens took {}ms, deleted {} records", execution, count);
+	}
+
+	@Transactional(value = "defaultTransactionManager")
+	@Scheduled(fixedDelay = 60 * ONE_MINUTE, initialDelay = 24 * ONE_MINUTE)
+	@SchedulerLock(name = "clearExpiredAuthorizationCodes", lockAtMostFor = "3590s", lockAtLeastFor = "3590s")
 	public void clearExpiredAuthorizationCodes() {
-		LockAssert.assertLocked();
-		this.defaultOAuth2AuthorizationCodeService.clearExpiredAuthorizationCodes();
+		try {
+			LockAssert.assertLocked();
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+		long start = System.currentTimeMillis();
+		int count = this.customClearTasks.clearExpiredAuthorizationCodes(TimeUnit.MINUTES.toMillis(15));
+		long execution = System.currentTimeMillis() - start;
+		log.info("clearExpiredAuthorizationCodes took {}ms, deleted {} records", execution, count);
 	}
 
-	@Scheduled(fixedDelay = 300000L, initialDelay = 600000L)
-	@SchedulerLock(name = "clearExpiredDeviceCodes")
+	@Transactional(value = "defaultTransactionManager")
+	@Scheduled(fixedDelay = 60 * ONE_MINUTE, initialDelay = 36 * ONE_MINUTE)
+	@SchedulerLock(name = "clearExpiredDeviceCodes", lockAtMostFor = "3590s", lockAtLeastFor = "3590s")
 	public void clearExpiredDeviceCodes() {
-		LockAssert.assertLocked();
-		this.deviceCodeService.clearExpiredDeviceCodes();
+		try {
+			LockAssert.assertLocked();
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+		long start = System.currentTimeMillis();
+		int count = this.customClearTasks.clearExpiredDeviceCodes(TimeUnit.MINUTES.toMillis(15));
+		long execution = System.currentTimeMillis() - start;
+		log.info("clearExpiredDeviceCodes took {}ms, deleted {} records", execution, count);
 	}
 
-	@Scheduled(fixedDelay = 600000L, initialDelay = 600000L)
-	@SchedulerLock(name = "clearExpiredAcrs")
+	@Transactional(value = "defaultTransactionManager")
+	@Scheduled(fixedDelay = 60 * ONE_MINUTE, initialDelay = 48 * ONE_MINUTE)
+	@SchedulerLock(name = "clearExpiredAcrs", lockAtMostFor = "3590s", lockAtLeastFor = "3590s")
 	public void clearExpiredAcrs() {
-		LockAssert.assertLocked();
-		this.perunAcrRepository.deleteExpired();
+		try {
+			LockAssert.assertLocked();
+		} catch (IllegalArgumentException e) {
+			return;
+		}
+		long start = System.currentTimeMillis();
+		int count = this.customClearTasks.clearExpiredAcrs(TimeUnit.MINUTES.toMillis(15));
+		long execution = System.currentTimeMillis() - start;
+		log.info("clearExpiredAcrs took {}ms, deleted {} records", execution, count);
 	}
 
 }
