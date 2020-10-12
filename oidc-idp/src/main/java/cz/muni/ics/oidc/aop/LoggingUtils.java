@@ -49,7 +49,7 @@ public class LoggingUtils {
      * @throws Throwable throw exception by the method execution.
      */
     public static Object logExecutionTimes(Logger log, ProceedingJoinPoint pjp) throws Throwable {
-        String className = pjp.getSignature().getClass().getName();
+        String className = pjp.getTarget().getClass().getName();
         String methodName = pjp.getSignature().getName();
         Object[] args = pjp.getArgs();
         long start = System.currentTimeMillis();
