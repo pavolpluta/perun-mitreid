@@ -158,7 +158,7 @@ public class PerunConnectorRpc {
 			return JsonNodeFactory.instance.nullNode();
 		}
 
-		String actionUrl = perunUrl + serializer + manager + '/' + method;
+		String actionUrl = perunUrl + '/' + serializer + '/' + manager + '/' + method;
 		//make the call
 		try {
 			log.debug("calling {} with {}", actionUrl, map);
