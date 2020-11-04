@@ -52,13 +52,15 @@ public class PerunConnectorRpc {
 	private String perunUser;
 	private String perunPassword;
 	private boolean isEnabled;
+	private String serializer;
 	private RestTemplate restTemplate;
 
-	public PerunConnectorRpc(String perunUrl, String perunUser, String perunPassword, String enabled) {
+	public PerunConnectorRpc(String perunUrl, String perunUser, String perunPassword, String enabled, String serializer) {
 		this.isEnabled = Boolean.parseBoolean(enabled);
 		this.setPerunUrl(perunUrl);
 		this.setPerunUser(perunUser);
 		this.setPerunPassword(perunPassword);
+		this.setSerializer(serializer);
 	}
 
 	public void setEnabled(String enabled) {
@@ -93,6 +95,14 @@ public class PerunConnectorRpc {
 		}
 
 		this.perunPassword = perunPassword;
+	}
+
+	public void setSerializer(String serializer) {
+		if (serializer == null || serializer.trim().isEmpty()) {
+			throw new IllegalArgumentException("Serializer cannot be null or empty");
+		}
+
+		this.serializer = serializer;
 	}
 
 	@PostConstruct
@@ -148,7 +158,7 @@ public class PerunConnectorRpc {
 			return JsonNodeFactory.instance.nullNode();
 		}
 
-		String actionUrl = perunUrl + "/json/" + manager + '/' + method;
+		String actionUrl = perunUrl + serializer + manager + '/' + method;
 		//make the call
 		try {
 			log.debug("calling {} with {}", actionUrl, map);

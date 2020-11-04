@@ -40,6 +40,7 @@
 				<prop key="perun.rpc.url">https://perun.elixir-czech.cz/krb/rpc</prop>
 				<prop key="perun.rpc.user">xxxxx</prop>
 				<prop key="perun.rpc.password">yyyyy</prop>
+				<prop key="perun.rpc.serializer">json</prop>
 				<!-- LDAP -->
 				<prop key="ldap.host">perun.cesnet.cz</prop>
 				<prop key="ldap.user">xxxxx</prop>
@@ -424,6 +425,7 @@
 		<constructor-arg name="perunUser" value="${perun.rpc.user}"/>
 		<constructor-arg name="perunPassword" value="${perun.rpc.password}"/>
 		<constructor-arg name="enabled" value="${perun.rpc.enabled}"/>
+		<constructor-arg name="serializer" value="${perun.rpc.serializer}"/>
 	</bean>
 
 	<bean id="perunAdapterMethodsRpc" class="cz.muni.ics.oidc.server.adapters.impl.PerunAdapterRpc">
