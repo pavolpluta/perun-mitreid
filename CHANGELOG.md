@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+#### Changed
+- Allow using Perun RPC serializer from the configuration. Default value is 'json'. 
 
 ## [v2.2.0]
 ### Added
