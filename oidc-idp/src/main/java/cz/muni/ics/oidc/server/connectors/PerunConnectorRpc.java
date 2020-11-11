@@ -20,6 +20,7 @@ import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.InterceptingClientHttpRequestFactory;
 import org.springframework.http.client.support.BasicAuthorizationInterceptor;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -52,13 +53,15 @@ public class PerunConnectorRpc {
 	private String perunUser;
 	private String perunPassword;
 	private boolean isEnabled;
+	private String serializer;
 	private RestTemplate restTemplate;
 
-	public PerunConnectorRpc(String perunUrl, String perunUser, String perunPassword, String enabled) {
+	public PerunConnectorRpc(String perunUrl, String perunUser, String perunPassword, String enabled, String serializer) {
 		this.isEnabled = Boolean.parseBoolean(enabled);
 		this.setPerunUrl(perunUrl);
 		this.setPerunUser(perunUser);
 		this.setPerunPassword(perunPassword);
+		this.setSerializer(serializer);
 	}
 
 	public void setEnabled(String enabled) {
@@ -70,7 +73,7 @@ public class PerunConnectorRpc {
 	}
 
 	public void setPerunUrl(String perunUrl) {
-		if (perunUrl == null || perunUrl.trim().isEmpty()) {
+		if (!StringUtils.hasText(perunUrl)) {
 			throw new IllegalArgumentException("Perun URL cannot be null or empty");
 		} else if (perunUrl.endsWith("/")) {
 			perunUrl = perunUrl.substring(0, perunUrl.length() - 1);
@@ -80,7 +83,7 @@ public class PerunConnectorRpc {
 	}
 
 	public void setPerunUser(String perunUser) {
-		if (perunUser == null || perunUser.trim().isEmpty()) {
+		if (!StringUtils.hasText(perunUser)) {
 			throw new IllegalArgumentException("Perun USER cannot be null or empty");
 		}
 
@@ -88,11 +91,19 @@ public class PerunConnectorRpc {
 	}
 
 	public void setPerunPassword(String perunPassword) {
-		if (perunPassword == null || perunPassword.trim().isEmpty()) {
+		if (!StringUtils.hasText(perunPassword)) {
 			throw new IllegalArgumentException("Perun PASSWORD cannot be null or empty");
 		}
 
 		this.perunPassword = perunPassword;
+	}
+
+	public void setSerializer(String serializer) {
+		if (!StringUtils.hasText(serializer)) {
+			this.serializer = "json";
+		}
+
+		this.serializer = serializer;
 	}
 
 	@PostConstruct
@@ -148,7 +159,7 @@ public class PerunConnectorRpc {
 			return JsonNodeFactory.instance.nullNode();
 		}
 
-		String actionUrl = perunUrl + "/json/" + manager + '/' + method;
+		String actionUrl = perunUrl + '/' + serializer + '/' + manager + '/' + method;
 		//make the call
 		try {
 			log.debug("calling {} with {}", actionUrl, map);
