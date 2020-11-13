@@ -41,7 +41,7 @@ public class PerunUserInfo extends DefaultUserInfo {
 				if (value == null || value.isNull()) {
 					obj.addProperty(key, (String) null);
 					log.debug("adding null claim {}=null", key);
-				} else if (value.isTextual()) {
+				} else if (value.isTextual() || value.isNumber() || value.isBoolean()) {
 					obj.addProperty(key, value.asText());
 					log.debug("adding string claim {}={}", key, value.asText());
 				} else if (value.isNumber()) {
