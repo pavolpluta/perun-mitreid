@@ -2,7 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-#### Changed
+### Added
+- added StaticValueClaimSource
+### Changed
 - Allow using Perun RPC serializer from the configuration. Default value is 'json'. 
 
 ## [v2.2.0]
