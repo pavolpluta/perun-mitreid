@@ -3,6 +3,7 @@ package cz.muni.ics.oidc.web.controllers;
 
 import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import cz.muni.ics.oidc.server.PerunScopeClaimTranslationService;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
@@ -31,11 +32,13 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Controller of the pages where user accepts that information
@@ -132,33 +135,48 @@ public class PerunOAuthConfirmationController{
         // add in any scopes that aren't system scopes to the end of the list
         sortedScopes.addAll(Sets.difference(scopes, systemScopes));
 
-        model.put("scopes", sortedScopes);
-
         Map<String, Map<String, Object>> claimsForScopes = new LinkedHashMap<>();
         if (user != null) {
             JsonObject userJson = user.toJson();
-
+            log.error("{}", userJson);
             for (SystemScope systemScope : sortedScopes) {
                 Map<String, Object> claimValues = new LinkedHashMap<>();
-
                 Set<String> claims = scopeClaimTranslationService.getClaimsForScope(systemScope.getValue());
                 for (String claim : claims) {
-                    if (userJson.has(claim) && userJson.get(claim).isJsonPrimitive()) {
-                        claimValues.put(claim, userJson.get(claim).getAsString());
-                    } else if (userJson.has(claim) && userJson.get(claim).isJsonArray()) {
-                        JsonArray arr = userJson.getAsJsonArray(claim);
-                        List<String> values = new ArrayList<>();
-                        for (int i = 0; i < arr.size(); i++) {
-                            values.add(arr.get(i).getAsString());
+                    if (userJson.has(claim)) {
+                        JsonElement claimJson = userJson.get(claim);
+                        if (claimJson == null || claimJson.isJsonNull()) {
+                            continue;
                         }
-                        claimValues.put(claim, values);
+                        if (claimJson.isJsonPrimitive()) {
+                            claimValues.put(claim, claimJson.getAsString());
+                        } else if (userJson.has(claim) && claimJson.isJsonArray()) {
+                            JsonArray arr = userJson.getAsJsonArray(claim);
+                            List<String> values = new ArrayList<>();
+                            for (int i = 0; i < arr.size(); i++) {
+                                values.add(arr.get(i).getAsString());
+                            }
+                            claimValues.put(claim, values);
+                        }
                     }
                 }
-                claimsForScopes.put(systemScope.getValue(), claimValues);
+                if (!claimValues.isEmpty()) {
+                    claimsForScopes.put(systemScope.getValue(), claimValues);
+                }
             }
         }
 
+        sortedScopes = sortedScopes.stream()
+                .filter(systemScope -> {
+                    if ("offline_access".equals(systemScope.getValue().toLowerCase())) {
+                        claimsForScopes.put("offline_access", Collections.singletonMap("offline_access", true));
+                        return true;
+                    }
+                    return claimsForScopes.containsKey(systemScope.getValue());
+                })
+                .collect(Collectors.toSet());
         model.put("claims", claimsForScopes);
+        model.put("scopes", sortedScopes);
     }
 
 }

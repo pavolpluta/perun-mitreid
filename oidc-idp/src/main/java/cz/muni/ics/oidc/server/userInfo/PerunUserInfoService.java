@@ -28,6 +28,7 @@ import org.mitre.openid.connect.service.UserInfoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.PostConstruct;
 import java.lang.reflect.Constructor;
@@ -454,12 +455,15 @@ public class PerunUserInfoService implements UserInfoService {
 			ui.setPhoneNumber(userAttributeValues.get(phoneAttribute).valueAsString()); //[E.164] is RECOMMENDED as the format, for example, +1 (425) 555-121
 			//ui.setPhoneNumberVerified(true); // True if the End-User's phone number has been verified
 			//ui.setUpdatedTime(Long.toString(System.currentTimeMillis()/1000L));// value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time
-			Address address = new DefaultAddress();
-			address.setFormatted(userAttributeValues.get(addressAttribute).valueAsString());
-			//address.setStreetAddress("Šumavská 15");
-			//address.setLocality("Brno");
-			//address.setPostalCode("61200");
-			//address.setCountry("Czech Republic");
+			Address address = null;
+			if (StringUtils.hasText(userAttributeValues.get(addressAttribute).valueAsString())) {
+				address = new DefaultAddress();
+				address.setFormatted(userAttributeValues.get(addressAttribute).valueAsString());
+				//address.setStreetAddress("Šumavská 15");
+				//address.setLocality("Brno");
+				//address.setPostalCode("61200");
+				//address.setCountry("Czech Republic");
+			}
 			ui.setAddress(address);
 			//custom claims
 			ClaimSourceProduceContext pctx = new ClaimSourceProduceContext(perunUserId, sub, userAttributeValues, perunAdapter, pair.getClient());
@@ -468,8 +472,14 @@ public class PerunUserInfoService implements UserInfoService {
 				log.debug("producing value for custom claim {}", pccd.getClaim());
 				JsonNode claimInJson = pccd.getClaimSource().produceValue(pctx);
 				log.debug("produced value {}={}", pccd.getClaim(), claimInJson);
-				if (claimInJson == null) {
+				if (claimInJson == null || claimInJson.isNull()) {
 					log.debug("claim {} is null", pccd.getClaim());
+					continue;
+				} else if (claimInJson.isTextual() && !StringUtils.hasText(claimInJson.asText())) {
+					log.debug("claim {} is a string and it is empty or null", pccd.getClaim());
+					continue;
+				} else if ((claimInJson.isArray() || claimInJson.isObject()) && claimInJson.size() == 0) {
+					log.debug("claim {} is an object or array and it is empty or null", pccd.getClaim());
 					continue;
 				}
 				ClaimModifier claimModifier = pccd.getClaimModifier();

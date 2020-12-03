@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 - added StaticValueClaimSource
 ### Changed
 - Allow using Perun RPC serializer from the configuration. Default value is 'json'. 
+- In userInfo, filter out empty claims. If scope does not have any claims in result, filter it out as well. 
 
 ## [v2.2.0]
 ### Added
