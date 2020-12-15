@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Changed
+- refactored RPC mapper
+- modified filter utility method checking given to check only for null or empty and not try to put protocol as well
+### Fixed
+- fixed calling wrong methods in attributes fetching of RPC adapter
 
 ## [v2.3.0]
 ### Added

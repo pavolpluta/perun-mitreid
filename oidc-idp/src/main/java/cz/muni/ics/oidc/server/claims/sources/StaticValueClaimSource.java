@@ -67,7 +67,7 @@ public class StaticValueClaimSource extends ClaimSource {
 			value = JsonNodeFactory.instance.textNode(valueStr);
 		}
 
-		log.debug("Produced value for attribute {}: {}", valueSeparator, value);
+		log.debug("Produced value: {}", value);
 		return value;
 	}
 

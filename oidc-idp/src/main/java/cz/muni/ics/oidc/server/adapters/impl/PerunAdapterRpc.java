@@ -442,7 +442,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		return this.getGroupAttributeValue(facility.getId(), attrToFetch);
+		return this.getFacilityAttributeValue(facility.getId(), attrToFetch);
 	}
 
 	@Override
@@ -488,7 +488,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 			return null;
 		}
 
-		return this.getFacilityAttribute(voId, attrToFetch).toPerunAttributeValue();
+		return this.getVoAttribute(voId, attrToFetch).toPerunAttributeValue();
 	}
 
 	@Override

@@ -12,15 +12,17 @@ import java.util.Objects;
 public class Resource extends Model {
 
 	private Long voId;
+	private Long facilityId;
 	private String name;
 	private String description;
 	private Vo vo;
 
 	public Resource() {	}
 
-	public Resource(Long id, Long voId, String name, String description) {
+	public Resource(Long id, Long facilityId, Long voId, String name, String description) {
 		super(id);
 		this.setVoId(voId);
+		this.setFacilityId(facilityId);
 		this.setName(name);
 		this.setDescription(description);
 	}
@@ -28,9 +30,21 @@ public class Resource extends Model {
 	/**
 	 * Should be used when RichResource is obtained from Perun
 	 */
-	public Resource(Long id, Long voId, String name, String description, Vo vo) {
-		this(id, voId, name, description);
+	public Resource(Long id, Long facilityId, Long voId, String name, String description, Vo vo) {
+		this(id, facilityId, voId, name, description);
 		this.setVo(vo);
+	}
+
+	public Long getFacilityId() {
+		return facilityId;
+	}
+
+	public void setFacilityId(Long facilityId) {
+		if (facilityId == null) {
+			throw new IllegalArgumentException("facilityId can't be null");
+		}
+
+		this.facilityId = facilityId;
 	}
 
 	public Long getVoId() {

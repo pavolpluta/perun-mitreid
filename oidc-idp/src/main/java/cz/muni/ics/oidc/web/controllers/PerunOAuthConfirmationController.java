@@ -138,7 +138,6 @@ public class PerunOAuthConfirmationController{
         Map<String, Map<String, Object>> claimsForScopes = new LinkedHashMap<>();
         if (user != null) {
             JsonObject userJson = user.toJson();
-            log.error("{}", userJson);
             for (SystemScope systemScope : sortedScopes) {
                 Map<String, Object> claimValues = new LinkedHashMap<>();
                 Set<String> claims = scopeClaimTranslationService.getClaimsForScope(systemScope.getValue());
@@ -150,7 +149,7 @@ public class PerunOAuthConfirmationController{
                         }
                         if (claimJson.isJsonPrimitive()) {
                             claimValues.put(claim, claimJson.getAsString());
-                        } else if (userJson.has(claim) && claimJson.isJsonArray()) {
+                        } else if (claimJson.isJsonArray()) {
                             JsonArray arr = userJson.getAsJsonArray(claim);
                             List<String> values = new ArrayList<>();
                             for (int i = 0; i < arr.size(); i++) {
@@ -168,7 +167,7 @@ public class PerunOAuthConfirmationController{
 
         sortedScopes = sortedScopes.stream()
                 .filter(systemScope -> {
-                    if ("offline_access".equals(systemScope.getValue().toLowerCase())) {
+                    if ("offline_access".equalsIgnoreCase(systemScope.getValue())) {
                         claimsForScopes.put("offline_access", Collections.singletonMap("offline_access", true));
                         return true;
                     }

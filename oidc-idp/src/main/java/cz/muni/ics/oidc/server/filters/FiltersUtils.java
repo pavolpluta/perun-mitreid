@@ -22,9 +22,6 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.security.Principal;
 import java.util.AbstractMap;
 import java.util.Arrays;
@@ -297,30 +294,7 @@ public class FiltersUtils {
 		if (customRegUrl == null || customRegUrl.isEmpty()) {
 			return null;
 		}
-
-		if (!customRegUrl.startsWith("http://") && !customRegUrl.startsWith("https://")) {
-			customRegUrl = "https://" + customRegUrl;
-		}
-
-		try {
-			URL url = new URL(customRegUrl);
-			URLConnection conn = url.openConnection();
-			conn.connect();
-			return customRegUrl;
-		} catch (IOException e) {
-			//this is ok, we can try to replace https:// with http://
-		}
-
-		customRegUrl = customRegUrl.replace("https://", "http://");
-
-		try {
-			URL url = new URL(customRegUrl);
-			URLConnection conn = url.openConnection();
-			conn.connect();
-			return customRegUrl;
-		} catch (IOException e) {
-			return null;
-		}
+		return customRegUrl;
 	}
 
 	private static String removeForceAuthParam(String query) {
