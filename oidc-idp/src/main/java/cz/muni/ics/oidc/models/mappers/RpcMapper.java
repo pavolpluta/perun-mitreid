@@ -14,6 +14,7 @@ import cz.muni.ics.oidc.models.Resource;
 import cz.muni.ics.oidc.models.UserExtSource;
 import cz.muni.ics.oidc.models.Vo;
 import cz.muni.ics.oidc.models.enums.MemberStatus;
+import org.springframework.util.StringUtils;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -416,7 +417,13 @@ public class RpcMapper {
 		String friendlyNameParameter = getFieldAsString(json, FRIENDLY_NAME_PARAMETER);
 		JsonNode value = getFieldAsJsonNode(json, VALUE);
 		String valueCreatedAt = getFieldAsString(json, VALUE_CREATED_AT);
+		if (!StringUtils.hasText(valueCreatedAt)) {
+			valueCreatedAt = null;
+		}
 		String valueModifiedAt = getFieldAsString(json, VALUE_MODIFIED_AT);
+		if (!StringUtils.hasText(valueModifiedAt)) {
+			valueModifiedAt = null;
+		}
 
 		return new PerunAttribute(id, friendlyName, namespace, description, type, displayName,
 				writable, unique, entity, baseFriendlyName, friendlyNameParameter, value, valueCreatedAt, valueModifiedAt);
