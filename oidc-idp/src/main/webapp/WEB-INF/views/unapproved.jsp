@@ -23,23 +23,7 @@ pageContext.setAttribute("cssLinks", cssLinks);
             <c:set var="contact" value="${contactIter}" />
         </c:forEach>
         <c:if test="${empty contact}">
-            <c:choose>
-                <c:when test="${theme eq 'elixir'}">
-                    <c:set var="contact" value="aai-contact@elixir-europe.org"/>
-                </c:when>
-                <c:when test="${theme eq 'cesnet'}">
-                    <c:set var="contact" value="login@cesnet.cz"/>
-                </c:when>
-                <c:when test="${theme eq 'ceitec'}">
-                    <c:set var="contact" value="idm@ics.muni.cz"/>
-                </c:when>
-                <c:when test="${theme eq 'bbmri'}">
-                    <c:set var="contact" value="aai@helpdesk.bbmri-eric.eu"/>
-                </c:when>
-                <c:when test="${theme eq 'europdx'}">
-                    <c:set var="contact" value="contact@europdx.eu"/>
-                </c:when>
-            </c:choose>
+            <c:set var="contact" value="${contactMail}"/>
         </c:if>
         <h1>${langProps['403_header']}</h1>
         <p>${langProps['403_text']}&#32;${fn:escapeXml(client.clientName)}

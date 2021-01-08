@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - refactored RPC mapper
 - modified filter utility method checking given to check only for null or empty and not try to put protocol as well
+- make use of contact.email property in UNAPPROVED view when no contact is available for client 
 ### Fixed
 - fixed calling wrong methods in attributes fetching of RPC adapter
 
