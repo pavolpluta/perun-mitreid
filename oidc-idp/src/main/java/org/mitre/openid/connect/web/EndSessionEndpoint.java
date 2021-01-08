@@ -22,6 +22,9 @@ import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
+import cz.muni.ics.oidc.web.WebHtmlClasses;
+import cz.muni.ics.oidc.web.controllers.ControllerUtils;
+import cz.muni.ics.oidc.web.langs.Localization;
 import org.mitre.jwt.assertion.impl.SelfAssertionValidator;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.service.ClientDetailsEntityService;
@@ -34,7 +37,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.common.exceptions.InvalidClientException;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -46,6 +48,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Map;
 
 /**
  * End Session Endpoint from OIDC session management.
@@ -80,6 +83,12 @@ public class EndSessionEndpoint {
 	@Autowired
 	private ClientDetailsEntityService clientService;
 
+	@Autowired
+	private Localization localization;
+
+	@Autowired
+	private WebHtmlClasses htmlClasses;
+
 	@RequestMapping(value = "/" + URL, method = RequestMethod.GET)
 	public String endSession(@RequestParam(value = "id_token_hint", required = false) String idTokenHint,
 	                         @RequestParam(value = "post_logout_redirect_uri", required = false) String postLogoutRedirectUri,
@@ -87,7 +96,7 @@ public class EndSessionEndpoint {
 	                         HttpServletRequest request,
 	                         HttpServletResponse response,
 	                         HttpSession session,
-	                         Authentication auth, Model m) throws IOException {
+	                         Authentication auth, Map<String, Object> model) throws IOException {
 
 		String referer = request.getHeader(REFERER_HEADER);
 		session.setAttribute(DENY_REDIRECT_URL, referer);
@@ -136,11 +145,13 @@ public class EndSessionEndpoint {
 		} else {
 			logger.info("Logout confirmating for user {} from client {}", auth.getName(), client != null ? client.getClientName() : "unknown");
 			// we are logged in, need to prompt the user before we log out
-			m.addAttribute("client", client);
-			m.addAttribute("idToken", idTokenClaims);
+			model.put("client", client);
+			model.put("idToken", idTokenClaims);
+
+			ControllerUtils.setPageOptions(model, request, localization, htmlClasses, perunOidcConfig);
 
 			// display the log out confirmation page
-			return "logoutConfirmation";
+			return "logout";
 		}
 	}
 

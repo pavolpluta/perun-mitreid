@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### Added
+- Added custom view for logout confirmation page
 ### Changed
 - refactored RPC mapper
 - modified filter utility method checking given to check only for null or empty and not try to put protocol as well
