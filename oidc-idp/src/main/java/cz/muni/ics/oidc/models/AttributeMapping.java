@@ -13,7 +13,7 @@ import java.util.Objects;
  * <ul>
  *     <li><b>[attrName].mapping.ldap</b> - name of attribute in LDAP</li>
  *     <li><b>[attrName].mapping.rpc</b> - name of attribute in LDAP</li>
- *     <li><b>[attrName].mapping.type</b> - [STRING|LARGE_STRING|INTEGER|BOOLEAN|ARRAY|LARGE_ARRAY|MAP_JSON|MAP_KEY_VALUE]
+ *     <li><b>[attrName].mapping.type</b> - [STRING|INTEGER|BOOLEAN|ARRAY|MAP_JSON|MAP_KEY_VALUE]
  *     - type of attribute value, defaults to STRING</li>
  *     <li><b>[attrName].mapping.separator</b> - separator of keys ands values if type equals to MAP_KEY_VALUE, defaults to '='</li>
  * </ul>

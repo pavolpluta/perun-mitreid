@@ -655,9 +655,6 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 			case STRING:
 				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.STRING_TYPE,
 						isNull ? jsonNodeFactory.nullNode() : jsonNodeFactory.textNode(attr.get().getString()));
-			case LARGE_STRING:
-				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.LARGE_STRING_TYPE,
-						isNull ? jsonNodeFactory.nullNode() : jsonNodeFactory.textNode(attr.get().getString()));
 			case INTEGER:
 				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.INTEGER_TYPE,
 						isNull ? jsonNodeFactory.nullNode() : jsonNodeFactory.numberNode(Long.parseLong(attr.get().getString())));
@@ -666,9 +663,6 @@ public class PerunAdapterLdap extends PerunAdapterWithMappingServices implements
 						isNull ? jsonNodeFactory.booleanNode(false) : jsonNodeFactory.booleanNode(Boolean.parseBoolean(attr.get().getString())));
 			case ARRAY:
 				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.ARRAY_TYPE,
-						isNull ? jsonNodeFactory.arrayNode() : getArrNode(attr));
-			case LARGE_ARRAY:
-				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.LARGE_ARRAY_LIST_TYPE,
 						isNull ? jsonNodeFactory.arrayNode() : getArrNode(attr));
 			case MAP_JSON:
 				return new PerunAttributeValue(mapping.getIdentifier(), PerunAttributeValue.MAP_TYPE,
