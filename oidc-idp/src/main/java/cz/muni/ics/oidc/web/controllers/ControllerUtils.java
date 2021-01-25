@@ -1,11 +1,19 @@
 package cz.muni.ics.oidc.web.controllers;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import cz.muni.ics.oidc.server.PerunScopeClaimTranslationService;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import cz.muni.ics.oidc.web.WebHtmlClasses;
 import cz.muni.ics.oidc.web.langs.Localization;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
+import org.mitre.oauth2.model.SystemScope;
+import org.mitre.oauth2.service.SystemScopeService;
+import org.mitre.openid.connect.model.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,9 +22,14 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -111,6 +124,69 @@ public class ControllerUtils {
 		model.put("theme", perunOidcConfig.getTheme().toLowerCase());
 		model.put("baseURL", perunOidcConfig.getBaseURL());
 		model.put("samlResourcesURL", perunOidcConfig.getSamlResourcesURL());
+	}
+
+	public static void setScopesAndClaims(SystemScopeService scopeService,
+										  PerunScopeClaimTranslationService scopeClaimTranslationService,
+										  Map<String, Object> model,
+										  Set<String> scope,
+										  UserInfo user)
+	{
+		Set<SystemScope> scopes = scopeService.fromStrings(scope);
+		Set<SystemScope> sortedScopes = new LinkedHashSet<>(scopes.size());
+		Set<SystemScope> systemScopes = scopeService.getAll();
+
+		// sort scopes for display based on the inherent order of system scopes
+		for (SystemScope s : systemScopes) {
+			if (scopes.contains(s)) {
+				sortedScopes.add(s);
+			}
+		}
+
+		// add in any scopes that aren't system scopes to the end of the list
+		sortedScopes.addAll(Sets.difference(scopes, systemScopes));
+
+		Map<String, Map<String, Object>> claimsForScopes = new LinkedHashMap<>();
+		if (user != null) {
+			JsonObject userJson = user.toJson();
+			for (SystemScope systemScope : sortedScopes) {
+				Map<String, Object> claimValues = new LinkedHashMap<>();
+				Set<String> claims = scopeClaimTranslationService.getClaimsForScope(systemScope.getValue());
+				for (String claim : claims) {
+					if (userJson.has(claim)) {
+						JsonElement claimJson = userJson.get(claim);
+						if (claimJson == null || claimJson.isJsonNull()) {
+							continue;
+						}
+						if (claimJson.isJsonPrimitive()) {
+							claimValues.put(claim, claimJson.getAsString());
+						} else if (claimJson.isJsonArray()) {
+							JsonArray arr = userJson.getAsJsonArray(claim);
+							List<String> values = new ArrayList<>();
+							for (int i = 0; i < arr.size(); i++) {
+								values.add(arr.get(i).getAsString());
+							}
+							claimValues.put(claim, values);
+						}
+					}
+				}
+				if (!claimValues.isEmpty()) {
+					claimsForScopes.put(systemScope.getValue(), claimValues);
+				}
+			}
+		}
+
+		sortedScopes = sortedScopes.stream()
+				.filter(systemScope -> {
+					if ("offline_access".equalsIgnoreCase(systemScope.getValue())) {
+						claimsForScopes.put("offline_access", Collections.singletonMap("offline_access", true));
+						return true;
+					}
+					return claimsForScopes.containsKey(systemScope.getValue());
+				})
+				.collect(Collectors.toSet());
+		model.put("claims", claimsForScopes);
+		model.put("scopes", sortedScopes);
 	}
 
 	private static String removeQueryParameter(String url, String parameterName) throws URISyntaxException {
