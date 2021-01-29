@@ -1,7 +1,5 @@
 package cz.muni.ics.oidc.server.filters.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.web.filter.GenericFilterBean;
 
@@ -14,7 +12,6 @@ import java.io.IOException;
 
 public class MDCFilter extends GenericFilterBean {
 
-    public static final Logger log = LoggerFactory.getLogger(MDCFilter.class);
     private static final int SIZE = 12;
     private static final String SESSION_ID = "sessionID";
 
@@ -29,7 +26,6 @@ public class MDCFilter extends GenericFilterBean {
                 if (id != null && id.length() > SIZE) {
                     id = id.substring(0, SIZE);
                 }
-                log.debug("set sessionID {} for remote user {}", id, req.getRemoteUser());
                 MDC.put(SESSION_ID, id);
             }
             filterChain.doFilter(servletRequest, servletResponse);

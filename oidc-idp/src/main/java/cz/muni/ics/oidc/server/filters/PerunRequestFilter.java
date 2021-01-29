@@ -62,9 +62,9 @@ public abstract class PerunRequestFilter {
             this.subs = new HashSet<>(Arrays.asList(params.getProperty(SUBS).split(DELIMITER)));
         }
 
-        log.debug("Filter name: {}", filterName);
-        log.debug("Skip for SUBS: {}", subs);
-        log.debug("Skip for CLIENT_IDS: {}", clientIds);
+        log.debug("{} - filter initialized", filterName);
+        log.debug("{} - skip execution for users with SUB in: {}", filterName, subs);
+        log.debug("{} - skip execution for clients with CLIENT_ID in: {}", filterName, clientIds);
     }
 
     /**
@@ -82,14 +82,13 @@ public abstract class PerunRequestFilter {
         HttpServletRequest request = (HttpServletRequest) req;
         // skip everything that's not an authorize URL
         if (!requestMatcher.matches(request)) {
-            log.debug("Filter: {} has been skipped, did not match /authorize", filterName);
+            log.debug("{} - filter has been skipped, did not match '/authorize' the request", filterName);
             return true;
         }
         if (!skip(request)) {
-            log.debug("Executing filter: {}", filterName);
+            log.trace("{} - executing filter", filterName);
             return this.process(req, res, params);
         } else {
-            log.debug("Filter: {} has been skipped", filterName);
             return true;
         }
     }
@@ -99,13 +98,14 @@ public abstract class PerunRequestFilter {
         String clientId = request.getParameter(PerunFilterConstants.PARAM_CLIENT_ID);
 
         if (sub != null && subs.contains(sub)) {
-            log.debug("Skipping filter {} because of sub {}", filterName, sub);
+            log.debug("{} - skip filter execution: matched one of the ignored SUBS ({})", filterName, sub);
             return true;
         } else if (clientId != null && clientIds.contains(clientId)){
-            log.debug("Skipping filter {} because of client_id {}", filterName, clientId);
+            log.debug("{} - skip filter execution: matched one of the ignored CLIENT_IDS ({})", filterName, clientId);
             return true;
         }
 
         return false;
     }
+
 }

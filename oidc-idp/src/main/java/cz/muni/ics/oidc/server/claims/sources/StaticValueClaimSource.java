@@ -42,6 +42,7 @@ public class StaticValueClaimSource extends ClaimSource {
 
 	public StaticValueClaimSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		log.debug("Initializing '{}'", this.getClass().getSimpleName());
 		this.valueSeparator = ctx.getProperty(VALUE_SEPARATOR, NO_SEPARATOR);
 		this.valueStr = ctx.getProperty(VALUE, null);
 		this.valueArr = null;

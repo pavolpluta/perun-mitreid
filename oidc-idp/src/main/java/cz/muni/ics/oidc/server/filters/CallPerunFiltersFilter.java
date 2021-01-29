@@ -66,28 +66,27 @@ public class CallPerunFiltersFilter extends GenericFilterBean {
         List<PerunRequestFilter> filters = perunFiltersContext.getFilters();
         if (filters != null && !filters.isEmpty()) {
             HttpServletRequest request = (HttpServletRequest) servletRequest;
-            ClientDetailsEntity client = FiltersUtils.extractClient(request, authRequestFactory,
+            ClientDetailsEntity client = FiltersUtils.extractClientFromRequest(request, authRequestFactory,
                     clientDetailsEntityService);
             Facility facility = null;
             if (client != null && StringUtils.hasText(client.getClientId())) {
                 try {
                     facility = perunAdapter.getFacilityByClientId(client.getClientId());
                 } catch (Exception e) {
-                    log.warn("Could not fetch facility for client_id {}", client.getClientId(), e);
+                    log.warn("{} - could not fetch facility for client_id '{}'",
+                            CallPerunFiltersFilter.class.getSimpleName(), client.getClientId(), e);
                     facility = null;
                 }
             }
             PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
-
             FilterParams params = new FilterParams(client, facility, user);
             for (PerunRequestFilter filter : filters) {
-                log.debug("Calling filter: {}", filter.getClass().getName());
                 if (!filter.doFilter(servletRequest, servletResponse, params)) {
                     return;
                 }
             }
         }
-
         filterChain.doFilter(servletRequest, servletResponse);
     }
+
 }

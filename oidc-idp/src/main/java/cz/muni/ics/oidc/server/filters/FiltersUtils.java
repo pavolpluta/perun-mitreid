@@ -57,7 +57,6 @@ public class FiltersUtils {
 				requestMap.put(key, val[0]); // add the first value only (which is what Spring seems to do)
 			}
 		}
-
 		return requestMap;
 	}
 
@@ -70,8 +69,9 @@ public class FiltersUtils {
 	 * @return extracted client, null if some error occurs
 	 */
 	@SuppressWarnings("unchecked")
-	public static ClientDetailsEntity extractClient(HttpServletRequest request, OAuth2RequestFactory authRequestFactory,
-	                                                ClientDetailsEntityService clientService)
+	public static ClientDetailsEntity extractClientFromRequest(HttpServletRequest request,
+															   OAuth2RequestFactory authRequestFactory,
+															   ClientDetailsEntityService clientService)
 	{
 		if (!requestMatcher.matches(request) || request.getParameter("response_type") == null) {
 			return null;
@@ -82,18 +82,17 @@ public class FiltersUtils {
 
 		ClientDetailsEntity client;
 		if (Strings.isNullOrEmpty(authRequest.getClientId())) {
-			log.warn("ClientID is null or empty, skip to next filter");
+			log.debug("cannot extract client - ClientID is null or empty");
 			return null;
 		}
 
 		client = clientService.loadClientByClientId(authRequest.getClientId());
-		log.debug("Found client: {}", client.getClientId());
-
 		if (Strings.isNullOrEmpty(client.getClientName())) {
-			log.warn("ClientName is null or empty, skip to next filter");
+			log.warn("cannot extract clientName for the clientID '{}'", client.getClientId());
 			return null;
 		}
 
+		log.debug("returning client '{}' with ID '{}'", client.getClientId(), client.getClientName());
 		return client;
 	}
 
@@ -114,6 +113,8 @@ public class FiltersUtils {
 		}
 
 		PerunPrincipal principal = new PerunPrincipal(p.getName(), extSourceName);
+		log.debug("fetching Perun user with extLogin '{}' and extSourceName '{}'",
+				principal.getExtLogin(), principal.getExtSourceName());
 		return perunAdapter.getPreauthenticatedUserId(principal);
 	}
 
@@ -141,11 +142,15 @@ public class FiltersUtils {
 			extLogin = remoteUser;
 		}
 
-		if (extSourceName == null || extLogin == null) {
-			return null;
+		PerunPrincipal principal = null;
+		if (extSourceName != null && extLogin != null) {
+			principal = new PerunPrincipal(extLogin, extSourceName);
+			log.debug("extracted principal '{}'", principal);
+		} else {
+			log.debug("could not extract principal");
 		}
 
-		return new PerunPrincipal(extLogin, extSourceName);
+		return principal;
 	}
 
 	/**
@@ -156,16 +161,18 @@ public class FiltersUtils {
 	 */
 	public static boolean isScopePresent(String scopeParam, String scope) {
 		if (scopeParam == null || scopeParam.trim().isEmpty()) {
+			log.trace("no scope has been requested");
 			return false;
 		}
 
 		String[] scopes = scopeParam.split(" ");
 		for (String s : scopes) {
 			if (s.equals(scope)) {
+				log.trace("scope '{}' has been requested", scope);
 				return true;
 			}
 		}
-
+		log.trace("scope has not been requested");
 		return false;
 	}
 
@@ -201,7 +208,7 @@ public class FiltersUtils {
 						.collect(Collectors.joining("&")));
 			}
 		}
-
+		log.debug("returning rebuilt request URL: '{}'", returnURL);
 		return returnURL;
 	}
 
@@ -211,9 +218,9 @@ public class FiltersUtils {
 	 * @param response response object
 	 * @param clientId identifier of the service
 	 */
-	public static void redirectUnapproved(HttpServletRequest request, HttpServletResponse response, String clientId) {
+	public static void redirectUnapproved(HttpServletRequest request, HttpServletResponse response, String clientId)
+	{
 		// cannot register, redirect to unapproved
-		log.debug("redirect to unapproved");
 		Map<String, String> params = new HashMap<>();
 		if (clientId != null) {
 			params.put("client_id", clientId);
@@ -237,12 +244,16 @@ public class FiltersUtils {
 	 * @param facilityAttributes Actual facility attributes
 	 * @param perunAdapter Adapter to call Perun
 	 */
-	public static void redirectUserCannotAccess(HttpServletRequest request, HttpServletResponse response, Facility facility,
-												   PerunUser user, String clientIdentifier, FacilityAttrsConfig facilityAttrsConfig,
-												   Map<String, PerunAttributeValue> facilityAttributes, PerunAdapter perunAdapter) 
+	public static void redirectUserCannotAccess(HttpServletRequest request,
+												HttpServletResponse response,
+												Facility facility,
+												PerunUser user,
+												String clientIdentifier,
+												FacilityAttrsConfig facilityAttrsConfig,
+												Map<String, PerunAttributeValue> facilityAttributes,
+												PerunAdapter perunAdapter)
 	{
 		if (facilityAttributes.get(facilityAttrsConfig.getAllowRegistrationAttr()).valueAsBoolean()) {
-			log.info("User not allowed to access the service");
 			boolean canRegister = perunAdapter.getAdapterRpc().groupWhereCanRegisterExists(facility);
 			if (canRegister) {
 				PerunAttributeValue customRegUrlAttr = facilityAttributes.get(facilityAttrsConfig.getRegistrationURLAttr());
@@ -251,7 +262,7 @@ public class FiltersUtils {
 					customRegUrl = validateUrl(customRegUrl);
 					if (customRegUrl != null) {
 						// redirect to custom registration URL
-						FiltersUtils.redirectToCustomRegUrl(response, customRegUrl);
+						FiltersUtils.redirectToCustomRegUrl(response, customRegUrl, user);
 						return;
 					}
 				}
@@ -265,36 +276,33 @@ public class FiltersUtils {
 		}
 
 		// cannot register, redirect to unapproved
-		log.debug("redirect to unapproved");
+		log.debug("user cannot register to obtain access, redirecting user '{}' to unapproved page", user);
 		FiltersUtils.redirectUnapproved(request, response, clientIdentifier);
 	}
 
 	private static void redirectToRegistrationForm(HttpServletRequest request, HttpServletResponse response,
 												   String clientIdentifier, Facility facility, PerunUser user) {
-		log.debug("Redirect to registration form");
 		Map<String, String> params = new HashMap<>();
 		params.put("client_id", clientIdentifier);
 		params.put("facility_id", facility.getId().toString());
 		params.put("user_id", String.valueOf(user.getId()));
 		String redirectUrl = ControllerUtils.createRedirectUrl(request, PerunFilterConstants.AUTHORIZE_REQ_PATTERN,
 				PerunUnapprovedRegistrationController.REGISTRATION_CONTINUE_MAPPING, params);
+		log.debug("redirecting user '{}' to the registration form URL: {}", user, redirectUrl);
 		response.reset();
 		response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 		response.setHeader("Location", redirectUrl);
 	}
 
-	private static void redirectToCustomRegUrl(HttpServletResponse response, String customRegUrl) {
-		log.debug("Redirect to custom registration URL: {}", customRegUrl);
+	private static void redirectToCustomRegUrl(HttpServletResponse response, String customRegUrl, PerunUser user) {
+		log.debug("redirecting user '{}' to the custom registration URL: {}", user, customRegUrl);
 		response.reset();
 		response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
 		response.setHeader("Location", customRegUrl);
 	}
 
 	private static String validateUrl(String customRegUrl) {
-		if (customRegUrl == null || customRegUrl.isEmpty()) {
-			return null;
-		}
-		return customRegUrl;
+		return (customRegUrl == null || customRegUrl.isEmpty()) ? null : customRegUrl;
 	}
 
 	private static String removeForceAuthParam(String query) {

@@ -58,6 +58,7 @@ public class EntitlementSource extends GroupNamesSource {
 
 	public EntitlementSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		log.debug("Initializing '{}'", this.getClass().getSimpleName());
 		this.forwardedEntitlements = ClaimUtils.fillStringPropertyOrNoVal(FORWARDED_ENTITLEMENTS, ctx);
 		this.resourceCapabilities = ClaimUtils.fillStringPropertyOrNoVal(RESOURCE_CAPABILITIES, ctx);
 		this.facilityCapabilities = ClaimUtils.fillStringPropertyOrNoVal(FACILITY_CAPABILITIES, ctx);
@@ -83,17 +84,17 @@ public class EntitlementSource extends GroupNamesSource {
 
 		if (idToGnameMap != null && !idToGnameMap.values().isEmpty()) {
 			this.fillEntitlementsFromGroupNames(idToGnameMap.values(), entitlements);
-			log.trace("Added entitlements for group names, current value: {}", entitlements);
+			log.debug("Entitlements for group names added.");
 		}
 
 		if (facility != null) {
 			this.fillCapabilities(facility, pctx, idToGnameMap, entitlements);
-			log.trace("Added entitlements for capabilities, current value: {}", entitlements);
+			log.debug("Capabilities added.");
 		}
 
 		if (ClaimUtils.isPropSet(this.forwardedEntitlements)) {
 			this.fillForwardedEntitlements(pctx, entitlements);
-			log.trace("Added forwarded entitlements, current value: {}", entitlements);
+			log.debug("Forwarded entitlements added.");
 		}
 
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
@@ -113,6 +114,7 @@ public class EntitlementSource extends GroupNamesSource {
 
 		for (String capability : resultCapabilities) {
 			entitlements.add(wrapCapabilityToAARC(capability));
+			log.trace("Added capability: {}", capability);
 		}
 	}
 
@@ -122,8 +124,9 @@ public class EntitlementSource extends GroupNamesSource {
 		if (forwardedEntitlementsVal != null && !forwardedEntitlementsVal.isNullValue()) {
 			JsonNode eduPersonEntitlementJson = forwardedEntitlementsVal.valueAsJson();
 			for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
-				log.debug("Added forwarded entitlement: {}", eduPersonEntitlementJson.get(i).asText());
-				entitlements.add(eduPersonEntitlementJson.get(i).asText());
+				String entitlement = eduPersonEntitlementJson.get(i).asText();
+				log.trace("Added forwarded entitlement: {}", entitlement);
+				entitlements.add(entitlement);
 			}
 		}
 	}
@@ -143,7 +146,9 @@ public class EntitlementSource extends GroupNamesSource {
 			if (StringUtils.hasText(parts[1])) {
 				gname += (':' + parts[1]);
 			}
-			entitlements.add(wrapGroupNameToAARC(gname));
+			String gNameEntitlement = wrapGroupNameToAARC(gname);
+			log.trace("Added group name entitlement: {}", gNameEntitlement);
+			entitlements.add(gNameEntitlement);
 		}
 	}
 

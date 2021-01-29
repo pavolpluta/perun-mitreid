@@ -51,12 +51,12 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 
 	public EdupersonScopedAffiliationsMUSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		log.debug("initializing");
+		log.debug("Initializing '{}'", this.getClass().getSimpleName());
 		parseConfigFile(ctx.getProperty(CONFIG_FILE, DEFAULT_PATH));
 	}
 
 	private void parseConfigFile(String file) {
-		log.debug("loading config file {}", file);
+		log.debug("Loading config file {}", file);
 		YAMLMapper mapper = new YAMLMapper();
 		try {
 			JsonNode root = mapper.readValue(new File(file), JsonNode.class);
@@ -71,21 +71,21 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 				affiliations.put(gids, value);
 			}
 		} catch (IOException ex) {
-			log.error("cannot read EPSA_MU config file", ex);
+			log.error("Cannot read '{}' config file", this.getClass().getSimpleName(), ex);
 		}
 	}
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		log.debug("producing value started for user with sub: {}", pctx.getSub());
-		ArrayNode result = JsonNodeFactory.instance.arrayNode();
 		Long userId = pctx.getPerunUserId();
+		log.debug("Producing values...");
+		ArrayNode result = JsonNodeFactory.instance.arrayNode();
 		Set<Long> groups = pctx.getPerunAdapter().getUserGroupsIds(userId, voId);
 		for (Map.Entry<List<Long>, String> entry : affiliations.entrySet()) {
 			for (Long id: entry.getKey()) {
 				if (groups.contains(id)) {
 					String affiliation = entry.getValue() + '@' + scope;
-					log.debug("added affiliation: {}", affiliation);
+					log.trace("Added affiliation: {}", affiliation);
 					result.add(affiliation);
 					break;
 				}
@@ -94,11 +94,11 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 
 		if (result.size() == 0) {
 			String affiliation = "affiliate@" + scope;
-			log.debug("added affiliation: {}", affiliation);
+			log.trace("Added affiliation: {}", affiliation);
 			result.add(affiliation);
 		}
 
-		log.debug("produced value {} for user with sub {}", result, pctx.getSub());
+		log.debug("Value '{}' for user '{}' with sub '{}' produced", result, userId, pctx.getSub());
 		return result;
 	}
 }

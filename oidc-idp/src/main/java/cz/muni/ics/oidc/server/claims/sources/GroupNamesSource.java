@@ -31,6 +31,7 @@ public class GroupNamesSource extends ClaimSource {
 
 	public GroupNamesSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		log.debug("Initializing '{}'", this.getClass().getSimpleName());
 	}
 
 	@Override
@@ -44,7 +45,7 @@ public class GroupNamesSource extends ClaimSource {
 	}
 
 	protected Map<Long, String> produceValueWithoutReplacing(ClaimSourceProduceContext pctx) {
-		log.debug("producing value without trimming 'members'");
+		log.debug("Producing value without trimming 'members'");
 		return produceValue(pctx, false);
 	}
 
@@ -56,7 +57,7 @@ public class GroupNamesSource extends ClaimSource {
 		if (client != null) {
 			String clientId = client.getClientId();
 			facility = perunConnector.getFacilityByClientId(clientId);
-			log.debug("found facility ({}) for client_id ({})", facility, clientId);
+			log.debug("Found facility '{}' for client_id '{}'", facility, clientId);
 		}
 
 		Set<Group> userGroups = new HashSet<>();

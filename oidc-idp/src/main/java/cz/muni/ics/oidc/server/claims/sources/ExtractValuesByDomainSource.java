@@ -9,6 +9,8 @@ import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import cz.muni.ics.oidc.server.claims.ClaimUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This source extract attribute values for given scope
@@ -23,6 +25,8 @@ import cz.muni.ics.oidc.server.claims.ClaimUtils;
  */
 public class ExtractValuesByDomainSource extends ClaimSource {
 
+	private static final Logger log = LoggerFactory.getLogger(ExtractValuesByDomainSource.class);
+
 	private static final String EXTRACT_BY_DOMAIN = "extractByDomain";
 	private static final String ATTRIBUTE_NAME = "attributeName";
 
@@ -31,6 +35,7 @@ public class ExtractValuesByDomainSource extends ClaimSource {
 
 	public ExtractValuesByDomainSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		log.debug("Initializing '{}'", this.getClass().getSimpleName());
 		this.domain = ClaimUtils.fillStringPropertyOrNoVal(EXTRACT_BY_DOMAIN, ctx);
 		if (!ClaimUtils.isPropSet(this.domain)) {
 			throw new IllegalArgumentException("Missing mandatory configuration option - domain");
@@ -53,8 +58,11 @@ public class ExtractValuesByDomainSource extends ClaimSource {
 		if (attributeValue != null) {
 			JsonNode attributeValueJson = attributeValue.valueAsJson();
 			if (attributeValueJson.isTextual() && hasDomain(attributeValueJson.textValue(), domain)) {
+				log.debug("Attribute value '{}' for attribute name '{}' in the domain '{}' found", attributeValueJson, attributeName, domain);
 				return attributeValueJson;
 			} else if (attributeValueJson.isArray()) {
+				log.trace("Array attribute value for attribute name '{}' found", attributeName);
+				log.trace("Looking for subvalues for the domain '{}'...", domain);
 				ArrayNode arrayNode = (ArrayNode) attributeValueJson;
 				JsonNodeFactory factory = JsonNodeFactory.instance;
 				ArrayNode result = new ArrayNode(factory);
@@ -65,6 +73,7 @@ public class ExtractValuesByDomainSource extends ClaimSource {
 						result.add(subValue);
 					}
 				}
+				log.debug("Found attribute values for attribute name '{}' in the domain '{}': {}", attributeName, domain, result);
 				return result;
 			}
 		}

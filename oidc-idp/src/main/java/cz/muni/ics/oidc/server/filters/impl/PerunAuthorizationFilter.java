@@ -32,16 +32,18 @@ import java.util.Map;
  */
 public class PerunAuthorizationFilter extends PerunRequestFilter {
 
-	private final static Logger log = LoggerFactory.getLogger(PerunAuthorizationFilter.class);
+	private static final Logger log = LoggerFactory.getLogger(PerunAuthorizationFilter.class);
 
 	private final PerunAdapter perunAdapter;
 	private final FacilityAttrsConfig facilityAttrsConfig;
+	private final String filterName;
 
 	public PerunAuthorizationFilter(PerunRequestFilterParams params) {
 		super(params);
 		BeanUtil beanUtil = params.getBeanUtil();
 		this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
 		this.facilityAttrsConfig = beanUtil.getBean(FacilityAttrsConfig.class);
+		this.filterName = params.getFilterName();
 	}
 
 	@Override
@@ -50,14 +52,14 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 		HttpServletResponse response = (HttpServletResponse) res;
 
 		Facility facility = params.getFacility();
-		if (facility == null) {
-			log.info("Skipping filter because not able to find facility");
+		if (facility == null || facility.getId() == null) {
+			log.debug("{} - skip filter execution: no facility provided", filterName);
 			return true;
 		}
 
 		PerunUser user = params.getUser();
-		if (user == null) {
-			log.info("Skipping filter because not able to extract user");
+		if (user == null || user.getId() == null) {
+			log.debug("{} - skip filter execution: no user provided", filterName);
 			return true;
 		}
 
@@ -67,24 +69,24 @@ public class PerunAuthorizationFilter extends PerunRequestFilter {
 
 	private boolean decideAccess(Facility facility, PerunUser user, HttpServletRequest request,
 								 HttpServletResponse response, String clientIdentifier, PerunAdapter perunAdapter,
-								 FacilityAttrsConfig facilityAttrsConfig) {
+								 FacilityAttrsConfig facilityAttrsConfig)
+	{
 		Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(
 				facility, facilityAttrsConfig.getMembershipAttrNames());
 
 		if (!facilityAttributes.get(facilityAttrsConfig.getCheckGroupMembershipAttr()).valueAsBoolean()) {
-			log.debug("Membership check not requested, skipping filter");
+			log.debug("{} - skip filter execution: membership check not requested", filterName);
 			return true;
 		}
 
-		boolean canAccess = perunAdapter.canUserAccessBasedOnMembership(facility, user.getId());
-		if (canAccess) {
-			// allow access, continue with chain
-			log.info("User allowed to access the service");
+		if (perunAdapter.canUserAccessBasedOnMembership(facility, user.getId())) {
+			log.info("{} - user allowed to access the service", filterName);
 			return true;
+		} else {
+			FiltersUtils.redirectUserCannotAccess(request, response, facility, user, clientIdentifier,
+					facilityAttrsConfig, facilityAttributes, perunAdapter);
+			return false;
 		}
-		FiltersUtils.redirectUserCannotAccess(request, response, facility, user, clientIdentifier, facilityAttrsConfig,
-				facilityAttributes, perunAdapter);
-		return false;
 	}
 
 }

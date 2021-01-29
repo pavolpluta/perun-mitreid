@@ -31,6 +31,7 @@ public class PerunAttributeClaimSource extends ClaimSource {
 
 	public PerunAttributeClaimSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		log.debug("Initializing '{}'", this.getClass().getSimpleName());
 		this.attributeName = ClaimUtils.fillStringPropertyOrNoVal(ATTRIBUTE, ctx);
 		if (!ClaimUtils.isPropSet(this.attributeName)) {
 			throw new IllegalArgumentException("Missing mandatory configuration option - attribute");
@@ -44,7 +45,7 @@ public class PerunAttributeClaimSource extends ClaimSource {
 			value = pctx.getAttrValues().get(attributeName).valueAsJson();
 		}
 
-		log.debug("Produced value for attribute {}: {}", attributeName, value);
+		log.debug("Produced value for attribute '{}': {}", attributeName, value);
 		return value;
 	}
 

@@ -35,6 +35,7 @@ public class TwoArrayAttributesClaimSource extends ClaimSource {
 
 	public TwoArrayAttributesClaimSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		log.debug("Initializing '{}'", this.getClass().getSimpleName());
 		this.attribute1Name = ClaimUtils.fillStringPropertyOrNoVal(ATTRIBUTE_1, ctx);
 		if (!ClaimUtils.isPropSet(this.attribute1Name)) {
 			throw new IllegalArgumentException("Missing mandatory configuration option - attribute1");
@@ -51,13 +52,13 @@ public class TwoArrayAttributesClaimSource extends ClaimSource {
 		if (ClaimUtils.isPropSetAndHasAttribute(attribute1Name, pctx)) {
 			j1 = pctx.getAttrValues().get(attribute1Name).valueAsJson();
 		}
-		log.debug("values for {}: {}", attribute1Name, j1);
+		log.debug("Found values for '{}': {}", attribute1Name, j1);
 
 		JsonNode j2 = new ArrayNode(JsonNodeFactory.instance);
 		if (ClaimUtils.isPropSetAndHasAttribute(attribute2Name, pctx)) {
 			j2 = pctx.getAttrValues().get(attribute2Name).valueAsJson();
 		}
-		log.debug("values for {}: {}", attribute2Name, j2);
+		log.debug("Found values for '{}': {}", attribute2Name, j2);
 
 		if (j1 == null || j1.isNull() || !j1.isArray()) return j2;
 		if (j2 == null || j2.isNull() || !j2.isArray()) return j1;
@@ -68,7 +69,7 @@ public class TwoArrayAttributesClaimSource extends ClaimSource {
 
 		result.addAll(a1);
 		result.addAll(a2);
-		log.debug("final value for attributes {} and {} is {}", attribute1Name, attribute2Name, result);
+		log.debug("Final values for attributes '{}' and '{}' are: {}", attribute1Name, attribute2Name, result);
 		return result;
 	}
 
