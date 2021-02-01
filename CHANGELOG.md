@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - make use of contact.email property in UNAPPROVED view when no contact is available for client 
 ### Fixed
 - fixed calling wrong methods in attributes fetching of RPC adapter
+- fixed mapping of user: the firstName field is optional
 
 ## [v2.3.0]
 ### Added

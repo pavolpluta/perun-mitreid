@@ -80,7 +80,7 @@ public class RpcMapper {
 		}
 
 		Long id = getRequiredFieldAsLong(json, ID);
-		String firstName = getRequiredFieldAsString(json, FIRST_NAME);
+		String firstName = getFieldAsString(json, FIRST_NAME);
 		String lastName = getRequiredFieldAsString(json, LAST_NAME);
 
 		return new PerunUser(id, firstName, lastName);
