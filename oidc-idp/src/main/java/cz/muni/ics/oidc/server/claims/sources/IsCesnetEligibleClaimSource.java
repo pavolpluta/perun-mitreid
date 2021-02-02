@@ -38,28 +38,34 @@ public class IsCesnetEligibleClaimSource extends ClaimSource {
 
     private final String sourceAttr;
     private String valueFormat;
+    private final String claimName;
 
     public IsCesnetEligibleClaimSource(ClaimSourceInitContext ctx) {
         super(ctx);
-        log.debug("Initializing '{}'", this.getClass().getSimpleName());
+        this.claimName = ctx.getClaimName();
         this.sourceAttr = ClaimUtils.fillStringPropertyOrNoVal(SOURCE_ATTR_NAME, ctx);
         if (!ClaimUtils.isPropSet(sourceAttr)) {
-            throw new IllegalArgumentException("Missing mandatory configuration option -" + sourceAttr);
+            throw new IllegalArgumentException(claimName + " - missing mandatory configuration option: "
+                    + SOURCE_ATTR_NAME);
         }
         this.valueFormat = ClaimUtils.fillStringPropertyOrNoVal(VALUE_FORMAT, ctx);
         if (!ClaimUtils.isPropSet(valueFormat)) {
             this.valueFormat = DEFAULT_FORMAT;
         }
+        log.debug("{} - sourceAttr: '{}', valueFormat: '{}'", claimName, sourceAttr, valueFormat);
     }
 
     @Override
     public JsonNode produceValue(ClaimSourceProduceContext pctx) {
+        JsonNode result;
         if (ClaimUtils.isPropSetAndHasAttribute(sourceAttr, pctx)) {
             String lastSeen = pctx.getAttrValues().get(sourceAttr).valueAsString();
-            return JsonNodeFactory.instance.booleanNode(this.isCesnetEligible(lastSeen));
+            result = JsonNodeFactory.instance.booleanNode(this.isCesnetEligible(lastSeen));
+        } else {
+            result = JsonNodeFactory.instance.booleanNode(false);
         }
-        log.debug("Source attribute not set or has no value, returning false.");
-        return JsonNodeFactory.instance.booleanNode(false);
+        log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), result);
+        return result;
     }
 
     private boolean isCesnetEligible(String attrValue) {
@@ -71,16 +77,18 @@ public class IsCesnetEligibleClaimSource extends ClaimSource {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(valueFormat);
             timeStampLastSeen = LocalDate.parse(attrValue, formatter);
         } catch (DateTimeParseException e) {
-            log.error("Could not parse timestamp value: {}", attrValue);
+            log.warn("{} - could not parse timestamp (for format: {}) value: '{}'", claimName, valueFormat, attrValue);
             return false;
         }
 
         LocalDate now = LocalDateTime.now().toLocalDate();
         if (timeStampLastSeen.isBefore(now.minusMonths(VALIDITY_PERIOD))) {
-            log.debug("Timestamp is after the defined period - invalid");
+            log.trace("{} - timestamp '{}' is after the defined period of '{} months'",
+                    claimName, timeStampLastSeen, VALIDITY_PERIOD);
             return false;
         } else {
-            log.debug("Timestamp is withing the defined period - valid");
+            log.trace("{} - timestamp '{}' is within the defined period of '{} months'",
+                    claimName, timeStampLastSeen, VALIDITY_PERIOD);
             return true;
         }
     }

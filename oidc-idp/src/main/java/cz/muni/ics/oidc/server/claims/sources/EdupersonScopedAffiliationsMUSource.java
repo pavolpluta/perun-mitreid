@@ -47,20 +47,22 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 
 	private final Map<List<Long>, String> affiliations = new HashMap<>();
 	private Long voId = 363L;
-	private String scope = "muni.cz";
+	private String valueScope = "muni.cz";
+	private final String claimName;
 
 	public EdupersonScopedAffiliationsMUSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		log.debug("Initializing '{}'", this.getClass().getSimpleName());
+		this.claimName = ctx.getClaimName();
 		parseConfigFile(ctx.getProperty(CONFIG_FILE, DEFAULT_PATH));
+		log.debug("{} - affiliations: '{}', voId: '{}', valueScope: '{}'", claimName, affiliations, voId, valueScope);
 	}
 
 	private void parseConfigFile(String file) {
-		log.debug("Loading config file {}", file);
+		log.trace("{} - Loading config file {}", claimName, file);
 		YAMLMapper mapper = new YAMLMapper();
 		try {
 			JsonNode root = mapper.readValue(new File(file), JsonNode.class);
-			scope = root.get(KEY_SCOPE).asText();
+			valueScope = root.get(KEY_SCOPE).asText();
 			voId = root.get(KEY_VO_ID).longValue();
 			for (JsonNode affiliationMapping : root.path(KEY_AFFILIATIONS)) {
 				String value = affiliationMapping.path(KEY_VALUE).asText();
@@ -71,21 +73,20 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 				affiliations.put(gids, value);
 			}
 		} catch (IOException ex) {
-			log.error("Cannot read '{}' config file", this.getClass().getSimpleName(), ex);
+			log.warn("{} - cannot read claim configuration file: '{}'", claimName, file);
 		}
 	}
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
 		Long userId = pctx.getPerunUserId();
-		log.debug("Producing values...");
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
 		Set<Long> groups = pctx.getPerunAdapter().getUserGroupsIds(userId, voId);
 		for (Map.Entry<List<Long>, String> entry : affiliations.entrySet()) {
 			for (Long id: entry.getKey()) {
 				if (groups.contains(id)) {
-					String affiliation = entry.getValue() + '@' + scope;
-					log.trace("Added affiliation: {}", affiliation);
+					String affiliation = entry.getValue() + '@' + valueScope;
+					log.trace("{} - added affiliation '{}' due to membership in group '{}'", claimName, affiliation, id);
 					result.add(affiliation);
 					break;
 				}
@@ -93,12 +94,13 @@ public class EdupersonScopedAffiliationsMUSource extends ClaimSource {
 		}
 
 		if (result.size() == 0) {
-			String affiliation = "affiliate@" + scope;
-			log.trace("Added affiliation: {}", affiliation);
+			String affiliation = "affiliate@" + valueScope;
+			log.trace("{} - user is not a member in any special groups, added default affiliation: '{}'",
+					claimName, affiliation);
 			result.add(affiliation);
 		}
 
-		log.debug("Value '{}' for user '{}' with sub '{}' produced", result, userId, pctx.getSub());
+		log.debug("{} - produced value for user({}): '{}'", claimName, userId, result);
 		return result;
 	}
 }

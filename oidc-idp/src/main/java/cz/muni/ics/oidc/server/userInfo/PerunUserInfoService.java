@@ -213,7 +213,7 @@ public class PerunUserInfoService implements UserInfoService {
 	@PostConstruct
 	public void postInit() {
 		log.debug("trying to load modifier for attribute.openid.sub");
-		subModifier = loadClaimValueModifier("attribute.openid.sub.modifier");
+		subModifier = loadClaimValueModifier("sub", "attribute.openid.sub.modifier");
 		//custom claims
 		this.customClaims = new ArrayList<>(customClaimNames.size());
 		for (String claim : customClaimNames) {
@@ -226,9 +226,9 @@ public class PerunUserInfoService implements UserInfoService {
 				continue;
 			}
 			//get ClaimSource
-			ClaimSource claimSource = loadClaimSource(propertyBase + SOURCE);
+			ClaimSource claimSource = loadClaimSource(claim, propertyBase + SOURCE);
 			//optional claim value modifier
-			ClaimModifier claimModifier = loadClaimValueModifier(propertyBase + MODIFIER);
+			ClaimModifier claimModifier = loadClaimValueModifier(claim, propertyBase + MODIFIER);
 			//add claim definition
 			customClaims.add(new PerunCustomClaimDefinition(scope, claim, claimSource, claimModifier));
 		}
@@ -296,61 +296,74 @@ public class PerunUserInfoService implements UserInfoService {
 				.build(cacheLoader);
 	}
 
-	private ClaimModifier loadClaimValueModifier(String propertyPrefix) {
+	private ClaimModifier loadClaimValueModifier(String claimName, String propertyPrefix) {
 		String modifierClass = properties.getProperty(propertyPrefix + CLASS);
-		if (modifierClass != null) {
-			try {
-				Class<?> rawClazz = Class.forName(modifierClass);
-				if (!ClaimModifier.class.isAssignableFrom(rawClazz)) {
-					log.error("modifier class {} does not extend ClaimModifier", modifierClass);
-					return null;
-				}
-				@SuppressWarnings("unchecked") Class<ClaimModifier> clazz = (Class<ClaimModifier>) rawClazz;
-				Constructor<ClaimModifier> constructor = clazz.getConstructor(ClaimModifierInitContext.class);
-				ClaimModifierInitContext ctx = new ClaimModifierInitContext(propertyPrefix, properties);
-				ClaimModifier claimModifier = constructor.newInstance(ctx);
-				log.info("loaded claim modifier '{}' for {}", claimModifier, propertyPrefix);
-				return claimModifier;
-			} catch (ClassNotFoundException e) {
-				log.error("modifier class {} not found", modifierClass);
-				return null;
-			} catch (NoSuchMethodException e) {
-				log.error("modifier class {} does not have proper constructor", modifierClass);
-				return null;
-			} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-				log.error("cannot instantiate " + modifierClass, e);
-				log.error("modifier class {} cannot be instantiated", modifierClass);
+		if (!StringUtils.hasText(modifierClass)) {
+			log.warn("{} - failed to initialized claim modifier: no class has ben configured", claimName);
+			return null;
+		}
+		log.trace("{} - loading ClaimModifier class '{}'", claimName, modifierClass);
+
+		try {
+			Class<?> rawClazz = Class.forName(modifierClass);
+			if (!ClaimModifier.class.isAssignableFrom(rawClazz)) {
+				log.warn("{} - failed to initialized claim modifier: class '{}' does not extend ClaimModifier",
+						claimName, modifierClass);
 				return null;
 			}
-		} else {
-			log.debug("property {} not found, skipping", propertyPrefix);
+			@SuppressWarnings("unchecked") Class<ClaimModifier> clazz = (Class<ClaimModifier>) rawClazz;
+			Constructor<ClaimModifier> constructor = clazz.getConstructor(ClaimModifierInitContext.class);
+			ClaimModifierInitContext ctx = new ClaimModifierInitContext(propertyPrefix, properties, claimName);
+			return constructor.newInstance(ctx);
+		} catch (ClassNotFoundException e) {
+			log.warn("{} - failed to initialize claim modifier: class '{}' was not found", claimName, modifierClass);
+			log.trace("{} - details:", claimName, e);
+			return null;
+		} catch (NoSuchMethodException e) {
+			log.warn("{} - failed to initialize claim modifier: class '{}' does not have proper constructor",
+					claimName, modifierClass);
+			log.trace("{} - details:", claimName, e);
+			return null;
+		} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
+			log.warn("{} - failed to initialize claim modifier: class '{}' cannot be instantiated", claimName, modifierClass);
+			log.trace("{} - details:", claimName, e);
 			return null;
 		}
 	}
 
-	private ClaimSource loadClaimSource(String propertyPrefix) {
+	private ClaimSource loadClaimSource(String claimName, String propertyPrefix) {
 		String sourceClass = properties.getProperty(propertyPrefix + CLASS, PerunAttributeClaimSource.class.getName());
+		if (!StringUtils.hasText(sourceClass)) {
+			log.warn("{} - failed to initialized claim source: no class has ben configured", claimName);
+			return null;
+		}
+
+		log.trace("{} - loading ClaimSource class '{}'", claimName, sourceClass);
+
 		try {
 			Class<?> rawClazz = Class.forName(sourceClass);
-			if (!ClaimSource.class.isAssignableFrom(rawClazz)) {
-				log.error("source class {} does not extend ClaimSource", sourceClass);
+			if (!ClaimModifier.class.isAssignableFrom(rawClazz)) {
+				log.warn("{} - failed to initialized claim source: class '{}' does not extend ClaimSource",
+						claimName, sourceClass);
 				return null;
 			}
 			@SuppressWarnings("unchecked") Class<ClaimSource> clazz = (Class<ClaimSource>) rawClazz;
 			Constructor<ClaimSource> constructor = clazz.getConstructor(ClaimSourceInitContext.class);
-			ClaimSourceInitContext ctx = new ClaimSourceInitContext(perunOidcConfig, jwtService, propertyPrefix, properties);
-			ClaimSource claimSource = constructor.newInstance(ctx);
-			log.info("loaded claim source '{}' for {}", claimSource, propertyPrefix);
-			return claimSource;
+			ClaimSourceInitContext ctx = new ClaimSourceInitContext(perunOidcConfig, jwtService, propertyPrefix,
+					properties, claimName);
+			return constructor.newInstance(ctx);
 		} catch (ClassNotFoundException e) {
-			log.error("source class {} not found", sourceClass);
+			log.warn("{} - failed to initialize claim source: class '{}' was not found", claimName, sourceClass);
+			log.trace("{} - details:", claimName, e);
 			return null;
 		} catch (NoSuchMethodException e) {
-			log.error("source class {} does not have proper constructor", sourceClass);
+			log.warn("{} - failed to initialize claim source: class '{}' does not have proper constructor",
+					claimName, sourceClass);
+			log.trace("{} - details:", claimName, e);
 			return null;
 		} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-			log.error("cannot instantiate " + sourceClass, e);
-			log.error("source class {} cannot be instantiated", sourceClass);
+			log.warn("{} - failed to initialize claim source: class '{}' cannot be instantiated", claimName, sourceClass);
+			log.trace("{} - details:", claimName, e);
 			return null;
 		}
 	}

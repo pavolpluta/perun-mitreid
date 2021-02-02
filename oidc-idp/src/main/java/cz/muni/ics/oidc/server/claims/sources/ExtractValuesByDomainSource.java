@@ -32,53 +32,58 @@ public class ExtractValuesByDomainSource extends ClaimSource {
 
 	private final String domain;
 	private final String attributeName;
+	private final String claimName;
 
 	public ExtractValuesByDomainSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		log.debug("Initializing '{}'", this.getClass().getSimpleName());
+		this.claimName = ctx.getClaimName();
 		this.domain = ClaimUtils.fillStringPropertyOrNoVal(EXTRACT_BY_DOMAIN, ctx);
 		if (!ClaimUtils.isPropSet(this.domain)) {
-			throw new IllegalArgumentException("Missing mandatory configuration option - domain");
+			throw new IllegalArgumentException(claimName + " - missing mandatory configuration option: "
+					+ EXTRACT_BY_DOMAIN);
 		}
 		this.attributeName = ClaimUtils.fillStringPropertyOrNoVal(ATTRIBUTE_NAME, ctx);
 		if (!ClaimUtils.isPropSet(this.attributeName)) {
-			throw new IllegalArgumentException("Missing mandatory configuration option - attributeName");
+			throw new IllegalArgumentException(claimName + " - missing mandatory configuration option: "
+					+ ATTRIBUTE_NAME);
 		}
+		log.debug("{} - domain: '{}', attributeName: '{}'", claimName, domain, attributeName);
 	}
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
+		JsonNode result = NullNode.getInstance();
 		if (!ClaimUtils.isPropSet(domain)) {
-			return NullNode.getInstance();
+			log.trace("{} - no domain set, return empty JSON", domain);
+			result = NullNode.getInstance();
 		} else if (!ClaimUtils.isPropSetAndHasAttribute(attributeName, pctx)) {
-			return NullNode.getInstance();
-		}
+			log.trace("{} - no attributeName set, return empty JSON", domain);
+			result = NullNode.getInstance();
+		} else {
+			PerunAttributeValue attributeValue = pctx.getAttrValues().get(attributeName);
+			if (attributeValue != null) {
+				JsonNode attributeValueJson = attributeValue.valueAsJson();
+				if (attributeValueJson.isTextual() && hasDomain(attributeValueJson.textValue(), domain)) {
+					log.trace("{} - found domain in string value: '{}'", claimName, attributeValueJson);
+					result = attributeValueJson;
+				} else if (attributeValueJson.isArray()) {
+					ArrayNode arrayNode = (ArrayNode) attributeValueJson;
+					JsonNodeFactory factory = JsonNodeFactory.instance;
+					ArrayNode arr = new ArrayNode(factory);
 
-		PerunAttributeValue attributeValue = pctx.getAttrValues().get(attributeName);
-		if (attributeValue != null) {
-			JsonNode attributeValueJson = attributeValue.valueAsJson();
-			if (attributeValueJson.isTextual() && hasDomain(attributeValueJson.textValue(), domain)) {
-				log.debug("Attribute value '{}' for attribute name '{}' in the domain '{}' found", attributeValueJson, attributeName, domain);
-				return attributeValueJson;
-			} else if (attributeValueJson.isArray()) {
-				log.trace("Array attribute value for attribute name '{}' found", attributeName);
-				log.trace("Looking for subvalues for the domain '{}'...", domain);
-				ArrayNode arrayNode = (ArrayNode) attributeValueJson;
-				JsonNodeFactory factory = JsonNodeFactory.instance;
-				ArrayNode result = new ArrayNode(factory);
-
-				for (int i = 0; i < arrayNode.size(); i++) {
-					String subValue = arrayNode.get(i).textValue();
-					if (hasDomain(subValue, domain)) {
-						result.add(subValue);
+					for (int i = 0; i < arrayNode.size(); i++) {
+						String subValue = arrayNode.get(i).textValue();
+						if (hasDomain(subValue, domain)) {
+							log.trace("{} - found domain in array sub-value: '{}'", claimName, subValue);
+							arr.add(subValue);
+						}
 					}
+					result = arr;
 				}
-				log.debug("Found attribute values for attribute name '{}' in the domain '{}': {}", attributeName, domain, result);
-				return result;
 			}
 		}
-
-		return NullNode.getInstance();
+		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), result);
+		return result;
 	}
 
 	private boolean hasDomain(String value, String domain) {

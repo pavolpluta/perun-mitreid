@@ -3,6 +3,7 @@ package cz.muni.ics.oidc.server.filters;
 import cz.muni.ics.oidc.BeanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -56,7 +57,7 @@ public class PerunFiltersContext {
 	private PerunRequestFilter loadFilter(String filterName) {
 		String propPrefix = PerunFiltersContext.PREFIX + filterName;
 		String filterClass = properties.getProperty(propPrefix + FILTER_CLASS, null);
-		if (filterClass == null) {
+		if (!StringUtils.hasText(filterClass)) {
 			log.warn("{} - failed to initialized filter: no class has ben configured", filterName);
 			return null;
 		}
@@ -75,16 +76,16 @@ public class PerunFiltersContext {
 			PerunRequestFilterParams params = new PerunRequestFilterParams(filterName, propPrefix, properties, beanUtil);
 			return constructor.newInstance(params);
 		} catch (ClassNotFoundException e) {
-			log.warn("{} - failed to initialized filter: class '{}' was not found", filterName, filterClass);
+			log.warn("{} - failed to initialize filter: class '{}' was not found", filterName, filterClass);
 			log.trace("{} - details:", filterName, e);
 			return null;
 		} catch (NoSuchMethodException e) {
-			log.warn("{} - failed to initialized filter: class '{}' does not have proper constructor",
+			log.warn("{} - failed to initialize filter: class '{}' does not have proper constructor",
 					filterName, filterClass);
 			log.trace("{} - details:", filterName, e);
 			return null;
 		} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-			log.warn("{} - failed to initialized filter: class '{}' cannot be instantiated", filterName, filterClass);
+			log.warn("{} - failed to initialize filter: class '{}' cannot be instantiated", filterName, filterClass);
 			log.trace("{} - details:", filterName, e);
 			return null;
 		}

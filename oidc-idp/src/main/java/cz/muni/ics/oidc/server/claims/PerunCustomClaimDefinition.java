@@ -1,5 +1,8 @@
 package cz.muni.ics.oidc.server.claims;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Keeps definition of a custom user claim.
  *
@@ -23,6 +26,8 @@ package cz.muni.ics.oidc.server.claims;
  */
 public class PerunCustomClaimDefinition {
 
+	private static final Logger log = LoggerFactory.getLogger(PerunCustomClaimDefinition.class);
+
 	private String scope;
 	private String claim;
 	private ClaimSource claimSource;
@@ -33,6 +38,10 @@ public class PerunCustomClaimDefinition {
 		this.claim = claim;
 		this.claimSource = claimSource;
 		this.claimModifier = claimModifier;
+		log.debug("initialized scope '{}' with claim '{}', claimSource '{}' and modifier '{}", scope, claim,
+				(claimSource != null ? claimSource.getClass().getSimpleName() : "none"),
+				(claimModifier != null ? claimModifier.getClass().getSimpleName() : "none")
+		);
 	}
 
 	public String getScope() {

@@ -39,16 +39,19 @@ public class StaticValueClaimSource extends ClaimSource {
 	private final String valueSeparator;
 	private String[] valueArr;
 	private final String valueStr;
+	private final String claimName;
 
 	public StaticValueClaimSource(ClaimSourceInitContext ctx) {
 		super(ctx);
-		log.debug("Initializing '{}'", this.getClass().getSimpleName());
+		this.claimName = ctx.getClaimName();
 		this.valueSeparator = ctx.getProperty(VALUE_SEPARATOR, NO_SEPARATOR);
 		this.valueStr = ctx.getProperty(VALUE, null);
 		this.valueArr = null;
 		if (valueStr != null) {
 			valueArr = valueStr.split(valueSeparator);
 		}
+		log.debug("{} - valueSeparator: '{}', valueStr: '{}', valueArr: '{}'", claimName,
+				valueSeparator, valueStr, valueArr);
 	}
 
 	@Override
@@ -68,7 +71,7 @@ public class StaticValueClaimSource extends ClaimSource {
 			value = JsonNodeFactory.instance.textNode(valueStr);
 		}
 
-		log.debug("Produced value: {}", value);
+		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), value);
 		return value;
 	}
 

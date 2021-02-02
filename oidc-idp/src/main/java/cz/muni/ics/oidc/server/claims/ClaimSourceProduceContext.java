@@ -19,7 +19,9 @@ public class ClaimSourceProduceContext {
 	private final PerunAdapter perunAdapter;
 	private final ClientDetailsEntity client;
 
-	public ClaimSourceProduceContext(long perunUserId, String sub, Map<String, PerunAttributeValue> attrValues, PerunAdapter perunAdapter, ClientDetailsEntity client) {
+	public ClaimSourceProduceContext(long perunUserId, String sub, Map<String, PerunAttributeValue> attrValues,
+									 PerunAdapter perunAdapter, ClientDetailsEntity client)
+	{
 		this.perunUserId = perunUserId;
 		this.sub = sub;
 		this.attrValues = attrValues;

@@ -1,6 +1,8 @@
 package cz.muni.ics.oidc.server.claims;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Interface for code that can produce claim values.
@@ -11,7 +13,10 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public abstract class ClaimSource {
 
+	private static final Logger log = LoggerFactory.getLogger(ClaimSource.class);
+
 	public ClaimSource(ClaimSourceInitContext ctx) {
+		log.debug("{} - claim source initialized", ctx.getClaimName());
 	}
 
 	public abstract JsonNode produceValue(ClaimSourceProduceContext pctx);
@@ -20,6 +25,5 @@ public abstract class ClaimSource {
 	public String toString() {
 		return this.getClass().getName();
 	}
-
 
 }
