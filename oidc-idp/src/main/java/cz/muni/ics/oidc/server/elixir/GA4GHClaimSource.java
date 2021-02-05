@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Class producing GA4GH Passport claim. The claim is specified in
@@ -114,16 +115,22 @@ public class GA4GHClaimSource extends ClaimSource {
 			for (JsonNode repo : root.path("repos")) {
 				String name = repo.path("name").asText();
 				String actionURL = repo.path("url").asText();
-				String authHeader = repo.path("auth_header").asText();
-				String authValue = repo.path("auth_value").asText();
-				if (actionURL == null || authHeader == null || authValue == null) {
+				JsonNode headers = repo.path("headers");
+				Map<String, String> headersWithValues = new HashMap<>();
+				for (JsonNode header: headers) {
+					headersWithValues.put(header.path("header").asText(), header.path("value").asText());
+				}
+				if (actionURL == null || headersWithValues.isEmpty()) {
 					log.error("claim repository " + repo + " not defined with url|auth_header|auth_value ");
 					continue;
 				}
 				RestTemplate restTemplate = new RestTemplate();
 				restTemplate.setRequestFactory(
 						new InterceptingClientHttpRequestFactory(restTemplate.getRequestFactory(),
-								Collections.singletonList(new AddHeaderInterceptor(authHeader, authValue)))
+								headersWithValues.entrySet()
+										.stream()
+										.map(e -> new AddHeaderInterceptor(e.getKey(), e.getValue()))
+										.collect(Collectors.toList()))
 				);
 				claimRepositories.add(new ClaimRepository(name, restTemplate, actionURL));
 				log.info("GA4GH Claims Repository " + name + " configured at " + actionURL);
