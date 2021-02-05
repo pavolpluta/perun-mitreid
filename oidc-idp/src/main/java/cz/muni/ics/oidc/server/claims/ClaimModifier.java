@@ -24,4 +24,5 @@ public abstract class ClaimModifier {
 	public String toString() {
 		return this.getClass().getName();
 	}
+
 }

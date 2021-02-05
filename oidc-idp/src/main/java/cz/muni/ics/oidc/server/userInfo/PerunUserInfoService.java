@@ -7,6 +7,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import cz.muni.ics.oidc.exceptions.ConfigurationException;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunAttributeValueAwareModel;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
@@ -16,7 +17,7 @@ import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import cz.muni.ics.oidc.server.claims.PerunCustomClaimDefinition;
-import cz.muni.ics.oidc.server.claims.sources.PerunAttributeClaimSource;
+import cz.muni.ics.oidc.server.claims.modifiers.NoOperationModifier;
 import cz.muni.ics.oidc.server.configurations.PerunOidcConfig;
 import org.mitre.jwt.signer.service.JWTSigningAndValidationService;
 import org.mitre.oauth2.model.ClientDetailsEntity;
@@ -211,26 +212,26 @@ public class PerunUserInfoService implements UserInfoService {
 	}
 
 	@PostConstruct
-	public void postInit() {
+	public void postInit() throws ConfigurationException {
 		log.debug("trying to load modifier for attribute.openid.sub");
 		subModifier = loadClaimValueModifier("sub", "attribute.openid.sub.modifier");
 		//custom claims
 		this.customClaims = new ArrayList<>(customClaimNames.size());
-		for (String claim : customClaimNames) {
-			String propertyBase = CUSTOM_CLAIM + claim;
+		for (String claimName : customClaimNames) {
+			String propertyBase = CUSTOM_CLAIM + claimName;
 			//get scope
 			String scopeProperty = propertyBase + ".scope";
 			String scope = properties.getProperty(scopeProperty);
 			if (scope == null) {
-				log.error("property {} not found, skipping custom claim {}", scopeProperty, claim);
+				log.error("property {} not found, skipping custom claim {}", scopeProperty, claimName);
 				continue;
 			}
 			//get ClaimSource
-			ClaimSource claimSource = loadClaimSource(claim, propertyBase + SOURCE);
+			ClaimSource claimSource = loadClaimSource(claimName, propertyBase + SOURCE);
 			//optional claim value modifier
-			ClaimModifier claimModifier = loadClaimValueModifier(claim, propertyBase + MODIFIER);
+			ClaimModifier claimModifier = loadClaimValueModifier(claimName, propertyBase + MODIFIER);
 			//add claim definition
-			customClaims.add(new PerunCustomClaimDefinition(scope, claim, claimSource, claimModifier));
+			customClaims.add(new PerunCustomClaimDefinition(scope, claimName, claimSource, claimModifier));
 		}
 
 		this.userInfoModifierContext = new UserInfoModifierContext(properties, perunAdapter);
@@ -296,56 +297,55 @@ public class PerunUserInfoService implements UserInfoService {
 				.build(cacheLoader);
 	}
 
-	private ClaimModifier loadClaimValueModifier(String claimName, String propertyPrefix) {
-		String modifierClass = properties.getProperty(propertyPrefix + CLASS);
+	private ClaimModifier loadClaimValueModifier(String claimName, String propertyPrefix) throws ConfigurationException {
+		String modifierClass = properties.getProperty(propertyPrefix + CLASS, NoOperationModifier.class.getName());
 		if (!StringUtils.hasText(modifierClass)) {
-			log.warn("{} - failed to initialized claim modifier: no class has ben configured", claimName);
-			return null;
+			log.debug("{} - no class has ben configured for claim value modifier, use noop modifier", claimName);
 		}
 		log.trace("{} - loading ClaimModifier class '{}'", claimName, modifierClass);
 
 		try {
 			Class<?> rawClazz = Class.forName(modifierClass);
 			if (!ClaimModifier.class.isAssignableFrom(rawClazz)) {
-				log.warn("{} - failed to initialized claim modifier: class '{}' does not extend ClaimModifier",
+				log.error("{} - failed to initialized claim modifier: class '{}' does not extend ClaimModifier",
 						claimName, modifierClass);
-				return null;
+				throw new ConfigurationException("No instantiable class modifier configured for claim " + claimName);
 			}
 			@SuppressWarnings("unchecked") Class<ClaimModifier> clazz = (Class<ClaimModifier>) rawClazz;
 			Constructor<ClaimModifier> constructor = clazz.getConstructor(ClaimModifierInitContext.class);
 			ClaimModifierInitContext ctx = new ClaimModifierInitContext(propertyPrefix, properties, claimName);
 			return constructor.newInstance(ctx);
 		} catch (ClassNotFoundException e) {
-			log.warn("{} - failed to initialize claim modifier: class '{}' was not found", claimName, modifierClass);
+			log.error("{} - failed to initialize claim modifier: class '{}' was not found", claimName, modifierClass);
 			log.trace("{} - details:", claimName, e);
-			return null;
+			throw new ConfigurationException("Error has occurred when instantiating claim modifier of " + claimName);
 		} catch (NoSuchMethodException e) {
-			log.warn("{} - failed to initialize claim modifier: class '{}' does not have proper constructor",
+			log.error("{} - failed to initialize claim modifier: class '{}' does not have proper constructor",
 					claimName, modifierClass);
 			log.trace("{} - details:", claimName, e);
-			return null;
+			throw new ConfigurationException("Error has occurred when instantiating claim modifier of " + claimName);
 		} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-			log.warn("{} - failed to initialize claim modifier: class '{}' cannot be instantiated", claimName, modifierClass);
+			log.error("{} - failed to initialize claim modifier: class '{}' cannot be instantiated", claimName, modifierClass);
 			log.trace("{} - details:", claimName, e);
-			return null;
+			throw new ConfigurationException("Error has occurred when instantiating claim modifier of " + claimName);
 		}
 	}
 
-	private ClaimSource loadClaimSource(String claimName, String propertyPrefix) {
-		String sourceClass = properties.getProperty(propertyPrefix + CLASS, PerunAttributeClaimSource.class.getName());
+	private ClaimSource loadClaimSource(String claimName, String propertyPrefix) throws ConfigurationException {
+		String sourceClass = properties.getProperty(propertyPrefix + CLASS);
 		if (!StringUtils.hasText(sourceClass)) {
-			log.warn("{} - failed to initialized claim source: no class has ben configured", claimName);
-			return null;
+			log.error("{} - failed to initialized claim source: no class has ben configured", claimName);
+			throw new ConfigurationException("No class configured for claim source");
 		}
 
 		log.trace("{} - loading ClaimSource class '{}'", claimName, sourceClass);
 
 		try {
 			Class<?> rawClazz = Class.forName(sourceClass);
-			if (!ClaimModifier.class.isAssignableFrom(rawClazz)) {
-				log.warn("{} - failed to initialized claim source: class '{}' does not extend ClaimSource",
+			if (!ClaimSource.class.isAssignableFrom(rawClazz)) {
+				log.error("{} - failed to initialized claim source: class '{}' does not extend ClaimSource",
 						claimName, sourceClass);
-				return null;
+				throw new ConfigurationException("No instantiable class source configured for claim " + claimName);
 			}
 			@SuppressWarnings("unchecked") Class<ClaimSource> clazz = (Class<ClaimSource>) rawClazz;
 			Constructor<ClaimSource> constructor = clazz.getConstructor(ClaimSourceInitContext.class);
@@ -353,18 +353,18 @@ public class PerunUserInfoService implements UserInfoService {
 					properties, claimName);
 			return constructor.newInstance(ctx);
 		} catch (ClassNotFoundException e) {
-			log.warn("{} - failed to initialize claim source: class '{}' was not found", claimName, sourceClass);
+			log.error("{} - failed to initialize claim source: class '{}' was not found", claimName, sourceClass);
 			log.trace("{} - details:", claimName, e);
-			return null;
+			throw new ConfigurationException("Error has occurred when instantiating claim source for claim " + claimName);
 		} catch (NoSuchMethodException e) {
-			log.warn("{} - failed to initialize claim source: class '{}' does not have proper constructor",
+			log.error("{} - failed to initialize claim source: class '{}' does not have proper constructor",
 					claimName, sourceClass);
 			log.trace("{} - details:", claimName, e);
-			return null;
+			throw new ConfigurationException("Error has occurred when instantiating claim source for claim " + claimName);
 		} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-			log.warn("{} - failed to initialize claim source: class '{}' cannot be instantiated", claimName, sourceClass);
+			log.error("{} - failed to initialize claim source: class '{}' cannot be instantiated", claimName, sourceClass);
 			log.trace("{} - details:", claimName, e);
-			return null;
+			throw new ConfigurationException("Error has occurred when instantiating claim source for claim " + claimName);
 		}
 	}
 
