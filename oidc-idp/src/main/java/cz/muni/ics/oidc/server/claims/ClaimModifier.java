@@ -1,5 +1,8 @@
 package cz.muni.ics.oidc.server.claims;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Interface for all code that needs to modify claim values.
  *
@@ -9,7 +12,10 @@ package cz.muni.ics.oidc.server.claims;
  */
 public abstract class ClaimModifier {
 
+	private static final Logger log = LoggerFactory.getLogger(ClaimModifier.class);
+
 	public ClaimModifier(ClaimModifierInitContext ctx) {
+		log.debug("{} - claim modifier initialized", ctx.getClaimName());
 	}
 
 	public abstract String modify(String value);

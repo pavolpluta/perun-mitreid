@@ -47,7 +47,7 @@ import java.util.Set;
 @SuppressWarnings("SqlResolve")
 public class ValidUserFilter extends PerunRequestFilter {
 
-	private final static Logger log = LoggerFactory.getLogger(ValidUserFilter.class);
+	private static final Logger log = LoggerFactory.getLogger(ValidUserFilter.class);
 
 	/* CONFIGURATION OPTIONS */
 	private static final String ALL_ENV_GROUPS = "allEnvGroups";
@@ -67,6 +67,7 @@ public class ValidUserFilter extends PerunRequestFilter {
 
 	private final PerunAdapter perunAdapter;
 	private final FacilityAttrsConfig facilityAttrsConfig;
+	private final String filterName;
 
 	public ValidUserFilter(PerunRequestFilterParams params) {
 		super(params);
@@ -80,6 +81,7 @@ public class ValidUserFilter extends PerunRequestFilter {
 		this.testEnvVos = this.getIdsFromParam(params, TEST_ENV_VOS);
 		this.prodEnvGroups = this.getIdsFromParam(params, PROD_ENV_GROUPS);
 		this.prodEnvVos = this.getIdsFromParam(params, PROD_ENV_VOS);
+		this.filterName = params.getFilterName();
 	}
 
 	@Override
@@ -93,28 +95,36 @@ public class ValidUserFilter extends PerunRequestFilter {
 		PerunUser user = params.getUser();
 
 		if (user == null || user.getId() == null) {
-			log.warn("No user or his/her ID from Perun found -- found user obj = {}", user);
-			log.debug("Skip to next filter");
+			log.debug("{} - skip filter execution: no user provided", filterName);
 			return true;
 		}
 
 		Facility facility = params.getFacility();
-		if (facility != null && facility.getId() != null) {
-			PerunAttributeValue isTestSp = perunAdapter.getFacilityAttributeValue(facility.getId(), facilityAttrsConfig.getTestSpAttr());
-			log.debug("Service in test env: {}", isTestSp);
-			if (isTestSp != null && isTestSp.valueAsBoolean()) {
-				additionalVos.addAll(testEnvVos);
-				additionalGroups.addAll(testEnvGroups);
-			} else {
-				additionalVos.addAll(prodEnvVos);
-				additionalGroups.addAll(prodEnvGroups);
-			}
+		if (facility == null || facility.getId() == null) {
+			log.debug("{} - skip filter execution: no facility provided", filterName);
+			return true;
 		}
 
-		if (!perunAdapter.isValidMemberInGroupsAndVos(user.getId(), allEnvVos, allEnvGroups, additionalVos, additionalGroups)) {
-			log.info("User not member in required default and test/prod VOs and GROUPS");
-			log.debug("user: {}, allEnvVos: {}, allEnvGroups: {}, additionalVos: {}, additionalGroups: {}",
-					user.getId(), allEnvVos, allEnvGroups, additionalVos, additionalGroups);
+		PerunAttributeValue isTestSp = perunAdapter.getFacilityAttributeValue(facility.getId(), facilityAttrsConfig.getTestSpAttr());
+		boolean isTestSpBool = false;
+		if (isTestSp != null) {
+			isTestSpBool = isTestSp.valueAsBoolean();
+		}
+		log.debug("{} - service {} in test env", filterName, (isTestSpBool ? "is" : "is not"));
+		if (isTestSpBool) {
+			additionalVos.addAll(testEnvVos);
+			additionalGroups.addAll(testEnvGroups);
+		} else {
+			additionalVos.addAll(prodEnvVos);
+			additionalGroups.addAll(prodEnvGroups);
+		}
+
+		if (!perunAdapter.isValidMemberInGroupsAndVos(
+				user.getId(), allEnvVos, allEnvGroups, additionalVos, additionalGroups))
+		{
+			log.info("{} - user is not member in required set of vos and groups", filterName);
+			log.debug("{} - user: '{}', allEnvVos: '{}', allEnvGroups: '{}', additionalVos: '{}', additionalGroups: '{}'",
+					filterName, user.getId(), allEnvVos, allEnvGroups, additionalVos, additionalGroups);
 			Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(
 					facility, facilityAttrsConfig.getMembershipAttrNames());
 
@@ -122,7 +132,7 @@ public class ValidUserFilter extends PerunRequestFilter {
 					facilityAttrsConfig, facilityAttributes, perunAdapter);
 			return false;
 		}
-		log.info("User allowed to access service via membership in default and test/prod default VOs and GROUPS");
+		log.info("{} - user satisfies the membership criteria", filterName);
 		return true;
 	}
 
@@ -139,4 +149,5 @@ public class ValidUserFilter extends PerunRequestFilter {
 
 		return result;
 	}
+
 }

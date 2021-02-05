@@ -29,8 +29,12 @@ public class GroupNamesSource extends ClaimSource {
 
 	public static final Logger log = LoggerFactory.getLogger(GroupNamesSource.class);
 
+	private final String claimName;
+
 	public GroupNamesSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		this.claimName = ctx.getClaimName();
+		log.debug("{} - initialized", claimName);
 	}
 
 	@Override
@@ -39,16 +43,17 @@ public class GroupNamesSource extends ClaimSource {
 		ArrayNode arr = JsonNodeFactory.instance.arrayNode();
 		new HashSet<>(idToNameMap.values()).forEach(arr::add);
 
-		log.debug("Produced groupNames: {}", arr);
+		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), arr);
 		return arr;
 	}
 
 	protected Map<Long, String> produceValueWithoutReplacing(ClaimSourceProduceContext pctx) {
-		log.debug("producing value without trimming 'members'");
 		return produceValue(pctx, false);
 	}
 
 	private Map<Long, String> produceValue(ClaimSourceProduceContext pctx, boolean trimMembers) {
+		log.trace("{} - produce value {} trimming 'members' part of the group names",
+				claimName, (trimMembers ? "with": "without"));
 		PerunAdapter perunConnector = pctx.getPerunAdapter();
 		ClientDetailsEntity client = pctx.getClient();
 		Facility facility = null;
@@ -56,14 +61,13 @@ public class GroupNamesSource extends ClaimSource {
 		if (client != null) {
 			String clientId = client.getClientId();
 			facility = perunConnector.getFacilityByClientId(clientId);
-			log.debug("found facility ({}) for client_id ({})", facility, clientId);
 		}
 
 		Set<Group> userGroups = new HashSet<>();
 		if (facility != null) {
 			userGroups = perunConnector.getGroupsWhereUserIsActiveWithUniqueNames(facility.getId(),
 					pctx.getPerunUserId());
-			log.debug("Found user groups: {}", userGroups);
+			log.trace("{} - found user groups: '{}'", claimName, userGroups);
 		}
 
 		Map<Long, String> idToNameMap = new HashMap<>();
@@ -77,6 +81,7 @@ public class GroupNamesSource extends ClaimSource {
 			idToNameMap.put(g.getId(), g.getUniqueGroupName());
 		});
 
+		log.trace("{} - group ID to group name map: '{}'", claimName, idToNameMap);
 		return idToNameMap;
 	}
 

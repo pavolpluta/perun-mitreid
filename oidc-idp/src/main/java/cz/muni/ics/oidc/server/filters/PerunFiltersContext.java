@@ -3,6 +3,7 @@ package cz.muni.ics.oidc.server.filters;
 import cz.muni.ics.oidc.BeanUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -39,13 +40,13 @@ public class PerunFiltersContext {
 		this.filters = new LinkedList<>();
 
 		String filterNames = properties.getProperty(FILTER_NAMES);
-		log.debug("Filter names: {}", filterNames);
+		log.debug("Filters to be initialized '{}'", filterNames);
 
+		log.debug("--------------------------------");
 		for (String filterName: filterNames.split(",")) {
-			log.debug("Initializing filter: {}", filterName);
 			PerunRequestFilter requestFilter = loadFilter(filterName);
 			filters.add(requestFilter);
-			log.info("Initialized filter: {}", filterName);
+			log.debug("--------------------------------");
 		}
 	}
 
@@ -56,33 +57,36 @@ public class PerunFiltersContext {
 	private PerunRequestFilter loadFilter(String filterName) {
 		String propPrefix = PerunFiltersContext.PREFIX + filterName;
 		String filterClass = properties.getProperty(propPrefix + FILTER_CLASS, null);
-		log.debug("Loading class {} for filter: {}", filterClass, filterName);
-		if (filterClass == null) {
+		if (!StringUtils.hasText(filterClass)) {
+			log.warn("{} - failed to initialized filter: no class has ben configured", filterName);
 			return null;
 		}
-		
+		log.trace("{} - loading class '{}'", filterName, filterClass);
+
 		try {
 			Class<?> rawClazz = Class.forName(filterClass);
 			if (!PerunRequestFilter.class.isAssignableFrom(rawClazz)) {
-				log.error("filter class {} does not extend PerunRequestFilter", filterClass);
+				log.warn("{} - failed to initialized filter: class '{}' does not extend PerunRequestFilter",
+						filterName, filterClass);
 				return null;
 			}
 			
 			@SuppressWarnings("unchecked") Class<PerunRequestFilter> clazz = (Class<PerunRequestFilter>) rawClazz;
 			Constructor<PerunRequestFilter> constructor = clazz.getConstructor(PerunRequestFilterParams.class);
 			PerunRequestFilterParams params = new PerunRequestFilterParams(filterName, propPrefix, properties, beanUtil);
-			PerunRequestFilter filter = constructor.newInstance(params);
-			log.info("loaded filter '{}' for {}", filter, filterName);
-			return filter;
+			return constructor.newInstance(params);
 		} catch (ClassNotFoundException e) {
-			log.error("filter class {} not found", filterClass);
+			log.warn("{} - failed to initialize filter: class '{}' was not found", filterName, filterClass);
+			log.trace("{} - details:", filterName, e);
 			return null;
 		} catch (NoSuchMethodException e) {
-			log.error("filter class {} does not have proper constructor", filterClass);
+			log.warn("{} - failed to initialize filter: class '{}' does not have proper constructor",
+					filterName, filterClass);
+			log.trace("{} - details:", filterName, e);
 			return null;
 		} catch (IllegalAccessException | InvocationTargetException | InstantiationException e) {
-			log.error("cannot instantiate " + filterClass, e);
-			log.error("filter class {} cannot be instantiated", filterClass);
+			log.warn("{} - failed to initialize filter: class '{}' cannot be instantiated", filterName, filterClass);
+			log.trace("{} - details:", filterName, e);
 			return null;
 		}
 	}

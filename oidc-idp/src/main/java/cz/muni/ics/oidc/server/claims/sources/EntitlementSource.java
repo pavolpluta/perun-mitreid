@@ -55,20 +55,25 @@ public class EntitlementSource extends GroupNamesSource {
 	private final String facilityCapabilities;
 	private final String prefix;
 	private final String authority;
+	private final String claimName;
 
 	public EntitlementSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		this.claimName = ctx.getClaimName();
 		this.forwardedEntitlements = ClaimUtils.fillStringPropertyOrNoVal(FORWARDED_ENTITLEMENTS, ctx);
 		this.resourceCapabilities = ClaimUtils.fillStringPropertyOrNoVal(RESOURCE_CAPABILITIES, ctx);
 		this.facilityCapabilities = ClaimUtils.fillStringPropertyOrNoVal(FACILITY_CAPABILITIES, ctx);
 		this.prefix = ClaimUtils.fillStringPropertyOrNoVal(PREFIX, ctx);
 		if (!ClaimUtils.isPropSet(this.prefix)) {
-			throw new IllegalArgumentException("Missing mandatory configuration option - prefix");
+			throw new IllegalArgumentException(claimName + " - missing mandatory configuration option: " + PREFIX);
 		}
 		this.authority = ClaimUtils.fillStringPropertyOrNoVal(AUTHORITY, ctx);
 		if (!ClaimUtils.isPropSet(this.authority)) {
-			throw new IllegalArgumentException("Missing mandatory configuration option - authority");
+			throw new IllegalArgumentException(claimName + " - missing mandatory configuration option: " + AUTHORITY);
 		}
+		log.debug("{} - forwardedEntitlements: '{}', resourceCapabilities: '{}', facilityCapabilities: '{}', " +
+				"prefix: '{}', authority: '{}'", claimName, forwardedEntitlements, resourceCapabilities,
+				facilityCapabilities, prefix, authority);
 	}
 
 	@Override
@@ -83,17 +88,17 @@ public class EntitlementSource extends GroupNamesSource {
 
 		if (idToGnameMap != null && !idToGnameMap.values().isEmpty()) {
 			this.fillEntitlementsFromGroupNames(idToGnameMap.values(), entitlements);
-			log.trace("Added entitlements for group names, current value: {}", entitlements);
+			log.trace("{} - entitlements for group names added", claimName);
 		}
 
 		if (facility != null) {
 			this.fillCapabilities(facility, pctx, idToGnameMap, entitlements);
-			log.trace("Added entitlements for capabilities, current value: {}", entitlements);
+			log.trace("{} - capabilities added", claimName);
 		}
 
 		if (ClaimUtils.isPropSet(this.forwardedEntitlements)) {
 			this.fillForwardedEntitlements(pctx, entitlements);
-			log.trace("Added forwarded entitlements, current value: {}", entitlements);
+			log.trace("{} - forwarded entitlements added", claimName);
 		}
 
 		ArrayNode result = JsonNodeFactory.instance.arrayNode();
@@ -101,6 +106,7 @@ public class EntitlementSource extends GroupNamesSource {
 			result.add(entitlement);
 		}
 
+		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), result);
 		return result;
 	}
 
@@ -113,6 +119,7 @@ public class EntitlementSource extends GroupNamesSource {
 
 		for (String capability : resultCapabilities) {
 			entitlements.add(wrapCapabilityToAARC(capability));
+			log.trace("Added capability: {}", capability);
 		}
 	}
 
@@ -122,8 +129,9 @@ public class EntitlementSource extends GroupNamesSource {
 		if (forwardedEntitlementsVal != null && !forwardedEntitlementsVal.isNullValue()) {
 			JsonNode eduPersonEntitlementJson = forwardedEntitlementsVal.valueAsJson();
 			for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
-				log.debug("Added forwarded entitlement: {}", eduPersonEntitlementJson.get(i).asText());
-				entitlements.add(eduPersonEntitlementJson.get(i).asText());
+				String entitlement = eduPersonEntitlementJson.get(i).asText();
+				log.trace("Added forwarded entitlement: {}", entitlement);
+				entitlements.add(entitlement);
 			}
 		}
 	}
@@ -143,7 +151,9 @@ public class EntitlementSource extends GroupNamesSource {
 			if (StringUtils.hasText(parts[1])) {
 				gname += (':' + parts[1]);
 			}
-			entitlements.add(wrapGroupNameToAARC(gname));
+			String gNameEntitlement = wrapGroupNameToAARC(gname);
+			log.trace("Added group name entitlement: {}", gNameEntitlement);
+			entitlements.add(gNameEntitlement);
 		}
 	}
 

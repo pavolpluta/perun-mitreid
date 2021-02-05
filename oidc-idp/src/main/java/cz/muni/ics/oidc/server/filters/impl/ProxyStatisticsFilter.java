@@ -46,7 +46,7 @@ import java.time.LocalDate;
 @SuppressWarnings("SqlResolve")
 public class ProxyStatisticsFilter extends PerunRequestFilter {
 
-	private final static Logger log = LoggerFactory.getLogger(ProxyStatisticsFilter.class);
+	private static final Logger log = LoggerFactory.getLogger(ProxyStatisticsFilter.class);
 
 	/* CONFIGURATION OPTIONS */
 	private static final String IDP_NAME_ATTRIBUTE_NAME = "idpNameAttributeName";
@@ -64,6 +64,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 
 	private final DataSource mitreIdStats;
 	private final PerunOidcConfig config;
+	private final String filterName;
 
 	public ProxyStatisticsFilter(PerunRequestFilterParams params) {
 		super(params);
@@ -76,7 +77,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		this.statisticsTableName = params.getProperty(STATISTICS_TABLE_NAME);
 		this.identityProvidersMapTableName = params.getProperty(IDENTITY_PROVIDERS_MAP_TABLE_NAME);
 		this.serviceProvidersMapTableName = params.getProperty(SERVICE_PROVIDERS_MAP_TABLE_NAME);
-
+		this.filterName = params.getFilterName();
 	}
 
 	@Override
@@ -85,7 +86,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 
 		ClientDetailsEntity client = params.getClient();
 		if (client == null) {
-			log.debug("Could not fetch client, skip to next filter");
+			log.debug("{} - skip execution: no client provided", filterName);
 			return true;
 		}
 
@@ -93,7 +94,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		String clientName = client.getClientName();
 
 		if (Strings.isNullOrEmpty((String) request.getAttribute(idpEntityIdAttributeName))) {
-			log.warn("Attribute '" + idpEntityIdAttributeName + "' is null or empty, skip to next filter");
+			log.debug("{} - skip execution: no source IDP provided", filterName);
 			return true;
 		}
 
@@ -114,7 +115,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 		LocalDate date = LocalDate.now();
 
 		if (userId == null || userId.trim().isEmpty()) {
-			log.debug("UserId is null or empty, skip insert!");
+			log.debug("{} - skip inserting login: no userID available", filterName);
 			return;
 		}
 
@@ -133,12 +134,12 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 				preparedStatement.setInt(3, spId);
 				preparedStatement.setString(4, userId);
 				preparedStatement.execute();
-				log.debug("The login log has been successfully stored into database: ({}, {}, {}, {}, {})",
-						idpEntityId, idpName, spIdentifier, spName, userId);
+				log.trace("{} - login entry stored ({}, {}, {}, {}, {})", filterName, idpEntityId, idpName,
+						spIdentifier, spName, userId);
 			}
 		} catch (SQLException ex) {
-			log.warn("Statistics weren't updated due to SQLException.");
-			log.error("Caught SQLException", ex);
+			log.warn("{} - caught SQLException", filterName);
+			log.debug("{} - details:", filterName, ex);
 		}
 	}
 
@@ -149,9 +150,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 			preparedStatement.setString(1, spIdentifier);
 			ResultSet rs = preparedStatement.executeQuery();
 			rs.first();
-			int spId = rs.getInt("spId");
-			log.debug("Extracted spId {}", spId);
-			return spId;
+			return rs.getInt("spId");
 		}
 	}
 
@@ -162,9 +161,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 			preparedStatement.setString(1, idpEntityId);
 			ResultSet rs = preparedStatement.executeQuery();
 			rs.first();
-			int idpId = rs.getInt("idpId");
-			log.debug("Extracted idpId {}", idpId);
-			return idpId;
+			return rs.getInt("idpId");
 		}
 	}
 
@@ -177,7 +174,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 			preparedStatement.setString(2, spName);
 			preparedStatement.setString(3, spName);
 			preparedStatement.execute();
-			log.debug("Insert into SP map table performed");
+			log.trace("{} - SP map entry inserted", filterName);
 		}
 	}
 
@@ -190,7 +187,7 @@ public class ProxyStatisticsFilter extends PerunRequestFilter {
 			preparedStatement.setString(2, idpName);
 			preparedStatement.setString(3, idpName);
 			preparedStatement.execute();
-			log.debug("Insert into IdP map table performed");
+			log.trace("{} - IdP map entry inserted", filterName);
 		}
 	}
 

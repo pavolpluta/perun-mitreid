@@ -28,13 +28,16 @@ public class PerunAttributeClaimSource extends ClaimSource {
 	private static final String ATTRIBUTE = "attribute";
 
 	private final String attributeName;
+	private final String claimName;
 
 	public PerunAttributeClaimSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		this.claimName = ctx.getClaimName();
 		this.attributeName = ClaimUtils.fillStringPropertyOrNoVal(ATTRIBUTE, ctx);
 		if (!ClaimUtils.isPropSet(this.attributeName)) {
-			throw new IllegalArgumentException("Missing mandatory configuration option - attribute");
+			throw new IllegalArgumentException("Missing mandatory configuration option - " + ATTRIBUTE);
 		}
+		log.debug("{} - attributeName: '{}'", claimName, attributeName);
 	}
 
 	@Override
@@ -44,7 +47,7 @@ public class PerunAttributeClaimSource extends ClaimSource {
 			value = pctx.getAttrValues().get(attributeName).valueAsJson();
 		}
 
-		log.debug("Produced value for attribute {}: {}", attributeName, value);
+		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), value);
 		return value;
 	}
 

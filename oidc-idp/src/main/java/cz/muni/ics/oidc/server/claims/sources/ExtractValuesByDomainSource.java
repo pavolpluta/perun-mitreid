@@ -9,6 +9,8 @@ import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import cz.muni.ics.oidc.server.claims.ClaimUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This source extract attribute values for given scope
@@ -23,53 +25,65 @@ import cz.muni.ics.oidc.server.claims.ClaimUtils;
  */
 public class ExtractValuesByDomainSource extends ClaimSource {
 
+	private static final Logger log = LoggerFactory.getLogger(ExtractValuesByDomainSource.class);
+
 	private static final String EXTRACT_BY_DOMAIN = "extractByDomain";
 	private static final String ATTRIBUTE_NAME = "attributeName";
 
 	private final String domain;
 	private final String attributeName;
+	private final String claimName;
 
 	public ExtractValuesByDomainSource(ClaimSourceInitContext ctx) {
 		super(ctx);
+		this.claimName = ctx.getClaimName();
 		this.domain = ClaimUtils.fillStringPropertyOrNoVal(EXTRACT_BY_DOMAIN, ctx);
 		if (!ClaimUtils.isPropSet(this.domain)) {
-			throw new IllegalArgumentException("Missing mandatory configuration option - domain");
+			throw new IllegalArgumentException(claimName + " - missing mandatory configuration option: "
+					+ EXTRACT_BY_DOMAIN);
 		}
 		this.attributeName = ClaimUtils.fillStringPropertyOrNoVal(ATTRIBUTE_NAME, ctx);
 		if (!ClaimUtils.isPropSet(this.attributeName)) {
-			throw new IllegalArgumentException("Missing mandatory configuration option - attributeName");
+			throw new IllegalArgumentException(claimName + " - missing mandatory configuration option: "
+					+ ATTRIBUTE_NAME);
 		}
+		log.debug("{} - domain: '{}', attributeName: '{}'", claimName, domain, attributeName);
 	}
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
+		JsonNode result = NullNode.getInstance();
 		if (!ClaimUtils.isPropSet(domain)) {
-			return NullNode.getInstance();
+			log.trace("{} - no domain set, return empty JSON", domain);
+			result = NullNode.getInstance();
 		} else if (!ClaimUtils.isPropSetAndHasAttribute(attributeName, pctx)) {
-			return NullNode.getInstance();
-		}
+			log.trace("{} - no attributeName set, return empty JSON", domain);
+			result = NullNode.getInstance();
+		} else {
+			PerunAttributeValue attributeValue = pctx.getAttrValues().get(attributeName);
+			if (attributeValue != null) {
+				JsonNode attributeValueJson = attributeValue.valueAsJson();
+				if (attributeValueJson.isTextual() && hasDomain(attributeValueJson.textValue(), domain)) {
+					log.trace("{} - found domain in string value: '{}'", claimName, attributeValueJson);
+					result = attributeValueJson;
+				} else if (attributeValueJson.isArray()) {
+					ArrayNode arrayNode = (ArrayNode) attributeValueJson;
+					JsonNodeFactory factory = JsonNodeFactory.instance;
+					ArrayNode arr = new ArrayNode(factory);
 
-		PerunAttributeValue attributeValue = pctx.getAttrValues().get(attributeName);
-		if (attributeValue != null) {
-			JsonNode attributeValueJson = attributeValue.valueAsJson();
-			if (attributeValueJson.isTextual() && hasDomain(attributeValueJson.textValue(), domain)) {
-				return attributeValueJson;
-			} else if (attributeValueJson.isArray()) {
-				ArrayNode arrayNode = (ArrayNode) attributeValueJson;
-				JsonNodeFactory factory = JsonNodeFactory.instance;
-				ArrayNode result = new ArrayNode(factory);
-
-				for (int i = 0; i < arrayNode.size(); i++) {
-					String subValue = arrayNode.get(i).textValue();
-					if (hasDomain(subValue, domain)) {
-						result.add(subValue);
+					for (int i = 0; i < arrayNode.size(); i++) {
+						String subValue = arrayNode.get(i).textValue();
+						if (hasDomain(subValue, domain)) {
+							log.trace("{} - found domain in array sub-value: '{}'", claimName, subValue);
+							arr.add(subValue);
+						}
 					}
+					result = arr;
 				}
-				return result;
 			}
 		}
-
-		return NullNode.getInstance();
+		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), result);
+		return result;
 	}
 
 	private boolean hasDomain(String value, String domain) {

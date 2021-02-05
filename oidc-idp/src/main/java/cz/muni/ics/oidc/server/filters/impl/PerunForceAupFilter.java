@@ -74,6 +74,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
     private final PerunAdapter perunAdapter;
     private final PerunOidcConfig perunOidcConfig;
+    private final String filterName;
 
     public PerunForceAupFilter(PerunRequestFilterParams params) {
         super(params);
@@ -86,6 +87,7 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         this.perunVoAupAttrName = params.getProperty(VO_AUP_ATTR_NAME);
         this.perunFacilityRequestedAupsAttrName = params.getProperty(FACILITY_REQUESTED_AUPS_ATTR_NAME);
         this.perunFacilityVoShortNamesAttrName = params.getProperty(VO_SHORT_NAMES_ATTR_NAME);
+        this.filterName = params.getFilterName();
     }
 
     @Override
@@ -95,14 +97,20 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
         if (request.getSession() != null && request.getSession().getAttribute(APPROVED) != null) {
             request.getSession().removeAttribute(APPROVED);
-            log.info("Aups already approved, check at next access to the service due to delayed propagation to LDAP");
-            log.debug("Skipping to next filter");
+            log.debug("{} - skip filter execution: aups are already approved, check at next access to the service due" +
+                    " to a delayed propagation to LDAP", filterName);
+            return true;
+        }
+
+        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
+        if (user == null || user.getId() == null) {
+            log.debug("{} - skip filter execution: no user provider", filterName);
             return true;
         }
 
         Facility facility = params.getFacility();
-        if (facility == null) {
-            log.debug("Skipping to next filter");
+        if (facility == null || facility.getId() == null) {
+            log.debug("{} - skip filter execution: no facility provider", filterName);
             return true;
         }
 
@@ -111,47 +119,49 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         Map<String, PerunAttributeValue> facilityAttributes = perunAdapter.getFacilityAttributeValues(facility, attrsToFetch);
 
         if (facilityAttributes == null) {
-            log.warn("Could not fetch attributes {} for facility {}", attrsToFetch, facility);
-            log.debug("Skipping to next filter");
+            log.debug("{} - skip filter execution: could not fetch attributes '{}' for facility '{}'",
+                    filterName, attrsToFetch, facility);
             return true;
         } else if (!facilityAttributes.containsKey(perunFacilityRequestedAupsAttrName) &&
-                !facilityAttributes.containsKey(perunFacilityVoShortNamesAttrName)) {
-            log.warn("Could not fetch attributes {}, {} for facility {}", perunFacilityRequestedAupsAttrName,
-                    perunFacilityVoShortNamesAttrName, facility);
-            log.debug("Skipping to next filter");
+                !facilityAttributes.containsKey(perunFacilityVoShortNamesAttrName))
+        {
+            log.debug("{} - skip filter execution: could not fetch required attributes '{}' and '{}' for facility '{}'",
+                    filterName, perunFacilityRequestedAupsAttrName, perunFacilityVoShortNamesAttrName, facility);
             return true;
         }
-
-        PerunUser user = FiltersUtils.getPerunUser(request, perunOidcConfig, perunAdapter);
 
         Map<String, Aup> newAups;
 
         try {
             newAups = getAupsToApprove(user, facilityAttributes);
         } catch (ParseException | IOException e) {
-            log.warn("Caught ParseException", e);
-            log.debug("Skipping to next filter");
+            log.warn("{} - caught parse exception when processing AUPs to approve", filterName);
+            log.trace("{} - details:", filterName, e);
             return true;
         }
 
         if (!newAups.isEmpty()) {
-            log.debug("User has to approve AUPs: {}", newAups.keySet());
+            log.debug("{} - user has to approve some AUPs", filterName);
+            log.trace("{} - AUPS to be approved: '{}'", filterName, newAups);
             String newAupsString = mapper.writeValueAsString(newAups);
 
-            request.getSession().setAttribute(AupController.RETURN_URL, request.getRequestURI().replace(request.getContextPath(), "") + '?' + request.getQueryString());
+            request.getSession().setAttribute(AupController.RETURN_URL, request.getRequestURI()
+                    .replace(request.getContextPath(), "") + '?' + request.getQueryString());
             request.getSession().setAttribute(AupController.NEW_AUPS, newAupsString);
             request.getSession().setAttribute(AupController.USER_ATTR, perunUserAupsAttrName);
 
-            log.debug("Redirecting to AUPs approval page");
+            log.debug("{} - redirecting user '{}' to AUPs approval page", filterName, user);
             response.sendRedirect(request.getContextPath() + '/' + AupController.URL);
             return false;
         }
 
-        log.debug("AUPs approved by user are actual for the AUPs requested by facility {}", facility);
+        log.debug("{} - no need to approve any AUPs", filterName);
         return true;
     }
 
-    private Map<String, Aup> getAupsToApprove(PerunUser user, Map<String, PerunAttributeValue> facilityAttributes) throws ParseException, IOException {
+    private Map<String, Aup> getAupsToApprove(PerunUser user, Map<String, PerunAttributeValue> facilityAttributes)
+            throws ParseException, IOException
+    {
         Map<String, Aup> aupsToApprove= new LinkedHashMap<>();
 
         PerunAttributeValue userAupsAttr = perunAdapter.getUserAttributeValue(user.getId(), perunUserAupsAttrName);
@@ -200,28 +210,28 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         if (!voAups.isEmpty()) {
             for (Map.Entry<String, List<Aup>> keyToVoAup : voAups.entrySet()) {
                 Aup voLatestAup = getLatestAupFromList(keyToVoAup.getValue());
-
                 if (userAups.containsKey(keyToVoAup.getKey())) {
                     Aup userLatestAup = getLatestAupFromList(userAups.get(keyToVoAup.getKey()));
-
                     if (! (voLatestAup.getDateAsLocalDate().isAfter(userLatestAup.getDateAsLocalDate()))) {
                         continue;
                     }
                 }
-
                 aupsToApprove.put(keyToVoAup.getKey(), voLatestAup);
             }
         }
 
+        log.trace("{} - VO AUPs to approve: {}", filterName, aupsToApprove);
         return aupsToApprove;
     }
 
     private Map<String, Aup> getOrgAupsToApprove(List<String > requestedAups, Map<String, List<Aup>> userAups)
-            throws ParseException, IOException {
+            throws ParseException, IOException
+    {
         Map<String, Aup> aupsToApprove = new LinkedHashMap<>();
         Map<String, List<Aup>> orgAups = new HashMap<>();
 
-        Map<String, PerunAttribute> orgAupsAttr = perunAdapter.getAdapterRpc().getEntitylessAttributes(perunOrgAupsAttrName);
+        Map<String, PerunAttribute> orgAupsAttr = perunAdapter.getAdapterRpc()
+                .getEntitylessAttributes(perunOrgAupsAttrName);
 
         if (orgAupsAttr != null && !orgAupsAttr.isEmpty()) {
             for (Map.Entry<String, PerunAttribute> entry : orgAupsAttr.entrySet()) {
@@ -237,21 +247,18 @@ public class PerunForceAupFilter extends PerunRequestFilter {
                 if (!orgAups.containsKey(requiredOrgAupKey) || orgAups.get(requiredOrgAupKey) == null) {
                     continue;
                 }
-
                 Aup orgLatestAup = getLatestAupFromList(orgAups.get(requiredOrgAupKey));
-
                 if (userAups.containsKey(requiredOrgAupKey)) {
                     Aup userLatestAup = getLatestAupFromList(userAups.get(requiredOrgAupKey));
-
                     if (! (orgLatestAup.getDateAsLocalDate().isAfter(userLatestAup.getDateAsLocalDate()))) {
                         continue;
                     }
                 }
-
                 aupsToApprove.put(requiredOrgAupKey, orgLatestAup);
             }
         }
 
+        log.trace("{} - ORG AUPs to approve: {}", filterName, aupsToApprove);
         return aupsToApprove;
     }
 
@@ -277,17 +284,16 @@ public class PerunForceAupFilter extends PerunRequestFilter {
         return voAups;
     }
 
-    private Map<String, List<Aup>> convertToMapKeyToListOfAups(Map<String, String> keyToListOfAupsString) throws IOException {
+    private Map<String, List<Aup>> convertToMapKeyToListOfAups(Map<String, String> keyToListOfAupsString)
+            throws IOException
+    {
         Map<String, List<Aup>> resultMap = new HashMap<>();
-
         if (keyToListOfAupsString != null && !keyToListOfAupsString.isEmpty()) {
             for (Map.Entry<String, String> entry : keyToListOfAupsString.entrySet()) {
                 List<Aup> aups = Arrays.asList(mapper.readValue(entry.getValue(), Aup[].class));
-
                 resultMap.put(entry.getKey(), aups);
             }
         }
-
         return resultMap;
     }
 
@@ -305,4 +311,5 @@ public class PerunForceAupFilter extends PerunRequestFilter {
 
         return latestAup;
     }
+
 }

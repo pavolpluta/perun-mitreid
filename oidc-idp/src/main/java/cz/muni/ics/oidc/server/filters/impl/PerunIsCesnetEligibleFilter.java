@@ -57,18 +57,19 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
     private static final String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     private final String isCesnetEligibleAttrName;
-    private final String isCesnetEligibleScope;
+    private final String triggerScope;
     private final int validityPeriod;
     /* END OF CONFIGURATION PROPERTIES */
 
     private final PerunAdapter perunAdapter;
+    private final String filterName;
 
     public PerunIsCesnetEligibleFilter(PerunRequestFilterParams params) {
         super(params);
         BeanUtil beanUtil = params.getBeanUtil();
         this.perunAdapter = beanUtil.getBean(PerunAdapter.class);
         this.isCesnetEligibleAttrName = params.getProperty(IS_CESNET_ELIGIBLE_ATTR_NAME);
-        this.isCesnetEligibleScope = params.getProperty(IS_CESNET_ELIGIBLE_SCOPE);
+        this.triggerScope = params.getProperty(IS_CESNET_ELIGIBLE_SCOPE);
         int validityPeriodParam = 12;
         if (params.hasProperty(VALIDITY_PERIOD)) {
             try {
@@ -79,6 +80,7 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
         }
 
         this.validityPeriod = validityPeriodParam;
+        this.filterName = params.getFilterName();
     }
 
     @Override
@@ -86,15 +88,14 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        if (!FiltersUtils.isScopePresent(request.getParameter(PARAM_SCOPE), isCesnetEligibleScope)) {
-            log.debug("Scope {} not present in request, no point in continuing filter execution. Skip to the next filter",
-                    isCesnetEligibleScope);
+        if (!FiltersUtils.isScopePresent(request.getParameter(PARAM_SCOPE), triggerScope)) {
+            log.debug("{} - skip execution: scope '{}' is not present in request", filterName, triggerScope);
             return true;
         }
 
         PerunUser user = params.getUser();
-        if (user == null) {
-            log.warn("Could not extract user from request, skip to the next filter");
+        if (user == null || user.getId() == null) {
+            log.debug("{} - skip execution: no user provider", filterName);
             return true;
         }
 
@@ -106,20 +107,23 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
                 timeStamp = LocalDateTime.parse(attrValue.valueAsString(), formatter);
             } catch (DateTimeParseException e) {
-                log.error("Could not parse {} value: {}", isCesnetEligibleAttrName, attrValue.valueAsString());
+                log.warn("{} - could not parse timestamp from attribute '{}' value: '{}'",
+                        filterName, isCesnetEligibleAttrName, attrValue.valueAsString());
+                log.debug("{} - skip execution: no timestamp to compare to", filterName);
+                log.trace("{} - details:", filterName, e);
                 return true;
             }
 
             LocalDateTime now = LocalDateTime.now();
             if (now.minusMonths(validityPeriod).isBefore(timeStamp)) {
-                log.debug("{} valid, go to the next filter", isCesnetEligibleAttrName);
+                log.debug("{} - attribute '{}' value is valid", filterName, isCesnetEligibleAttrName);
                 return true;
             } else {
                 reason = REASON_EXPIRED;
             }
         }
 
-        log.debug("Value of the attribute is invalid, redirecting to unauthorized");
+        log.debug("{} - attribute '{}' value is invalid, stop user at this point", filterName, attrValue);
         this.redirect(request, response, reason);
         return false;
     }
@@ -133,6 +137,7 @@ public class PerunIsCesnetEligibleFilter extends PerunRequestFilter {
 
         String redirectUrl = ControllerUtils.createRedirectUrl(req, PerunFilterConstants.AUTHORIZE_REQ_PATTERN,
                 PerunUnapprovedController.UNAPPROVED_IS_CESNET_ELIGIBLE_MAPPING, params);
+        log.debug("{} - redirecting user to unapproved: URL '{}'", filterName, redirectUrl);
         res.reset();
         res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
         res.setHeader(HttpHeaders.LOCATION, redirectUrl);
