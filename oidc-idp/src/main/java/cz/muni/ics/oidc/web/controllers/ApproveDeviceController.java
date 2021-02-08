@@ -35,6 +35,7 @@ public class ApproveDeviceController {
     public static final String USER_URL = "device";
     public static final String APPROVE_DEVICE = "approveDevice";
     public static final String DEVICE_APPROVED = "deviceApproved";
+    public static final String REQUEST_USER_CODE = "requestUserCode";
     public static final String USER_CODE = "user_code";
     public static final String USER_OAUTH_APPROVAL = "user_oauth_approval";
 
@@ -68,7 +69,7 @@ public class ApproveDeviceController {
     }
 
     @PreAuthorize("hasRole('ROLE_USER')")
-    @GetMapping(value = "/" + USER_URL, params = USER_CODE)
+    @GetMapping(value = "/" + "devicee")
     public String requestUserCode(@RequestParam(value = USER_CODE, required = false) String userCode,
                                   @ModelAttribute("authorizationRequest") AuthorizationRequest authRequest,
                                   Principal p,
@@ -76,12 +77,17 @@ public class ApproveDeviceController {
                                   ModelMap model,
                                   HttpSession session)
     {
-
-        if (!config.getConfigBean().isAllowCompleteDeviceCodeUri() || userCode == null) {
+        String result = deviceEndpoint.requestUserCode(userCode, model, session);
+        log.error("===========================");
+        log.error("result: {}", result);
+        log.error("===========================");
+        if (result.equals(REQUEST_USER_CODE) && !perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
             // if we don't allow the complete URI or we didn't get a user code on the way in,
             // print out a page that asks the user to enter their user code
             // user must be logged in
-            return "requestUserCode";
+            ControllerUtils.setPageOptions(model, req, localization, htmlClasses, perunOidcConfig);
+            model.put("page", REQUEST_USER_CODE);
+            return "themedRequestUserCode";
         } else {
             // complete verification uri was used, we received user code directly
             // skip requesting code page
