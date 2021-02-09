@@ -20,29 +20,24 @@ pageContext.setAttribute("cssLinks", cssLinks);
 </div> <%-- header --%>
 
 <div id="content" class="text-center">
-    <div id="head">
-        <h1>
-            <c:choose>
-                <c:when test="${ approved }">
-                    <p>&#x2714; ${langProps['device_approved_approved']}</p>
-                </c:when>
-                <c:otherwise>
-                    <p>&#x2717; ${langProps['device_approved_notApproved']}</p>
-                </c:otherwise>
-            </c:choose>
-        </h1>
-    </div>
-
     <h1>
-        <c:choose>
-            <c:when test="${empty client.clientName}">
-                <em><c:out value="${client.clientId}" /></em>
-            </c:when>
-            <c:otherwise>
-                <em><c:out value="${client.clientName}" /></em>
-            </c:otherwise>
-        </c:choose>
+        <c:if test="${ approved }"><p>&#x2714; ${langProps['device_approved_approved']}</p></c:if>
+        <c:if test="${ not approved }"><p>&#x2717; ${langProps['device_approved_rejected']}</p></c:if>
     </h1>
+    <p class="mt-2">
+        <c:if test="${ approved }">
+            ${langProps['device_approved_text_approved_start']}${" "}
+            <c:if test="${empty client.clientName}"><em><c:out value="${client.clientId}" /></em></c:if>
+            <c:if test="${not empty client.clientName}"><em><c:out value="${client.clientName}" /></em></c:if>
+            ${" "}${langProps['device_approved_text_approved_end']}
+        </c:if>
+        <c:if test="${not approved}">
+            ${langProps['device_approved_text_rejected_start']}${" "}
+            <c:if test="${empty client.clientName}"><em><c:out value="${client.clientId}" /></em></c:if>
+            <c:if test="${not empty client.clientName}"><em><c:out value="${client.clientName}" /></em></c:if>
+            ${". "}${langProps['device_approved_text_rejected_end']}
+        </c:if>
+    </p>
 </div>
 
 </div> <%-- wrap --%>
