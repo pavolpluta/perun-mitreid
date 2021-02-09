@@ -22,43 +22,42 @@
 
 <div id="content" class="text-center">
     <h1>${langProps['request_code_header']}</h1>
-    <div class="error_message" style="word-wrap: break-word;">
-        <c:if test="${ error != null }">
+    <c:choose>
+        <c:when test="${ not empty error }">
+            <p class="alert alert-danger mt-2">
             <c:choose>
-                <c:when test="${ error == 'noUserCode' }">
-                    <h1>${langProps['noUserCode']}</h1>
-                </c:when>
-                <c:when test="${ error == 'expiredUserCode' }">
-                    <h1>${langProps['expiredUserCode']}</h1>
-                </c:when>
-                <c:when test="${ error == 'userCodeAlreadyApproved' }">
-                    <h1>${langProps['userCodeAlreadyApproved']}</h1>
-                </c:when>
-                <c:when test="${ error == 'userCodeMismatch' }">
-                    <h1>${langProps['userCodeMismatch']}</h1>
-                </c:when>
-                <c:otherwise>
-                    <h1>${langProps['userCodeError']}</h1>
-                </c:otherwise>
+                <c:when test="${ error == 'noUserCode' }">${langProps['user_code_empty_or_not_found']}</c:when>
+                <c:when test="${ error == 'expiredUserCode' }">${langProps['user_code_expired']}</c:when>
+                <c:when test="${ error == 'userCodeAlreadyApproved' }">${langProps['user_code_already_approved']}</c:when>
+                <c:when test="${ error == 'userCodeMismatch' }">${langProps['user_code_mismatch']}</c:when>
+                <c:otherwise>${langProps['user_code_error']}</c:otherwise>
             </c:choose>
-        </c:if>
-    </div>
+            </p>
+        </c:when>
+        <c:otherwise>
+            <p class="mt-2">
+                ${langProps['user_code_info']}
+            </p>
+        </c:otherwise>
+    </c:choose>
 
-    <form name="confirmationForm"
+    <form name="confirmationForm" class="mt-2"
           action="${ config.issuer }${ config.issuer.endsWith('/') ? '' : '/' }device/verify" method="post">
-
         <div class="row-fluid">
             <div class="span12">
                 <div>
                     <div class="input-block-level input-xlarge">
-                        <input type="text" name="user_code" placeholder="code" autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false" value="" />
+                            <input type="text" name="user_code" placeholder="${langProps['code']}"
+                                   autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false"
+                                   value="" />
                     </div>
                 </div>
             </div>
         </div>
-        <div class="row-fluid">
+        <div class="row-fluid mt-2">
             <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
-            <input name="approve" value="${langProps['userCode.submit']}" type="submit" class="btn btn-info btn-large" />
+            <input name="approve" value="${langProps['user_code_submit']}" type="submit"
+                   class="btn btn-success btn-block btn-large" />
         </div>
 
     </form>

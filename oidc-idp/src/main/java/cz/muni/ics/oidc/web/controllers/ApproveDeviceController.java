@@ -10,8 +10,6 @@ import org.mitre.oauth2.model.DeviceCode;
 import org.mitre.oauth2.service.SystemScopeService;
 import org.mitre.oauth2.web.DeviceEndpoint;
 import org.mitre.openid.connect.service.UserInfoService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -30,9 +28,7 @@ import java.security.Principal;
 @Controller
 public class ApproveDeviceController {
 
-    private static final Logger log = LoggerFactory.getLogger(ApproveDeviceController.class);
-
-    public static final String USER_URL = "device";
+    public static final String DEVICE = "device";
     public static final String APPROVE_DEVICE = "approveDevice";
     public static final String DEVICE_APPROVED = "deviceApproved";
     public static final String REQUEST_USER_CODE = "requestUserCode";
@@ -46,7 +42,6 @@ public class ApproveDeviceController {
     private final WebHtmlClasses htmlClasses;
     private final PerunScopeClaimTranslationService scopeClaimTranslationService;
     private final UserInfoService userInfoService;
-    private final PerunOidcConfig config;
 
     @Autowired
     public ApproveDeviceController(SystemScopeService scopeService,
@@ -55,8 +50,7 @@ public class ApproveDeviceController {
                                    Localization localization,
                                    WebHtmlClasses htmlClasses,
                                    PerunScopeClaimTranslationService scopeClaimTranslationService,
-                                   UserInfoService userInfoService,
-                                   PerunOidcConfig config)
+                                   UserInfoService userInfoService)
     {
         this.scopeService = scopeService;
         this.deviceEndpoint = deviceEndpoint;
@@ -65,11 +59,11 @@ public class ApproveDeviceController {
         this.htmlClasses = htmlClasses;
         this.scopeClaimTranslationService = scopeClaimTranslationService;
         this.userInfoService = userInfoService;
-        this.config = config;
     }
 
     @PreAuthorize("hasRole('ROLE_USER')")
-    @GetMapping(value = "/" + "devicee")
+    @GetMapping(value = "/" + DEVICE,
+            consumes = {"text/html", "application/xhtml+xml","application/xml;q=0.9","image/webp","*/*;q=0.8"})
     public String requestUserCode(@RequestParam(value = USER_CODE, required = false) String userCode,
                                   @ModelAttribute("authorizationRequest") AuthorizationRequest authRequest,
                                   Principal p,
@@ -78,26 +72,19 @@ public class ApproveDeviceController {
                                   HttpSession session)
     {
         String result = deviceEndpoint.requestUserCode(userCode, model, session);
-        log.error("===========================");
-        log.error("result: {}", result);
-        log.error("===========================");
         if (result.equals(REQUEST_USER_CODE) && !perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
-            // if we don't allow the complete URI or we didn't get a user code on the way in,
-            // print out a page that asks the user to enter their user code
-            // user must be logged in
             ControllerUtils.setPageOptions(model, req, localization, htmlClasses, perunOidcConfig);
             model.put("page", REQUEST_USER_CODE);
             return "themedRequestUserCode";
-        } else {
-            // complete verification uri was used, we received user code directly
-            // skip requesting code page
-            // user must be logged in
-            return readUserCode(userCode, authRequest, p, req, model, session);
+        } else if (result.equals(APPROVE_DEVICE) && !perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
+            return themedApproveDevice(model, p, req);
         }
+        return result;
     }
 
     @PreAuthorize("hasRole('ROLE_USER')")
-    @PostMapping(value = "/" + USER_URL + "/verify", params = {USER_CODE})
+    @PostMapping(value = "/" + DEVICE + "/verify",
+            consumes = {"text/html", "application/xhtml+xml","application/xml;q=0.9","image/webp","*/*;q=0.8"})
     public String readUserCode(@RequestParam(USER_CODE) String userCode,
                                @ModelAttribute("authorizationRequest") AuthorizationRequest authRequest,
                                Principal p,
@@ -107,23 +94,31 @@ public class ApproveDeviceController {
     {
         String result = deviceEndpoint.readUserCode(userCode, model, session);
         if (result.equals(APPROVE_DEVICE) && !perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
-            model.remove("scopes");
-            DeviceCode dc = (DeviceCode) model.get("dc");
-            ClientDetailsEntity client = (ClientDetailsEntity) model.get("client");
-            PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsernameAndClientId(
-                    p.getName(), client.getClientId());
-            ControllerUtils.setScopesAndClaims(scopeService, scopeClaimTranslationService, model, dc.getScope(), user);
+            return themedApproveDevice(model, p, req);
+        } else if (result.equals(REQUEST_USER_CODE) && !perunOidcConfig.getTheme().equalsIgnoreCase("default")) {
             ControllerUtils.setPageOptions(model, req, localization, htmlClasses, perunOidcConfig);
-
-            model.put("page", APPROVE_DEVICE);
-            return "themedApproveDevice";
+            model.put("page", REQUEST_USER_CODE);
+            return "themedRequestUserCode";
         }
 
         return result;
     }
 
+    private String themedApproveDevice(ModelMap model, Principal p, HttpServletRequest req) {
+        model.remove("scopes");
+        DeviceCode dc = (DeviceCode) model.get("dc");
+        ClientDetailsEntity client = (ClientDetailsEntity) model.get("client");
+        PerunUserInfo user = (PerunUserInfo) userInfoService.getByUsernameAndClientId(
+                p.getName(), client.getClientId());
+        ControllerUtils.setScopesAndClaims(scopeService, scopeClaimTranslationService, model, dc.getScope(), user);
+        ControllerUtils.setPageOptions(model, req, localization, htmlClasses, perunOidcConfig);
+
+        model.put("page", APPROVE_DEVICE);
+        return "themedApproveDevice";
+    }
+
     @PreAuthorize("hasRole('ROLE_USER')")
-    @PostMapping(value = "/" + USER_URL + "/approve", params = {USER_CODE, USER_OAUTH_APPROVAL})
+    @PostMapping(value = "/" + DEVICE + "/approve", params = {USER_CODE, USER_OAUTH_APPROVAL})
     public String approveDevice(@RequestParam(USER_CODE) String userCode,
                                 @RequestParam(USER_OAUTH_APPROVAL) Boolean approve,
                                 @ModelAttribute(USER_OAUTH_APPROVAL) AuthorizationRequest authRequest,
