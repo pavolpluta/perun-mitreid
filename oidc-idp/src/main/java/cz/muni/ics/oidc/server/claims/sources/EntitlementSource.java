@@ -81,11 +81,7 @@ public class EntitlementSource extends GroupNamesSource {
 		Map<Long, String> idToGnameMap = super.produceValueWithoutReplacing(pctx);
 		Set<String> entitlements = new TreeSet<>();
 
-		Facility facility = null;
-		if (pctx.getClient() != null) {
-			facility = pctx.getPerunAdapter().getFacilityByClientId(pctx.getClient().getClientId());
-		}
-
+		Facility facility = pctx.getContextCommonParameters().getClient();
 		if (idToGnameMap != null && !idToGnameMap.values().isEmpty()) {
 			this.fillEntitlementsFromGroupNames(idToGnameMap.values(), entitlements);
 			log.trace("{} - entitlements for group names added", claimName);

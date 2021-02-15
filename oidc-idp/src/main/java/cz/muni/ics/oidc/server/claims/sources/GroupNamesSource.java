@@ -9,7 +9,6 @@ import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
-import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
@@ -55,13 +54,7 @@ public class GroupNamesSource extends ClaimSource {
 		log.trace("{} - produce value {} trimming 'members' part of the group names",
 				claimName, (trimMembers ? "with": "without"));
 		PerunAdapter perunConnector = pctx.getPerunAdapter();
-		ClientDetailsEntity client = pctx.getClient();
-		Facility facility = null;
-
-		if (client != null) {
-			String clientId = client.getClientId();
-			facility = perunConnector.getFacilityByClientId(clientId);
-		}
+		Facility facility = pctx.getContextCommonParameters().getClient();
 
 		Set<Group> userGroups = new HashSet<>();
 		if (facility != null) {

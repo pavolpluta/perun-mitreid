@@ -8,9 +8,11 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import cz.muni.ics.oidc.exceptions.ConfigurationException;
+import cz.muni.ics.oidc.models.Facility;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
 import cz.muni.ics.oidc.models.PerunAttributeValueAwareModel;
 import cz.muni.ics.oidc.server.adapters.PerunAdapter;
+import cz.muni.ics.oidc.server.claims.ClaimContextCommonParameters;
 import cz.muni.ics.oidc.server.claims.ClaimModifier;
 import cz.muni.ics.oidc.server.claims.ClaimModifierInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
@@ -479,7 +481,10 @@ public class PerunUserInfoService implements UserInfoService {
 			}
 			ui.setAddress(address);
 			//custom claims
-			ClaimSourceProduceContext pctx = new ClaimSourceProduceContext(perunUserId, sub, userAttributeValues, perunAdapter, pair.getClient());
+			ClaimContextCommonParameters contextCommonParameters = getClaimContextCommonParameters(perunUserId,
+					pair.getClientId(), perunAdapter);
+			ClaimSourceProduceContext pctx = new ClaimSourceProduceContext(perunUserId, sub, userAttributeValues,
+					perunAdapter, pair.getClient(), contextCommonParameters);
 			log.debug("processing custom claims");
 			for (PerunCustomClaimDefinition pccd : customClaims) {
 				log.debug("producing value for custom claim {}", pccd.getClaim());
@@ -520,6 +525,13 @@ public class PerunUserInfoService implements UserInfoService {
 			}
 			log.debug("UserInfo created");
 			return ui;
+		}
+
+		private ClaimContextCommonParameters getClaimContextCommonParameters(long perunUserId, String clientId,
+																			 PerunAdapter perunAdapter)
+		{
+			Facility facility = perunAdapter.getFacilityByClientId(clientId);
+			return new ClaimContextCommonParameters(facility);
 		}
 	};
 

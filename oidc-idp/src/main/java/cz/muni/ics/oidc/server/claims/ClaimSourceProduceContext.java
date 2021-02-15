@@ -18,15 +18,21 @@ public class ClaimSourceProduceContext {
 	private final Map<String, PerunAttributeValue> attrValues;
 	private final PerunAdapter perunAdapter;
 	private final ClientDetailsEntity client;
+	private final ClaimContextCommonParameters contextCommonParameters;
 
-	public ClaimSourceProduceContext(long perunUserId, String sub, Map<String, PerunAttributeValue> attrValues,
-									 PerunAdapter perunAdapter, ClientDetailsEntity client)
+	public ClaimSourceProduceContext(long perunUserId,
+									 String sub,
+									 Map<String, PerunAttributeValue> attrValues,
+									 PerunAdapter perunAdapter,
+									 ClientDetailsEntity client,
+									 ClaimContextCommonParameters contextCommonParameters)
 	{
 		this.perunUserId = perunUserId;
 		this.sub = sub;
 		this.attrValues = attrValues;
 		this.perunAdapter = perunAdapter;
 		this.client = client;
+		this.contextCommonParameters = contextCommonParameters;
 	}
 
 	public Map<String, PerunAttributeValue> getAttrValues() {
@@ -47,6 +53,10 @@ public class ClaimSourceProduceContext {
 
 	public ClientDetailsEntity getClient() {
 		return client;
+	}
+
+	public ClaimContextCommonParameters getContextCommonParameters() {
+		return contextCommonParameters;
 	}
 
 	@Override
