@@ -9,10 +9,12 @@ import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.claims.ClaimSource;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
+import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,6 +30,7 @@ public class GroupNamesSource extends ClaimSource {
 
 	public static final Logger log = LoggerFactory.getLogger(GroupNamesSource.class);
 
+	protected static final String MEMBERS = "members";
 	private final String claimName;
 
 	public GroupNamesSource(ClaimSourceInitContext ctx) {
@@ -38,36 +41,25 @@ public class GroupNamesSource extends ClaimSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		Map<Long, String> idToNameMap = this.produceValue(pctx, true);
-		ArrayNode arr = JsonNodeFactory.instance.arrayNode();
-		new HashSet<>(idToNameMap.values()).forEach(arr::add);
-
-		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), arr);
-		return arr;
+		Map<Long, String> idToNameMap = this.produceGroupNames(pctx);
+		JsonNode result = convertResultStringsToJsonArray(new HashSet<>(idToNameMap.values()));
+		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), result);
+		return result;
 	}
 
-	protected Map<Long, String> produceValueWithoutReplacing(ClaimSourceProduceContext pctx) {
-		return produceValue(pctx, false);
-	}
-
-	private Map<Long, String> produceValue(ClaimSourceProduceContext pctx, boolean trimMembers) {
-		log.trace("{} - produce value {} trimming 'members' part of the group names",
-				claimName, (trimMembers ? "with": "without"));
-		PerunAdapter perunConnector = pctx.getPerunAdapter();
+	protected Map<Long, String> produceGroupNames(ClaimSourceProduceContext pctx) {
+		log.trace("{} - produce group names with trimming 'members' part of the group names", claimName);
 		Facility facility = pctx.getContextCommonParameters().getClient();
+		Set<Group> userGroups = getUserGroupsOnFacility(facility, pctx.getPerunUserId(), pctx.getPerunAdapter());
+		return getGroupIdToNameMap(userGroups, true);
+	}
 
-		Set<Group> userGroups = new HashSet<>();
-		if (facility != null) {
-			userGroups = perunConnector.getGroupsWhereUserIsActiveWithUniqueNames(facility.getId(),
-					pctx.getPerunUserId());
-			log.trace("{} - found user groups: '{}'", claimName, userGroups);
-		}
-
+	protected Map<Long, String> getGroupIdToNameMap(Set<Group> userGroups, boolean trimMembers) {
 		Map<Long, String> idToNameMap = new HashMap<>();
 		userGroups.forEach(g -> {
 			String uniqueName = g.getUniqueGroupName();
-			if (trimMembers && StringUtils.hasText(uniqueName) && "members".equals(g.getName())) {
-				uniqueName = uniqueName.replace(":members", "");
+			if (trimMembers && StringUtils.hasText(uniqueName) && MEMBERS.equals(g.getName())) {
+				uniqueName = uniqueName.replace(':' + MEMBERS, "");
 				g.setUniqueGroupName(uniqueName);
 			}
 
@@ -76,6 +68,23 @@ public class GroupNamesSource extends ClaimSource {
 
 		log.trace("{} - group ID to group name map: '{}'", claimName, idToNameMap);
 		return idToNameMap;
+	}
+
+	protected Set<Group> getUserGroupsOnFacility(Facility facility, Long userId, PerunAdapter perunAdapter) {
+		Set<Group> userGroups = new HashSet<>();
+		if (facility == null) {
+			log.warn("{} - no facility provided when searching for user groups, will return empty set", claimName);
+		} else {
+			userGroups = perunAdapter.getGroupsWhereUserIsActiveWithUniqueNames(facility.getId(), userId);
+		}
+		log.trace("{} - found user groups: '{}'", claimName, userGroups);
+		return userGroups;
+	}
+
+	protected JsonNode convertResultStringsToJsonArray(Collection<String> collection) {
+		ArrayNode arr = JsonNodeFactory.instance.arrayNode();
+		collection.forEach(arr::add);
+		return arr;
 	}
 
 }

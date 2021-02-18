@@ -1,11 +1,11 @@
 package cz.muni.ics.oidc.server.claims.sources;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.net.UrlEscapers;
 import cz.muni.ics.oidc.models.Facility;
+import cz.muni.ics.oidc.models.Group;
 import cz.muni.ics.oidc.models.PerunAttributeValue;
+import cz.muni.ics.oidc.server.adapters.PerunAdapter;
 import cz.muni.ics.oidc.server.claims.ClaimSourceInitContext;
 import cz.muni.ics.oidc.server.claims.ClaimSourceProduceContext;
 import cz.muni.ics.oidc.server.claims.ClaimUtils;
@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -43,12 +44,13 @@ public class EntitlementSource extends GroupNamesSource {
 
 	public static final Logger log = LoggerFactory.getLogger(EntitlementSource.class);
 
-	private static final String FORWARDED_ENTITLEMENTS = "forwardedEntitlements";
-	private static final String RESOURCE_CAPABILITIES = "resourceCapabilities";
-	private static final String FACILITY_CAPABILITIES = "facilityCapabilities";
-	private static final String PREFIX = "prefix";
-	private static final String AUTHORITY = "authority";
-	private static final String MEMBERS = "members";
+	private static final String GROUP = "group";
+
+	protected static final String FORWARDED_ENTITLEMENTS = "forwardedEntitlements";
+	protected static final String RESOURCE_CAPABILITIES = "resourceCapabilities";
+	protected static final String FACILITY_CAPABILITIES = "facilityCapabilities";
+	protected static final String PREFIX = "prefix";
+	protected static final String AUTHORITY = "authority";
 
 	private final String forwardedEntitlements;
 	private final String resourceCapabilities;
@@ -78,55 +80,38 @@ public class EntitlementSource extends GroupNamesSource {
 
 	@Override
 	public JsonNode produceValue(ClaimSourceProduceContext pctx) {
-		Map<Long, String> idToGnameMap = super.produceValueWithoutReplacing(pctx);
-		Set<String> entitlements = new TreeSet<>();
-
+		PerunAdapter perunAdapter = pctx.getPerunAdapter();
+		Long userId = pctx.getPerunUserId();
 		Facility facility = pctx.getContextCommonParameters().getClient();
-		if (idToGnameMap != null && !idToGnameMap.values().isEmpty()) {
-			this.fillEntitlementsFromGroupNames(idToGnameMap.values(), entitlements);
-			log.trace("{} - entitlements for group names added", claimName);
-		}
+		Set<Group> userGroups = getUserGroupsOnFacility(facility, userId, perunAdapter);
+		Set<String> entitlements = produceEntitlements(facility, userGroups, userId, perunAdapter);
 
-		if (facility != null) {
-			this.fillCapabilities(facility, pctx, idToGnameMap, entitlements);
-			log.trace("{} - capabilities added", claimName);
-		}
-
-		if (ClaimUtils.isPropSet(this.forwardedEntitlements)) {
-			this.fillForwardedEntitlements(pctx, entitlements);
-			log.trace("{} - forwarded entitlements added", claimName);
-		}
-
-		ArrayNode result = JsonNodeFactory.instance.arrayNode();
-		for (String entitlement: entitlements) {
-			result.add(entitlement);
-		}
-
-		log.debug("{} - produced value for user({}): '{}'", claimName, pctx.getPerunUserId(), result);
+		JsonNode result = convertResultStringsToJsonArray(entitlements);
+		log.debug("{} - produced value for user({}): '{}'", claimName, userId, result);
 		return result;
 	}
 
-	private void fillCapabilities(Facility facility, ClaimSourceProduceContext pctx,
+	protected void fillCapabilities(Facility facility, PerunAdapter perunAdapter,
 								  Map<Long, String> idToGnameMap, Set<String> entitlements) {
-		Set<String> resultCapabilities = pctx.getPerunAdapter()
+		Set<String> resultCapabilities = perunAdapter
 				.getCapabilities(facility, idToGnameMap,
 						ClaimUtils.isPropSet(this.facilityCapabilities) ? facilityCapabilities : null,
 						ClaimUtils.isPropSet(this.resourceCapabilities)? resourceCapabilities: null);
 
 		for (String capability : resultCapabilities) {
 			entitlements.add(wrapCapabilityToAARC(capability));
-			log.trace("Added capability: {}", capability);
+			log.trace("{} - added capability: {}", claimName, capability);
 		}
 	}
 
-	private void fillForwardedEntitlements(ClaimSourceProduceContext pctx, Set<String> entitlements) {
-		PerunAttributeValue forwardedEntitlementsVal = pctx.getPerunAdapter()
-				.getUserAttributeValue(pctx.getPerunUserId(), this.forwardedEntitlements);
+	protected void fillForwardedEntitlements(PerunAdapter perunAdapter, Long userId, Set<String> entitlements) {
+		PerunAttributeValue forwardedEntitlementsVal = perunAdapter
+				.getUserAttributeValue(userId, this.forwardedEntitlements);
 		if (forwardedEntitlementsVal != null && !forwardedEntitlementsVal.isNullValue()) {
 			JsonNode eduPersonEntitlementJson = forwardedEntitlementsVal.valueAsJson();
 			for (int i = 0; i < eduPersonEntitlementJson.size(); i++) {
 				String entitlement = eduPersonEntitlementJson.get(i).asText();
-				log.trace("Added forwarded entitlement: {}", entitlement);
+				log.trace("{} - added forwarded entitlement: {}", claimName, entitlement);
 				entitlements.add(entitlement);
 			}
 		}
@@ -148,16 +133,45 @@ public class EntitlementSource extends GroupNamesSource {
 				gname += (':' + parts[1]);
 			}
 			String gNameEntitlement = wrapGroupNameToAARC(gname);
-			log.trace("Added group name entitlement: {}", gNameEntitlement);
+			log.trace("{} - added group name entitlement: {}", claimName, gNameEntitlement);
 			entitlements.add(gNameEntitlement);
 		}
 	}
 
-	private String wrapGroupNameToAARC(String groupName) {
-		return prefix + "group:" + UrlEscapers.urlPathSegmentEscaper().escape(groupName) + "#" + authority;
+	protected Set<String> produceEntitlements(Facility facility, Set<Group> userGroups,
+											  Long userId, PerunAdapter perunAdapter)
+	{
+		Set<String> entitlements = new TreeSet<>();
+		Map<Long, String> groupIdToNameMap = super.getGroupIdToNameMap(userGroups, false);
+
+		if (groupIdToNameMap != null && !groupIdToNameMap.values().isEmpty()) {
+			this.fillEntitlementsFromGroupNames(new HashSet<>(groupIdToNameMap.values()), entitlements);
+			log.trace("{} - entitlements for group names added", claimName);
+		}
+
+		if (facility != null) {
+			this.fillCapabilities(facility, perunAdapter, groupIdToNameMap, entitlements);
+			log.trace("{} - capabilities added", claimName);
+		}
+
+		if (ClaimUtils.isPropSet(this.forwardedEntitlements)) {
+			this.fillForwardedEntitlements(perunAdapter, userId, entitlements);
+			log.trace("{} - forwarded entitlements added", claimName);
+		}
+
+		return entitlements;
+	}
+
+	protected String wrapGroupNameToAARC(String groupName) {
+		return addPrefixAndSuffix(GROUP + ':' + UrlEscapers.urlPathSegmentEscaper().escape(groupName));
 	}
 
 	private String wrapCapabilityToAARC(String capability) {
-		return prefix + UrlEscapers.urlPathSegmentEscaper().escape(capability) + "#" + authority;
+		return addPrefixAndSuffix(UrlEscapers.urlPathSegmentEscaper().escape(capability));
 	}
+
+	protected String addPrefixAndSuffix(String capability) {
+		return prefix + capability + '#' + authority;
+	}
+
 }

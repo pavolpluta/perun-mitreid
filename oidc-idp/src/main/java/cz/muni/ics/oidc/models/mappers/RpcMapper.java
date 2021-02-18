@@ -34,6 +34,7 @@ import java.util.stream.IntStream;
 public class RpcMapper {
 
 	public static final String ID = "id";
+	public static final String UUID = "uuid";
 	public static final String FIRST_NAME = "firstName";
 	public static final String LAST_NAME = "lastName";
 	public static final String PARENT_GROUP_ID = "parentGroupId";
@@ -65,8 +66,6 @@ public class RpcMapper {
 	public static final String DATE = "date";
 	public static final String LINK = "link";
 	public static final String TEXT = "text";
-
-	private String entity;
 
 	/**
 	 * Maps JsonNode to User model.
@@ -119,8 +118,9 @@ public class RpcMapper {
 		String name = getRequiredFieldAsString(json, NAME);
 		String description = getFieldAsString(json, DESCRIPTION);
 		Long voId = getRequiredFieldAsLong(json, VO_ID);
+		String uuid = getRequiredFieldAsString(json, UUID);
 
-		return new Group(id, parentGroupId, name, description, null, voId);
+		return new Group(id, parentGroupId, name, description, null, uuid,  voId);
 	}
 
 	/**
