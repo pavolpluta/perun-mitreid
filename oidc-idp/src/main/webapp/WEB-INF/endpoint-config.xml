@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Replaces (overlays) the same-name file from project org.server.openid-connect-server-webapp.
+-->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	   xmlns:security="http://www.springframework.org/schema/security"
+	   xmlns:context="http://www.springframework.org/schema/context"
+	   xmlns:aop="http://www.springframework.org/schema/aop"
+	   xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+	<security:http pattern="/devicecodeMFA/**"
+				   use-expressions="true"
+				   entry-point-ref="oauthAuthenticationEntryPoint"
+				   create-session="stateless"
+				   authentication-manager-ref="clientAuthenticationManager">
+		<security:http-basic entry-point-ref="oauthAuthenticationEntryPoint" />
+		<!-- include this only if you need to authenticate clients via request parameters -->
+		<security:custom-filter ref="clientAssertionEndpointFilter" after="PRE_AUTH_FILTER" /> <!-- this one has to go first -->
+		<security:custom-filter ref="clientCredentialsEndpointFilter" after="BASIC_AUTH_FILTER" />
+		<security:custom-filter ref="corsFilter" after="SECURITY_CONTEXT_FILTER" />
+		<security:access-denied-handler ref="oauthAccessDeniedHandler" />
+		<security:csrf disabled="true"/>
+	</security:http>
+
+</beans>

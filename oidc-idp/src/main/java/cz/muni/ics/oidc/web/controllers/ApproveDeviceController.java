@@ -11,6 +11,7 @@ import org.mitre.oauth2.service.SystemScopeService;
 import org.mitre.oauth2.web.DeviceEndpoint;
 import org.mitre.openid.connect.service.UserInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.provider.AuthorizationRequest;
@@ -19,11 +20,14 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.security.Principal;
+import java.util.Map;
 
 @Controller
 public class ApproveDeviceController {
@@ -34,6 +38,13 @@ public class ApproveDeviceController {
     public static final String REQUEST_USER_CODE = "requestUserCode";
     public static final String USER_CODE = "user_code";
     public static final String USER_OAUTH_APPROVAL = "user_oauth_approval";
+    public static final String URL = "devicecode";
+    public static final String VERIFICATION_URI = "verification_uri";
+    public static final String VERIFICATION_URI_COMPLETE = "verification_uri_complete";
+    public static final String ACR_VALUES = "acr_values";
+    public static final String ENTITY = "entity";
+    public static final String CLIENT_ID = "client_id";
+    public static final String SCOPE = "scope";
 
     private final SystemScopeService scopeService;
     private final DeviceEndpoint deviceEndpoint;
@@ -59,6 +70,25 @@ public class ApproveDeviceController {
         this.htmlClasses = htmlClasses;
         this.scopeClaimTranslationService = scopeClaimTranslationService;
         this.userInfoService = userInfoService;
+    }
+
+    @RequestMapping(
+            value = {"/" + URL},
+            method = RequestMethod.POST,
+            consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE},
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            params = {CLIENT_ID, ACR_VALUES}
+    )
+    public String requestDeviceCodeMFA(@RequestParam(CLIENT_ID) String clientId, @RequestParam(name = SCOPE, required = false) String scope,
+                                       @RequestParam(name = ACR_VALUES) String acrValues, Map<String, String> parameters, ModelMap model)
+    {
+        String result = deviceEndpoint.requestDeviceCode(clientId, scope, parameters, model);
+
+        Map<String, Object> response = (Map<String, Object>) model.get(ENTITY);
+        response.replace(VERIFICATION_URI, response.get(VERIFICATION_URI) + "?" + ACR_VALUES + "=" + acrValues);
+        response.replace(VERIFICATION_URI_COMPLETE, response.get(VERIFICATION_URI_COMPLETE) + "&" + ACR_VALUES + "=" + acrValues);
+
+        return result;
     }
 
     @PreAuthorize("hasRole('ROLE_USER')")
