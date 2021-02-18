@@ -762,7 +762,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		Set<String> resourceGroupNames = new HashSet<>();
 
 		if (null != resourceCapabilitiesAttrName) {
-			List<Resource> resources = this.getAssignedResources(facility);
+			List<Resource> resources = this.getAssignedRichResources(facility);
 			for (Resource resource : resources) {
 				PerunAttributeValue attrValue = this.getResourceAttributeValue(resource.getId(), resourceCapabilitiesAttrName);
 
@@ -774,12 +774,7 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 				for (Group group : groups) {
 					resourceGroupNames.add(group.getName());
 					String groupName = group.getName();
-					if ("members".equals(groupName)) {
-						groupName = "";
-						if (resource.getVo() != null) {
-							groupName = resource.getVo().getShortName();
-						}
-					} else if (resource.getVo() != null) {
+					if (resource.getVo() != null) {
 						groupName = resource.getVo().getShortName() + ':' + groupName;
 					}
 					group.setUniqueGroupName(groupName);
@@ -1138,6 +1133,18 @@ public class PerunAdapterRpc extends PerunAdapterWithMappingServices implements 
 		map.put("facility", facility.getId());
 
 		JsonNode res = connectorRpc.post(FACILITIES_MANAGER, "getAssignedResources", map);
+		return RpcMapper.mapResources(res);
+	}
+
+	private List<Resource> getAssignedRichResources(Facility facility) {
+		if (!this.connectorRpc.isEnabled()) {
+			return new ArrayList<>();
+		}
+
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put("facility", facility.getId());
+
+		JsonNode res = connectorRpc.post(FACILITIES_MANAGER, "getAssignedRichResources", map);
 		return RpcMapper.mapResources(res);
 	}
 
