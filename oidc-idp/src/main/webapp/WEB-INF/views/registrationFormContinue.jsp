@@ -39,9 +39,9 @@ pageContext.setAttribute("cssLinks", cssLinks);
     <form method="GET" action="${action}">
         <hr/>
         <br/>
-        <input type="hidden" name="client_id" value="${client_id}" />
-        <input type="hidden" name="facility_id" value="${facility_id}" />
-        <input type="hidden" name="user_id" value="${user_id}" />
+        <input type="hidden" name="client_id" value="${fn:escapeXml(client_id)}" />
+        <input type="hidden" name="facility_id" value="${fn:escapeXml(facility_id)}" />
+        <input type="hidden" name="user_id" value="${fn:escapeXml(user_id)}" />
         <input type="submit" name="continueToRegistration" value="${langProps['go_to_registration_continue']}"
                class="btn btn-lg btn-primary btn-block">
     </form>
