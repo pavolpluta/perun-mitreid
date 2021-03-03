@@ -24,16 +24,12 @@ import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_TARGET;
  *
  * @author Pavol Pluta <pavol.pluta1@gmail.com>
  */
-
 @Controller
 public class IsTestSpController {
     private static final Logger log = LoggerFactory.getLogger(IsTestSpController.class);
 
-    public static final String PREFIX = "/isTestSp";
-    public static final String WARNING_MAPPING = PREFIX + "/warning";
+    public static final String MAPPING = "/testRpWarning";
     public static final String IS_TEST_SP_APPROVED_SESS = "isTestSpApprovedSession";
-
-
     private static final String TARGET = "target";
     private static final String ACTION = "action";
 
@@ -48,7 +44,7 @@ public class IsTestSpController {
         this.perunOidcConfig = perunOidcConfig;
     }
 
-    @GetMapping(value = WARNING_MAPPING, params = PARAM_TARGET)
+    @GetMapping(value = MAPPING, params = PARAM_TARGET)
     public String isTestSpWarning(HttpServletRequest req,
                                   Map<String, Object> model,
                                   @RequestParam(PARAM_TARGET) String returnUrl)
@@ -58,19 +54,18 @@ public class IsTestSpController {
         model.put(ACTION, req.getRequestURL().toString());
         ControllerUtils.setPageOptions(model, req, localization, htmlClasses, perunOidcConfig);
         return "isTestSpWarning";
-
     }
 
-    @GetMapping(value = WARNING_MAPPING, params = {PARAM_TARGET, PARAM_ACCEPTED})
+    @GetMapping(value = MAPPING, params = {PARAM_TARGET, PARAM_ACCEPTED})
     public String warningApproved(HttpServletRequest request,
-                                  @RequestParam(PARAM_TARGET) String target,
-                                  @RequestParam(PARAM_ACCEPTED) boolean accepted)
+                                  @RequestParam(PARAM_TARGET) String target)
     {
         log.debug("Warning approved, set session attribute and redirect to {}", target);
-        if (accepted) {
-            HttpSession sess = request.getSession();
+        HttpSession sess = request.getSession();
+        if (sess != null) {
             sess.setAttribute(IS_TEST_SP_APPROVED_SESS, true);
         }
         return "redirect:" + target;
     }
+
 }

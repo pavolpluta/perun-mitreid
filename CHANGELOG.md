@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- implemented a filter for displaying warning in case of RP being registered in test environment
+
 ## [v2.4.1]
 ### Fixed
 - fixed NullPointerException in searching for facility without clientID

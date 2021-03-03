@@ -23,6 +23,17 @@ import java.util.Map;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.PARAM_TARGET;
 import static cz.muni.ics.oidc.web.controllers.IsTestSpController.IS_TEST_SP_APPROVED_SESS;
 
+/**
+ * This filter forwards user to a warning page if the service is in test environment.
+ * Otherwise, user can to access the service.
+ *
+ * Configuration (replace [name] part with the name defined for the filter):
+ * <ul>
+ *     <li><b>filter.[name].isTestSpAttr</b> - mapping to isCesnetEligible attribute</li>
+ * </ul>
+ * @author Dominik Frantisek Bucik <bucik@ics.muni.cz>
+ * @author Pavol Pluta <500348@mail.muni.cz>
+ */
 public class PerunIsTestSpFilter extends PerunRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(PerunIsTestSpFilter.class);
@@ -45,35 +56,27 @@ public class PerunIsTestSpFilter extends PerunRequestFilter {
     protected boolean process(ServletRequest req, ServletResponse res, FilterParams params) throws IOException {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        log.error("================================");
         Facility facility = params.getFacility();
         if (facility == null || facility.getId() == null) {
-            log.debug("{} - skip execution: no facility provider", filterName);
+            log.debug("{} - skip execution: no facility provided", filterName);
             return true;
-        }
-
-
-        //boolean isTestSp = facilityAttributes.get(facilityAttrsConfig.getTestSpAttr()).valueAsBoolean();
-
-        if (testSpWarningApproved(request)){
-            log.debug("{} - Warning already approved, continue to the next filter", filterName);
+        } else if (testSpWarningApproved(request)){
+            log.debug("{} - skip execution: warning already approved", filterName);
             return true;
         }
 
         PerunAttributeValue attrValue = perunAdapter.getFacilityAttributeValue(facility.getId(), isTestSpAttrName);
-
-        log.error("ATTR VALUE: {}", attrValue);
-        log.error("==============================");
-        if (attrValue != null && attrValue.valueAsBoolean()) {
-            log.debug("Redirecting user to test SP warning page");
+        if (attrValue == null) {
+            log.debug("{} - skip execution: attribute {} has null value", filterName, isTestSpAttrName);
+            return true;
+        } else if (attrValue.valueAsBoolean()) {
+            log.debug("{} - redirecting user to test SP warning page", filterName);
             this.redirect(request, response);
             return false;
         }
-
+        log.debug("{} - service is not testing, let user access it", filterName);
         return true;
-
     }
-
 
     private boolean testSpWarningApproved(HttpServletRequest req) {
         if (req.getSession() == null) {
@@ -93,7 +96,7 @@ public class PerunIsTestSpFilter extends PerunRequestFilter {
         Map<String, String> params = new HashMap<>();
         params.put(PARAM_TARGET, targetURL);
         String redirectUrl = ControllerUtils.createRedirectUrl(req, PerunFilterConstants.AUTHORIZE_REQ_PATTERN,
-                IsTestSpController.WARNING_MAPPING, params);
+                IsTestSpController.MAPPING, params);
         log.debug("{} - redirecting user to testSP warning page: {}", filterName, redirectUrl);
         res.reset();
         res.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
