@@ -56,6 +56,7 @@
         </div>
         <div class="row-fluid mt-2">
             <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+            <input type="hidden" name="acr" value="${acr}">
             <input name="approve" value="${langProps['user_code_submit']}" type="submit"
                    class="btn btn-success btn-block btn-large" />
         </div>

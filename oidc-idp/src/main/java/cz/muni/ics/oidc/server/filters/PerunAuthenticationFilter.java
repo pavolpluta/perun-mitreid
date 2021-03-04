@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.AUTHORIZE_REQ_PATTERN;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.EFILTER_PREFIX;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.FILTER_PREFIX;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.IDP_ENTITY_ID_PREFIX;
@@ -56,8 +57,9 @@ import static org.mitre.oauth2.model.RegisteredClientFields.CLIENT_ID;
 public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessingFilter {
 
 	private static final Logger log = LoggerFactory.getLogger(PerunAuthenticationFilter.class);
-	private final AntPathRequestMatcher unapprovedMatcher = new AntPathRequestMatcher(
+	private final AntPathRequestMatcher UNAPPROVED = new AntPathRequestMatcher(
 			PerunUnapprovedController.UNAPPROVED_MAPPING);
+	private final AntPathRequestMatcher AUTHORIZE = new AntPathRequestMatcher(AUTHORIZE_REQ_PATTERN);
 
 	private static final String FILTER_NAME = "AuthenticationFilter";
 
@@ -98,7 +100,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 			res.sendRedirect(redirectURL);
 		} else {
 			PerunUser user = null;
-			if (principal == null && !unapprovedMatcher.matches(req)) {
+			if (principal == null && !UNAPPROVED.matches(req)) {
 				//user is logged in, but we cannot find him in Perun
 				log.warn("{} - user is logged in, no principal found. Redirect user to UNAPPROVED view.", FILTER_NAME);
 				FiltersUtils.redirectUnapproved(req, res, clientId);
@@ -109,13 +111,13 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 				} catch (RuntimeException e) {
 					//user is logged in, but we cannot find him in Perun
 				}
-				if (user == null && !unapprovedMatcher.matches(req)) {
+				if (user == null && !UNAPPROVED.matches(req)) {
 					log.warn("{} - user is logged in, no user has been found in Perun for principal '{}'. " +
 							"Redirect user to UNAPPROVED view.", FILTER_NAME, principal);
 					FiltersUtils.redirectUnapproved(req, res, clientId);
 					return;
 				}
-				if (principal != null && req.getParameter(Acr.PARAM_ACR) != null) {
+				if (principal != null && req.getParameter(Acr.PARAM_ACR) != null && AUTHORIZE.matches(req)) {
 					storeAcr(principal, req);
 				}
 			}

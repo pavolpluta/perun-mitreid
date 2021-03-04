@@ -25,7 +25,7 @@ import static org.mitre.openid.connect.models.Acr.PARAM_SUB;
 		@NamedQuery(name = Acr.GET_ACTIVE, query = "SELECT acr FROM Acr acr WHERE " +
 				"acr.sub = :" + PARAM_SUB +
 				" AND acr.clientId = :" + Acr.PARAM_CLIENT_ID +
-				" AND acr.acrValues = :" + PARAM_ACR + " AND acr.state = :" + Acr.PARAM_STATE +
+				" AND acr.state = :" + Acr.PARAM_STATE +
 				" AND acr.expiresAt > :" + PARAM_EXPIRES_AT),
 		@NamedQuery(name = Acr.GET_BY_ID,
 				query = "SELECT acr FROM Acr acr " +

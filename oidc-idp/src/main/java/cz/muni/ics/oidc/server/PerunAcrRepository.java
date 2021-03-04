@@ -22,11 +22,10 @@ public class PerunAcrRepository {
 	@PersistenceContext(unitName = "defaultPersistenceUnit")
 	private EntityManager manager;
 
-	public Acr getActive(String sub, String clientId, String acr, String state) {
+	public Acr getActive(String sub, String clientId, String state) {
 		TypedQuery<Acr> query = manager.createNamedQuery(Acr.GET_ACTIVE, Acr.class);
 		query.setParameter(Acr.PARAM_SUB, sub);
 		query.setParameter(Acr.PARAM_CLIENT_ID, clientId);
-		query.setParameter(Acr.PARAM_ACR, acr);
 		query.setParameter(Acr.PARAM_STATE, state);
 		query.setParameter(Acr.PARAM_EXPIRES_AT, now());
 		return query.getSingleResult();

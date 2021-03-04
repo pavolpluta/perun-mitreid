@@ -5,6 +5,7 @@ import org.mitre.oauth2.model.DeviceCode;
 import org.mitre.oauth2.model.OAuth2AccessTokenEntity;
 import org.mitre.oauth2.model.OAuth2RefreshTokenEntity;
 import org.mitre.openid.connect.models.Acr;
+import org.mitre.openid.connect.models.DeviceCodeAcr;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -141,6 +142,23 @@ public class CustomClearTasks {
         int count = 0;
         Query query = manager.createNamedQuery(Acr.DELETE_EXPIRED);
         query.setParameter(Acr.PARAM_EXPIRES_AT, Instant.now().toEpochMilli());
+        if (timeout > 0) {
+            query.setHint("javax.persistence.query.timeout", timeout);
+        }
+        try {
+            count += query.executeUpdate();
+        } catch (QueryTimeoutException e) {
+            // this is OK
+        }
+        return count;
+    }
+
+    public int clearExpiredDeviceCodeAcrs(long timeout) {
+        manager.flush();
+        manager.clear();
+        int count = 0;
+        Query query = manager.createNamedQuery(DeviceCodeAcr.DELETE_EXPIRED);
+        query.setParameter(DeviceCodeAcr.PARAM_EXPIRES_AT, Instant.now().toEpochMilli());
         if (timeout > 0) {
             query.setHint("javax.persistence.query.timeout", timeout);
         }

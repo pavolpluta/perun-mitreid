@@ -10,6 +10,7 @@ import net.minidev.json.JSONArray;
 import org.mitre.oauth2.model.ClientDetailsEntity;
 import org.mitre.oauth2.model.OAuth2AccessTokenEntity;
 import org.mitre.openid.connect.models.Acr;
+import org.mitre.openid.connect.models.DeviceCodeAcr;
 import org.mitre.openid.connect.service.ScopeClaimTranslationService;
 import org.mitre.openid.connect.service.UserInfoService;
 import org.mitre.openid.connect.service.impl.DefaultOIDCTokenService;
@@ -31,21 +32,26 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 
 	private static final Logger log = LoggerFactory.getLogger(PerunOIDCTokenService.class);
 
-	@Autowired
 	private final UserInfoService userInfoService;
 	private final ScopeClaimTranslationService translator;
 	private final PerunOidcConfig perunOidcConfig;
 	private final PerunAcrRepository acrRepository;
+	private final PerunDeviceCodeAcrRepository deviceCodeAcrRepository;
 
 	private final Gson gson = new Gson();
 
-	public PerunOIDCTokenService(UserInfoService userInfoService, ScopeClaimTranslationService translator,
-								 PerunOidcConfig perunOidcConfig, PerunAcrRepository acrRepository)
+	@Autowired
+	public PerunOIDCTokenService(UserInfoService userInfoService,
+								 ScopeClaimTranslationService translator,
+								 PerunOidcConfig perunOidcConfig,
+								 PerunAcrRepository acrRepository,
+								 PerunDeviceCodeAcrRepository deviceCodeAcrRepository)
 	{
 		this.userInfoService = userInfoService;
 		this.translator = translator;
 		this.perunOidcConfig = perunOidcConfig;
 		this.acrRepository = acrRepository;
+		this.deviceCodeAcrRepository = deviceCodeAcrRepository;
 	}
 
 	@Override
@@ -73,26 +79,31 @@ public class PerunOIDCTokenService extends DefaultOIDCTokenService {
 			}
 		}
 
-		if (request.getRequestParameters() != null && request.getRequestParameters().containsKey("acr_values")) {
-			String acr = getAuthnContextClass(client.getClientId(), sub, request.getRequestParameters());
-			if (acr != null) {
-				log.debug("adding to ID token claim acr with value {}", acr);
-				idClaims.claim("acr", acr);
-			}
+		String acr = getAuthnContextClass(client.getClientId(), sub, request.getRequestParameters());
+		if (acr != null) {
+			log.debug("adding to ID token claim acr with value {}", acr);
+			idClaims.claim("acr", acr);
 		}
 	}
 
 	private String getAuthnContextClass(String clientId, String sub, Map<String, String> params) {
-		String state = params.get(Acr.PARAM_STATE);
-		String acrValues = params.get(Acr.PARAM_ACR);
-
-		Acr acr = acrRepository.getActive(sub, clientId, acrValues, state);
-
+		log.debug("Fetching ACR");
 		String authnContextClass = null;
-		if (acr != null) {
-			authnContextClass = acr.getShibAuthnContextClass();
+		if (params.containsKey(Acr.PARAM_STATE)) {
+			String state = params.get(Acr.PARAM_STATE);
+			log.debug("Fetch ACR for sub '{}', clientId: '{}' and state '{}'", sub, clientId, state);
+			Acr acr = acrRepository.getActive(sub, clientId, state);
+			if (acr != null) {
+				authnContextClass = acr.getShibAuthnContextClass();
+			}
+		} else if (params.containsKey(DeviceCodeAcr.PARAM_DEVICE_CODE)) {
+			String deviceCode = params.get(DeviceCodeAcr.PARAM_DEVICE_CODE);
+			log.debug("Fetch ACR for device code '{}'", deviceCode);
+			DeviceCodeAcr deviceCodeAcr = deviceCodeAcrRepository.getActiveByDeviceCode(deviceCode);
+			if (deviceCodeAcr != null) {
+				authnContextClass = deviceCodeAcr.getShibAuthnContextClass();
+			}
 		}
-
 		return authnContextClass;
 	}
 
