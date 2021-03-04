@@ -29,14 +29,22 @@ public class PerunDeviceCodeAcrRepository {
 				DeviceCodeAcr.class);
 		query.setParameter(DeviceCodeAcr.PARAM_DEVICE_CODE, deviceCode);
 		query.setParameter(Acr.PARAM_EXPIRES_AT, now());
-		return query.getSingleResult();
+		try {
+			return query.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
+		}
 	}
 
 	public DeviceCodeAcr getByUserCode(String userCode) {
 		TypedQuery<DeviceCodeAcr> query = manager.createNamedQuery(DeviceCodeAcr.GET_BY_USER_CODE, DeviceCodeAcr.class);
 		query.setParameter(DeviceCodeAcr.PARAM_USER_CODE, userCode);
 
-		return query.getSingleResult();
+		try {
+			return query.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
+		}
 	}
 
 	public DeviceCodeAcr getById(Long id) {
@@ -44,7 +52,11 @@ public class PerunDeviceCodeAcrRepository {
 		query.setParameter(DeviceCodeAcr.PARAM_ID, id);
 		query.setParameter(DeviceCodeAcr.PARAM_EXPIRES_AT, now());
 
-		return query.getSingleResult();
+		try {
+			return query.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
+		}
 	}
 
 	@Transactional

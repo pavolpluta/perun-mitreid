@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -29,7 +30,11 @@ public class PerunAcrRepository {
 		query.setParameter(Acr.PARAM_CLIENT_ID, clientId);
 		query.setParameter(Acr.PARAM_STATE, state);
 		query.setParameter(Acr.PARAM_EXPIRES_AT, now());
-		return query.getSingleResult();
+		try {
+			return query.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
+		}
 	}
 
 	public Acr getById(Long id) {
@@ -37,7 +42,11 @@ public class PerunAcrRepository {
 		query.setParameter(Acr.PARAM_ID, id);
 		query.setParameter(Acr.PARAM_EXPIRES_AT, now());
 
-		return query.getSingleResult();
+		try {
+			return query.getSingleResult();
+		} catch (NoResultException e) {
+			return null;
+		}
 	}
 
 	@Transactional
