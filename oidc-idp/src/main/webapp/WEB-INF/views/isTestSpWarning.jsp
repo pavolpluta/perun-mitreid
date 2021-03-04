@@ -28,7 +28,8 @@
     <form method="GET" action="${action}">
         <hr/>
         <br/>
-        <input type="hidden" name="target" value="${fn:escapeXml(target)}"/>
+        <input type="hidden" name="target" value="${fn:escapeXml(target)}">
+        <input type="hidden" name="accepted" value="true">
         <input type="submit" name="continue" value="${langProps['is_test_sp_warning_continue']}"
                class="btn btn-lg btn-primary btn-block">
     </form>
