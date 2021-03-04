@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -41,9 +42,13 @@ public class PerunAcrRepository {
 
 	@Transactional
 	public Acr store(Acr acr) {
-		Acr tmp = manager.merge(acr);
-		manager.flush();
-		return tmp;
+		try {
+			return getActive(acr.getSub(), acr.getClientId(), acr.getState());
+		} catch (NoResultException e) {
+			Acr tmp = manager.merge(acr);
+			manager.flush();
+			return tmp;
+		}
 	}
 
 	@Transactional

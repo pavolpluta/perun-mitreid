@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.persistence.TypedQuery;
@@ -48,9 +49,13 @@ public class PerunDeviceCodeAcrRepository {
 
 	@Transactional
 	public DeviceCodeAcr store(DeviceCodeAcr acr) {
-		DeviceCodeAcr tmp = manager.merge(acr);
-		manager.flush();
-		return tmp;
+		try {
+			return getActiveByDeviceCode(acr.getDeviceCode());
+		} catch (NoResultException e) {
+			DeviceCodeAcr tmp = manager.merge(acr);
+			manager.flush();
+			return tmp;
+		}
 	}
 
 	@Transactional

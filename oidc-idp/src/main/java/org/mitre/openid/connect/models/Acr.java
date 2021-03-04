@@ -55,9 +55,7 @@ public class Acr {
 	private String shibAuthnContextClass;
 	private long expiresAt;
 
-	public Acr() {
-
-	}
+	public Acr() { }
 
 	public Acr(String sub, String clientId, String acrValues, String state) {
 		this.sub = sub;
