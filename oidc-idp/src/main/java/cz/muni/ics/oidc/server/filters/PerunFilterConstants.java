@@ -26,6 +26,8 @@ public class PerunFilterConstants {
     public static final String PARAM_REASON = "reason";
     public static final String PARAM_AUTHN_CONTEXT_CLASS_REF = "authnContextClassRef";
     public static final String PARAM_ACCEPTED = "accepted";
+    public static final String PARAM_ACR_VALUES = "acr_values";
+    public static final String PARAM_STATE = "state";
 
     public static final String IDP_ENTITY_ID_PREFIX = "urn:cesnet:proxyidp:idpentityid:";
     public static final String FILTER_PREFIX = "urn:cesnet:proxyidp:filter:";

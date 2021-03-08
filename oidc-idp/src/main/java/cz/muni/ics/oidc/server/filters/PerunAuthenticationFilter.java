@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 
+import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.*;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.AUTHORIZE_REQ_PATTERN;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.EFILTER_PREFIX;
 import static cz.muni.ics.oidc.server.filters.PerunFilterConstants.FILTER_PREFIX;
@@ -117,7 +118,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 					FiltersUtils.redirectUnapproved(req, res, clientId);
 					return;
 				}
-				if (principal != null && req.getParameter(Acr.PARAM_ACR) != null && AUTHORIZE.matches(req)) {
+				if (principal != null && req.getParameter(PARAM_ACR_VALUES) != null
+						&& AUTHORIZE.matches(req)) {
 					storeAcr(principal, req);
 				}
 			}
@@ -138,7 +140,7 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 		if (perunPrincipal == null) {
 			String shibIdentityProvider = config.getProxyExtSourceName();
 			if (shibIdentityProvider == null) {
-				shibIdentityProvider = (String) req.getAttribute(PerunFilterConstants.SHIB_IDENTITY_PROVIDER);
+				shibIdentityProvider = (String) req.getAttribute(SHIB_IDENTITY_PROVIDER);
 			}
 			String remoteUser = req.getRemoteUser();
 			throw new IllegalStateException("ExtSource name or userExtSourceLogin is null: (" +
@@ -156,18 +158,15 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 	private void storeAcr(PerunPrincipal principal, HttpServletRequest req) {
 		String sub = principal.getExtLogin();
-		String clientId = req.getParameter(Acr.PARAM_CLIENT_ID);
-		String state = req.getParameter(Acr.PARAM_STATE);
-		String acrValues = req.getParameter(Acr.PARAM_ACR);
-		String shibAuthnContextClass = (String) req.getAttribute(PerunFilterConstants.SHIB_AUTHN_CONTEXT_CLASS);
+		String clientId = req.getParameter(PARAM_CLIENT_ID);
+		String state = req.getParameter(PARAM_STATE);
+		String shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_CLASS);
 		if (shibAuthnContextClass == null) {
-			shibAuthnContextClass = (String) req.getAttribute(PerunFilterConstants.SHIB_AUTHN_CONTEXT_METHOD);
+			shibAuthnContextClass = (String) req.getAttribute(SHIB_AUTHN_CONTEXT_METHOD);
 		}
+		long expiresAt = Instant.now().plusSeconds(600L).toEpochMilli();
 
-		Acr acr = new Acr(sub, clientId, acrValues, state, shibAuthnContextClass);
-
-		long expiresAtEpoch = Instant.now().plusSeconds(600L).toEpochMilli();
-		acr.setExpiresAt(expiresAtEpoch);
+		Acr acr = new Acr(sub, clientId, state, shibAuthnContextClass, expiresAt);
 		log.trace("{} - store acr '{}'", FILTER_NAME, acr);
 		acrRepository.store(acr);
 	}
@@ -283,8 +282,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 
 	private String extractAcrValuesFromRequestParam(HttpServletRequest req) {
 		String acrValues = null;
-		if (req.getParameter(Acr.PARAM_ACR) != null) {
-			acrValues = req.getParameter(Acr.PARAM_ACR);
+		if (req.getParameter(PARAM_ACR_VALUES) != null) {
+			acrValues = req.getParameter(PARAM_ACR_VALUES);
 		}
 
 		return acrValues;
@@ -328,8 +327,8 @@ public class PerunAuthenticationFilter extends AbstractPreAuthenticatedProcessin
 	}
 
 	private boolean mfaRequestedAndNotPerformedYet(HttpServletRequest req) {
-		return req.getParameter(Acr.PARAM_ACR) != null
-				&& req.getParameter(Acr.PARAM_ACR).contains(REFEDS_MFA)
+		return req.getParameter(PARAM_ACR_VALUES) != null
+				&& req.getParameter(PARAM_ACR_VALUES).contains(REFEDS_MFA)
 				&& req.getParameter(PARAM_LOGGED_OUT) == null;
 	}
 

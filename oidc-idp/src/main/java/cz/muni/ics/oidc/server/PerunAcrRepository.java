@@ -51,9 +51,10 @@ public class PerunAcrRepository {
 
 	@Transactional
 	public Acr store(Acr acr) {
-		try {
-			return getActive(acr.getSub(), acr.getClientId(), acr.getState());
-		} catch (NoResultException e) {
+		Acr existing = getActive(acr.getSub(), acr.getClientId(), acr.getState());
+		if (existing != null) {
+			return existing;
+		} else {
 			Acr tmp = manager.merge(acr);
 			manager.flush();
 			return tmp;

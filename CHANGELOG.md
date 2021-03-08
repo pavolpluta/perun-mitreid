@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - implemented a filter for displaying warning in case of RP being registered in test environment
+#### Changed
+- dropped the column *'acr_values'* from the table *'acrs'*
 
 ## [v2.4.1]
 ### Fixed

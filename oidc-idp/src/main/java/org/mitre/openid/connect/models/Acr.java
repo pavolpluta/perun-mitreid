@@ -10,7 +10,6 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
-import static org.mitre.openid.connect.models.Acr.PARAM_ACR;
 import static org.mitre.openid.connect.models.Acr.PARAM_EXPIRES_AT;
 import static org.mitre.openid.connect.models.Acr.PARAM_SUB;
 
@@ -43,33 +42,24 @@ public class Acr {
 	public static final String PARAM_ID = "id";
 	public static final String PARAM_SUB = "sub";
 	public static final String PARAM_CLIENT_ID = "client_id";
-	public static final String PARAM_ACR = "acr_values";
 	public static final String PARAM_STATE = "state";
 	public static final String PARAM_EXPIRES_AT = "expiration";
 
 	private Long id;
 	private String sub;
 	private String clientId;
-	private String acrValues;
 	private String state;
 	private String shibAuthnContextClass;
 	private long expiresAt;
 
 	public Acr() { }
 
-	public Acr(String sub, String clientId, String acrValues, String state) {
+	public Acr(String sub, String clientId, String state, String shibAuthnContextClass, long expiresAt) {
 		this.sub = sub;
 		this.clientId = clientId;
-		this.acrValues = acrValues;
-		this.state = state;
-	}
-
-	public Acr(String sub, String clientId, String acrValues, String state, String shibAuthnContextClass) {
-		this.sub = sub;
-		this.clientId = clientId;
-		this.acrValues = acrValues;
 		this.state = state;
 		this.shibAuthnContextClass = shibAuthnContextClass;
+		this.expiresAt = expiresAt;
 	}
 
 	@Id
@@ -101,16 +91,6 @@ public class Acr {
 
 	public void setClientId(String clientId) {
 		this.clientId = clientId;
-	}
-
-	@Basic
-	@Column(name = "acr_values")
-	public String getAcrValues() {
-		return acrValues;
-	}
-
-	public void setAcrValues(String acrValues) {
-		this.acrValues = acrValues;
 	}
 
 	@Basic
@@ -149,7 +129,6 @@ public class Acr {
 				"id=" + id +
 				", sub='" + sub + '\'' +
 				", clientId='" + clientId + '\'' +
-				", acr='" + acrValues + '\'' +
 				", state='" + state + '\'' +
 				", shibAuthnContextClass='" + shibAuthnContextClass + '\'' +
 				", expiration=" + expiresAt +
