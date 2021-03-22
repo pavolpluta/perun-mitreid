@@ -74,7 +74,7 @@ public class EntitlementExtendedClaimSource extends EntitlementSource {
     }
 
     private String wrapGroupEntitlementToAARCWithAttributes(String uuid, String displayName) {
-        return addPrefixAndSuffix(GROUP_ATTRIBUTES + ':' + uuid + '?' + DISPLAY_NAME + '=' +
+        return addPrefixAndSuffix(GROUP_ATTRIBUTES + ':' + uuid + "?=" + DISPLAY_NAME + '=' +
                 ESCAPER.escape(displayName));
     }
 
